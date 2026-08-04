@@ -18,6 +18,7 @@ import bg.martinandonov.restaurant.diningtable.dto.UpdateDiningTableStatusReques
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.reservation.service.DiningTableReservationGuard;
 
 @Service
 @Transactional
@@ -28,12 +29,15 @@ public class DiningTableService {
 
 	private final DiningTableRepository diningTableRepository;
 	private final DiningTableOperationalGuard diningTableOperationalGuard;
+	private final DiningTableReservationGuard diningTableReservationGuard;
 
 	public DiningTableService(
 			DiningTableRepository diningTableRepository,
-			DiningTableOperationalGuard diningTableOperationalGuard) {
+			DiningTableOperationalGuard diningTableOperationalGuard,
+			DiningTableReservationGuard diningTableReservationGuard) {
 		this.diningTableRepository = diningTableRepository;
 		this.diningTableOperationalGuard = diningTableOperationalGuard;
+		this.diningTableReservationGuard = diningTableReservationGuard;
 	}
 
 	public DiningTableResponse createTable(CreateDiningTableRequest request) {
@@ -109,6 +113,11 @@ public class DiningTableService {
 		DiningTable table = diningTableRepository.findByIdForUpdate(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Dining table not found: " + id));
 		assertOpenOrderAllowsStatus(table, status);
+		if (status == DiningTableStatus.OUT_OF_SERVICE
+				&& diningTableReservationGuard.hasFutureConfirmedReservation(table.getId())) {
+			throw new BusinessRuleException(
+					"Cannot set OUT_OF_SERVICE while the table has a future confirmed reservation");
+		}
 		applyStatus(table, status, false);
 		return toResponse(table);
 	}
@@ -147,6 +156,10 @@ public class DiningTableService {
 			table.setStatus(DiningTableStatus.AVAILABLE);
 		}
 		else {
+			if (diningTableReservationGuard.hasFutureConfirmedReservation(table.getId())) {
+				throw new BusinessRuleException(
+						"Cannot deactivate a table that has a future confirmed reservation");
+			}
 			table.setActive(false);
 			table.setStatus(DiningTableStatus.OUT_OF_SERVICE);
 		}

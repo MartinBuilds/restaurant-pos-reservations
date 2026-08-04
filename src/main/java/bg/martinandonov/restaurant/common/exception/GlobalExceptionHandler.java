@@ -2,7 +2,9 @@ package bg.martinandonov.restaurant.common.exception;
 
 import java.time.Instant;
 
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PessimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
@@ -47,9 +50,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler({
 			ObjectOptimisticLockingFailureException.class,
 			OptimisticLockingFailureException.class,
-			OptimisticLockException.class
+			OptimisticLockException.class,
+			PessimisticLockingFailureException.class,
+			PessimisticLockException.class,
+			CannotAcquireLockException.class
 	})
-	public ResponseEntity<ApiError> handleOptimisticLock(
+	public ResponseEntity<ApiError> handleLockConflict(
 			RuntimeException exception,
 			HttpServletRequest request) {
 		return buildResponse(

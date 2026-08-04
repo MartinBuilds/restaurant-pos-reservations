@@ -62,6 +62,7 @@ Database credentials and optional initial admin are supplied via environment var
 | `DB_URL` | `jdbc:mysql://localhost:3306/restaurant_management` | JDBC URL |
 | `DB_USERNAME` | `restaurant_app` | Database username |
 | `DB_PASSWORD` | _(required)_ | Database password |
+| `RESTAURANT_TIME_ZONE` | `Europe/Sofia` | Zone for reservation `LocalDateTime.now(clock)` |
 | `INITIAL_ADMIN_EMAIL` | _(optional)_ | Creates an ADMIN user on startup when set with the other initial admin variables |
 | `INITIAL_ADMIN_PASSWORD` | _(optional)_ | Initial admin password (BCrypt-hashed before storage) |
 | `INITIAL_ADMIN_FULL_NAME` | _(optional)_ | Initial admin display name |
@@ -620,7 +621,138 @@ Missed WebSocket events are not replayed. There is no `websocket_messages` table
 - HTML kitchen screen / frontend frameworks
 - SockJS
 - External brokers (Kafka, RabbitMQ, Redis, ActiveMQ)
-- Payments, reservations, reports, cancellation workflow
+- Payments, reports
+
+## Table reservations
+
+Online table bookings with conflict checks and occupancy schedule. There is no anonymous/public booking, no email/SMS, and no automatic change to `DiningTable.status`.
+
+### Time zone
+
+Reservation request times are `LocalDateTime` in the restaurant zone:
+
+```properties
+app.restaurant.time-zone=${RESTAURANT_TIME_ZONE:Europe/Sofia}
+```
+
+API expects ISO local date-time, for example `2026-08-05T19:00:00`. The service uses `LocalDateTime.now(clock)` with a configured `Clock` bean (not raw `LocalDateTime.now()`).
+
+### Entity and statuses
+
+Table `reservations` stores:
+
+- unique `reservationNumber` (server-generated UUID)
+- dining table, client user
+- `startTime` / `endTime`
+- `guestCount`, optional `notes`
+- `status`, timestamps, `@Version`
+
+Statuses (`ReservationStatus`):
+
+| Status | Blocks interval? |
+|---|---|
+| `CONFIRMED` | yes |
+| `CANCELLED` | no |
+| `COMPLETED` | no |
+| `NO_SHOW` | no |
+
+New reservations start as `CONFIRMED`.
+
+### Conflict rule
+
+Two `CONFIRMED` reservations on the same table conflict when:
+
+```text
+existing.startTime < requested.endTime
+AND
+existing.endTime > requested.startTime
+```
+
+Adjacent intervals are allowed (`18:00–20:00` and `20:00–22:00`). Overlap or identical intervals return `409 Conflict`.
+
+Concurrency: create/update locks the dining-table row with `PESSIMISTIC_WRITE`, then checks conflicts in the same transaction. Lock conflicts map to `409`.
+
+Reservations never automatically set `DiningTable.status` to `RESERVED` / `OCCUPIED` / etc. Current `AVAILABLE` / `OCCUPIED` / `RESERVED` does not block a future booking; `OUT_OF_SERVICE` and inactive tables do.
+
+### Capacity and availability
+
+- `guestCount >= 1` and `guestCount <= table.capacity` (capacity overflow → `400`)
+- Availability search returns active tables that are not `OUT_OF_SERVICE`, have enough capacity, and have no conflicting `CONFIRMED` reservation
+- Ordered by capacity ascending, then table number ascending
+
+### Ownership and status workflow
+
+- Client endpoints use the authenticated user (must have `CLIENT` role). Foreign reservations return `404`.
+- Client may update/cancel only own future `CONFIRMED` reservations (`CONFIRMED → CANCELLED` only; cancel is idempotent).
+- Admin may set `CANCELLED` (before start), `COMPLETED` (after end), `NO_SHOW` (after start). Terminal statuses cannot change further. Same-status updates are idempotent.
+
+### Dining-table guard
+
+A future `CONFIRMED` reservation blocks table deactivation and `OUT_OF_SERVICE`. Cancel or reschedule first. Open-order guards remain unchanged.
+
+### Endpoints
+
+Client (`CLIENT`; must have CLIENT role at service layer):
+
+- `GET /api/client/reservations/availability?startTime=&endTime=&guestCount=`
+- `POST /api/client/reservations`
+- `GET /api/client/reservations`
+- `GET /api/client/reservations/{id}`
+- `PUT /api/client/reservations/{id}`
+- `PATCH /api/client/reservations/{id}/cancel`
+
+Admin (`ADMIN`):
+
+- `POST /api/admin/reservations` (includes `clientId`)
+- `GET /api/admin/reservations?from=&to=&status=&tableId=&clientId=`
+- `GET /api/admin/reservations/{id}`
+- `PUT /api/admin/reservations/{id}`
+- `PATCH /api/admin/reservations/{id}/status`
+- `GET /api/admin/reservations/schedule?from=&to=&tableId=&status=`
+
+Waiter (`WAITER` / `ADMIN`), read-only:
+
+- `GET /api/waiter/reservations/schedule?from=&to=&tableId=&status=`
+
+Waiter schedule defaults to `CONFIRMED`, `COMPLETED`, `NO_SHOW` (excludes `CANCELLED` unless `status=CANCELLED` is requested). Admin schedule includes all statuses when `status` is omitted. Schedule overlap uses the same interval formula against `from`/`to`.
+
+Create example:
+
+```json
+{
+  "diningTableId": 1,
+  "startTime": "2026-08-05T19:00:00",
+  "endTime": "2026-08-05T21:00:00",
+  "guestCount": 2,
+  "notes": "Anniversary"
+}
+```
+
+Example response:
+
+```json
+{
+  "id": 1,
+  "reservationNumber": "3f1c9e2a-....",
+  "diningTableId": 1,
+  "tableNumber": 5,
+  "tableDisplayName": "Window",
+  "clientId": 10,
+  "clientName": "Ada Client",
+  "clientEmail": "client@example.com",
+  "startTime": "2026-08-05T19:00:00",
+  "endTime": "2026-08-05T21:00:00",
+  "guestCount": 2,
+  "status": "CONFIRMED",
+  "notes": "Anniversary",
+  "createdAt": "2026-08-05T12:00:00",
+  "updatedAt": "2026-08-05T12:00:00"
+}
+```
+
+### Payments (future, simulation only)
+
+This PR does not include payments. Later simulated payments will record `CASH` or `CARD` in MySQL only — no Stripe, PayPal, bank, gateway, real cards, or money movement.
 
 ## Current development status
 
@@ -635,4 +767,5 @@ Missed WebSocket events are not replayed. There is no `websocket_messages` table
 - Order creation with transactional stock deduction is implemented for WAITER/ADMIN
 - Order status workflow ACCEPTED → COOKING → READY → SERVED is implemented over REST
 - Kitchen/waiter STOMP notifications are implemented (AFTER_COMMIT, no message persistence)
-- Simulated payments, reservations, and reports are not implemented yet
+- Table reservations with conflict checks and schedule are implemented
+- Simulated payments and reports are not implemented yet

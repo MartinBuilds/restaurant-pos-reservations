@@ -39,6 +39,9 @@ class DiningTableServiceTest {
 	@Mock
 	private DiningTableOperationalGuard diningTableOperationalGuard;
 
+	@Mock
+	private bg.martinandonov.restaurant.reservation.service.DiningTableReservationGuard diningTableReservationGuard;
+
 	@InjectMocks
 	private DiningTableService diningTableService;
 
@@ -334,6 +337,31 @@ class DiningTableServiceTest {
 		assertThatThrownBy(() -> diningTableService.updateActiveTableStatus(1L, statusRequest("RESERVED")))
 				.isInstanceOf(BusinessRuleException.class)
 				.hasMessageContaining("open order");
+	}
+
+	@Test
+	void deactivateBlockedByFutureConfirmedReservation() {
+		DiningTable table = existingTable(1L, 3, null, 4, DiningTableStatus.AVAILABLE, true);
+		when(diningTableRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(table));
+		when(diningTableReservationGuard.hasFutureConfirmedReservation(1L)).thenReturn(true);
+
+		UpdateDiningTableActiveRequest request = new UpdateDiningTableActiveRequest();
+		request.setActive(false);
+
+		assertThatThrownBy(() -> diningTableService.updateTableActiveState(1L, request))
+				.isInstanceOf(BusinessRuleException.class)
+				.hasMessageContaining("future confirmed reservation");
+	}
+
+	@Test
+	void outOfServiceBlockedByFutureConfirmedReservation() {
+		DiningTable table = existingTable(1L, 3, null, 4, DiningTableStatus.AVAILABLE, true);
+		when(diningTableRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(table));
+		when(diningTableReservationGuard.hasFutureConfirmedReservation(1L)).thenReturn(true);
+
+		assertThatThrownBy(() -> diningTableService.updateTableStatus(1L, statusRequest("OUT_OF_SERVICE")))
+				.isInstanceOf(BusinessRuleException.class)
+				.hasMessageContaining("future confirmed reservation");
 	}
 
 	private CreateDiningTableRequest createRequest(Integer number, String name, Integer capacity) {
