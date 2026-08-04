@@ -370,7 +370,40 @@ Entities:
 Order statuses (`OrderStatus`):
 
 - `ACCEPTED` (new orders always start here)
-- `COOKING`, `READY`, `SERVED`, `CANCELLED` (kitchen workflow — not changed in this PR)
+- `COOKING`, `READY`, `SERVED`, `CANCELLED` (kitchen/waiter workflow; cancellation not exposed yet)
+
+### Order status workflow
+
+Allowed transitions:
+
+- `ACCEPTED` → `COOKING` (COOK / ADMIN via kitchen API)
+- `COOKING` → `READY` (COOK / ADMIN via kitchen API)
+- `READY` → `SERVED` (WAITER / ADMIN via waiter API)
+
+Invalid transitions return `409 Conflict`. Requesting an unsupported status for the endpoint returns `400 Bad Request`. Setting the current status again is idempotent (`200 OK`).
+
+After `SERVED`:
+
+- `order.closed` remains `false`
+- table remains `OCCUPIED`
+- stock, totals, and snapshots are unchanged
+
+`SERVED` does **not** mean paid. A later simulated payment PR will record `CASH` or `CARD` in MySQL, set `closed=true`, and free the table — without Stripe, PayPal, bank APIs, or real card data.
+
+Kitchen REST endpoints (`COOK` or `ADMIN`):
+
+- `GET /api/kitchen/orders`
+- `GET /api/kitchen/orders?status=ACCEPTED|COOKING|READY`
+- `GET /api/kitchen/orders/{id}`
+- `PATCH /api/kitchen/orders/{id}/status` with `COOKING` or `READY`
+
+Kitchen queue includes only open orders in `ACCEPTED`, `COOKING`, or `READY`. Served/cancelled/closed orders are omitted (404 by id).
+
+Waiter status endpoint (`WAITER` or `ADMIN`):
+
+- `PATCH /api/waiter/orders/{id}/status` with `SERVED` only
+
+There is no WebSocket/STOMP in this workflow PR.
 
 ### Creation flow
 
@@ -397,6 +430,7 @@ Any failure rolls back stock, table status, order, and availability changes.
 - `GET /api/waiter/orders?tableId={id}` — open orders for a table
 - `GET /api/waiter/orders/{id}`
 - `POST /api/waiter/orders/{id}/items` — add items to an `ACCEPTED` open order
+- `PATCH /api/waiter/orders/{id}/status` — set `SERVED` when current status is `READY`
 
 Create order example:
 
@@ -455,4 +489,5 @@ Kitchen WebSocket updates are also out of scope for this PR.
 - Automatic menu availability is computed from recipes and stock (with manual override)
 - Dining tables are managed by ADMIN and operable by WAITER
 - Order creation with transactional stock deduction is implemented for WAITER/ADMIN
+- Order status workflow ACCEPTED → COOKING → READY → SERVED is implemented over REST
 - Kitchen WebSocket, simulated payments, reservations, and reports are not implemented yet
