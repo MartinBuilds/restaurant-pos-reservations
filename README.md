@@ -151,7 +151,8 @@ Public endpoints (no login):
 - `active` marks whether a category/item is part of the catalog (soft disable, no hard deletes).
 - `available` is a manual flag on menu items (for temporary unavailability).
 - Public menu returns only items where the item is `active` and `available`, and its category is `active`.
-- Ingredient-based automatic availability will be added in a later inventory PR.
+- Ingredient-based automatic availability is not yet implemented (planned for a later PR).
+- Stock is not deducted automatically when orders are placed (planned for the order PR).
 
 ### Example requests
 
@@ -191,6 +192,67 @@ Example menu item response:
 }
 ```
 
+## Inventory and recipes API
+
+Base units (`IngredientUnit`):
+
+- `GRAM` (store kilograms as `1000`)
+- `MILLILITER` (store liters as `1000`)
+- `PIECE`
+
+Admin ingredient endpoints:
+
+- `POST /api/admin/inventory/ingredients`
+- `GET /api/admin/inventory/ingredients`
+- `GET /api/admin/inventory/ingredients?activeOnly=true`
+- `GET /api/admin/inventory/ingredients/{id}`
+- `PUT /api/admin/inventory/ingredients/{id}`
+- `PATCH /api/admin/inventory/ingredients/{id}/status`
+- `PATCH /api/admin/inventory/ingredients/{id}/stock`
+
+Admin recipe endpoints:
+
+- `GET /api/admin/menu/items/{menuItemId}/recipe`
+- `PUT /api/admin/menu/items/{menuItemId}/recipe`
+- `DELETE /api/admin/menu/items/{menuItemId}/recipe`
+
+Stock adjustment:
+
+- `quantityChange` may be positive (delivery) or negative (write-off)
+- resulting stock cannot go below zero
+- concurrent stock updates are protected with `@Version` and a pessimistic write lock
+
+Create ingredient example:
+
+```json
+{
+  "name": "Tomato",
+  "unit": "GRAM",
+  "stockQuantity": 5000,
+  "minimumStockLevel": 500
+}
+```
+
+Adjust stock example:
+
+```json
+{
+  "quantityChange": -250,
+  "note": "Prep usage correction"
+}
+```
+
+Replace recipe example:
+
+```json
+{
+  "components": [
+    { "ingredientId": 1, "quantityRequired": 150 },
+    { "ingredientId": 2, "quantityRequired": 20 }
+  ]
+}
+```
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
@@ -198,4 +260,6 @@ Example menu item response:
 - Roles are seeded idempotently on startup (`ADMIN`, `WAITER`, `COOK`, `CLIENT`)
 - Optional initial ADMIN can be created from environment variables
 - Menu catalog (categories and items) is implemented with admin and public APIs
-- Inventory, orders, reservations, and remaining modules are not implemented yet
+- Ingredients, stock quantities, and recipes are implemented for ADMIN management
+- Automatic availability and order-time stock deduction are not implemented yet
+- Orders, reservations, and remaining modules are not implemented yet
