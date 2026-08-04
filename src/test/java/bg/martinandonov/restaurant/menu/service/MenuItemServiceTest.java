@@ -24,7 +24,9 @@ import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.menu.dto.CreateMenuItemRequest;
+import bg.martinandonov.restaurant.menu.dto.MenuAvailabilityResponse;
 import bg.martinandonov.restaurant.menu.dto.MenuItemResponse;
+import bg.martinandonov.restaurant.menu.entity.MenuAvailabilityReason;
 import bg.martinandonov.restaurant.menu.entity.MenuCategory;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
@@ -37,6 +39,9 @@ class MenuItemServiceTest {
 
 	@Mock
 	private MenuCategoryService menuCategoryService;
+
+	@Mock
+	private MenuAvailabilityService menuAvailabilityService;
 
 	@InjectMocks
 	private MenuItemService menuItemService;
@@ -66,14 +71,26 @@ class MenuItemServiceTest {
 			ReflectionTestUtils.setField(item, "id", 10L);
 			return item;
 		});
+		when(menuAvailabilityService.recalculateAvailability(10L)).thenReturn(
+				new MenuAvailabilityResponse(10L, "Caesar Salad", true, false, "NO_RECIPE", 0L));
+		when(menuItemRepository.findById(10L)).thenAnswer(invocation -> {
+			MenuItem item = new MenuItem("Caesar Salad", null, new BigDecimal("12.50"), true, true, salads);
+			ReflectionTestUtils.setField(item, "id", 10L);
+			return Optional.of(item);
+		});
 
 		MenuItemResponse response = menuItemService.createMenuItem(request);
 
 		ArgumentCaptor<MenuItem> captor = ArgumentCaptor.forClass(MenuItem.class);
 		verify(menuItemRepository).save(captor.capture());
 		assertThat(captor.getValue().getPrice()).isEqualByComparingTo("12.50");
+		assertThat(captor.getValue().isManualAvailable()).isTrue();
+		assertThat(captor.getValue().isAvailable()).isFalse();
+		assertThat(captor.getValue().getAvailabilityReason()).isEqualTo(MenuAvailabilityReason.NO_RECIPE);
 		assertThat(response.getPrice()).isEqualByComparingTo("12.50");
 		assertThat(response.getCategoryId()).isEqualTo(1L);
+		assertThat(response.isAvailable()).isFalse();
+		assertThat(response.getAvailabilityReason()).isEqualTo("NO_RECIPE");
 	}
 
 	@Test
@@ -133,6 +150,13 @@ class MenuItemServiceTest {
 			ReflectionTestUtils.setField(item, "id", 11L);
 			return item;
 		});
+		when(menuAvailabilityService.recalculateAvailability(11L)).thenReturn(
+				new MenuAvailabilityResponse(11L, "Special", true, false, "NO_RECIPE", 0L));
+		when(menuItemRepository.findById(11L)).thenAnswer(invocation -> {
+			MenuItem item = new MenuItem("Special", null, new BigDecimal("9.99"), true, true, desserts);
+			ReflectionTestUtils.setField(item, "id", 11L);
+			return Optional.of(item);
+		});
 
 		MenuItemResponse response = menuItemService.createMenuItem(request);
 
@@ -169,6 +193,8 @@ class MenuItemServiceTest {
 				true,
 				salads);
 		ReflectionTestUtils.setField(publicItem, "id", 20L);
+		publicItem.setAvailable(true);
+		publicItem.setAvailabilityReason(MenuAvailabilityReason.AVAILABLE);
 
 		when(menuItemRepository.findByActiveTrueAndAvailableTrueAndCategory_ActiveTrueOrderByNameAsc())
 				.thenReturn(List.of(publicItem));
@@ -178,6 +204,8 @@ class MenuItemServiceTest {
 		assertThat(menu).hasSize(1);
 		assertThat(menu.get(0).isActive()).isTrue();
 		assertThat(menu.get(0).isAvailable()).isTrue();
+		assertThat(menu.get(0).isManualAvailable()).isTrue();
+		assertThat(menu.get(0).getAvailabilityReason()).isEqualTo("AVAILABLE");
 		assertThat(menu.get(0).getCategoryName()).isEqualTo("Salads");
 	}
 }

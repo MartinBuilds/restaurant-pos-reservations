@@ -5,6 +5,8 @@ import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,8 +40,15 @@ public class MenuItem {
 	@Column(name = "active", nullable = false)
 	private boolean active = true;
 
+	@Column(name = "manual_available", nullable = false)
+	private boolean manualAvailable = true;
+
 	@Column(name = "available", nullable = false)
-	private boolean available = true;
+	private boolean available = false;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "availability_reason", nullable = false, length = 32)
+	private MenuAvailabilityReason availabilityReason = MenuAvailabilityReason.NO_RECIPE;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "category_id", nullable = false)
@@ -53,13 +62,15 @@ public class MenuItem {
 			String description,
 			BigDecimal price,
 			boolean active,
-			boolean available,
+			boolean manualAvailable,
 			MenuCategory category) {
 		this.name = Objects.requireNonNull(name, "name must not be null");
 		this.description = description;
 		this.price = Objects.requireNonNull(price, "price must not be null");
 		this.active = active;
-		this.available = available;
+		this.manualAvailable = manualAvailable;
+		this.available = false;
+		this.availabilityReason = MenuAvailabilityReason.NO_RECIPE;
 		this.category = Objects.requireNonNull(category, "category must not be null");
 	}
 
@@ -99,12 +110,28 @@ public class MenuItem {
 		this.active = active;
 	}
 
+	public boolean isManualAvailable() {
+		return manualAvailable;
+	}
+
+	public void setManualAvailable(boolean manualAvailable) {
+		this.manualAvailable = manualAvailable;
+	}
+
 	public boolean isAvailable() {
 		return available;
 	}
 
 	public void setAvailable(boolean available) {
 		this.available = available;
+	}
+
+	public MenuAvailabilityReason getAvailabilityReason() {
+		return availabilityReason;
+	}
+
+	public void setAvailabilityReason(MenuAvailabilityReason availabilityReason) {
+		this.availabilityReason = Objects.requireNonNull(availabilityReason, "availabilityReason must not be null");
 	}
 
 	public MenuCategory getCategory() {
@@ -134,6 +161,7 @@ public class MenuItem {
 	@Override
 	public String toString() {
 		return "MenuItem{id=" + id + ", name='" + name + "', price=" + price
-				+ ", active=" + active + ", available=" + available + "}";
+				+ ", active=" + active + ", manualAvailable=" + manualAvailable
+				+ ", available=" + available + ", availabilityReason=" + availabilityReason + "}";
 	}
 }

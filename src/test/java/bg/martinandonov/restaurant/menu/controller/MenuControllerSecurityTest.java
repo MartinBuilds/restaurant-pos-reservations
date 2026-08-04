@@ -27,6 +27,7 @@ import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.GlobalExceptionHandler;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
+import bg.martinandonov.restaurant.menu.dto.MenuAvailabilityResponse;
 import bg.martinandonov.restaurant.menu.dto.MenuCategoryResponse;
 import bg.martinandonov.restaurant.menu.dto.MenuItemResponse;
 import bg.martinandonov.restaurant.menu.service.MenuCategoryService;
@@ -36,6 +37,7 @@ import bg.martinandonov.restaurant.security.SecurityConfig;
 @WebMvcTest(controllers = {
 		AdminMenuCategoryController.class,
 		AdminMenuItemController.class,
+		AdminMenuAvailabilityController.class,
 		PublicMenuController.class
 })
 @Import({ SecurityConfig.class, GlobalExceptionHandler.class })
@@ -68,6 +70,13 @@ class MenuControllerSecurityTest {
 	}
 
 	@Test
+	@WithMockUser(roles = "COOK")
+	void cookCannotAccessAvailabilityEndpoint() throws Exception {
+		mockMvc.perform(get("/api/admin/menu/items/1/availability"))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
 	@WithMockUser(roles = "ADMIN")
 	void adminCanAccessAdminCategories() throws Exception {
 		when(menuCategoryService.getAllCategories()).thenReturn(List.of(
@@ -76,6 +85,43 @@ class MenuControllerSecurityTest {
 		mockMvc.perform(get("/api/admin/menu/categories"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].name").value("Salads"));
+	}
+
+	@Test
+	@WithMockUser(roles = "ADMIN")
+	void adminCanGetItemAvailability() throws Exception {
+		when(menuItemService.getAvailability(1L)).thenReturn(
+				new MenuAvailabilityResponse(1L, "Soup", true, false, "NO_RECIPE", 0L));
+
+		mockMvc.perform(get("/api/admin/menu/items/1/availability"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.availabilityReason").value("NO_RECIPE"))
+				.andExpect(jsonPath("$.maxPossibleServings").value(0));
+	}
+
+	@Test
+	@WithAnonymousUser
+	void anonymousCannotRecalculateAvailability() throws Exception {
+		mockMvc.perform(post("/api/admin/menu/availability/recalculate").with(csrf()))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	@WithMockUser(roles = "WAITER")
+	void waiterCannotRecalculateAvailability() throws Exception {
+		mockMvc.perform(post("/api/admin/menu/availability/recalculate").with(csrf()))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
+	@WithMockUser(roles = "ADMIN")
+	void adminCanRecalculateAvailability() throws Exception {
+		when(menuItemService.recalculateAllAvailability()).thenReturn(List.of(
+				new MenuAvailabilityResponse(1L, "Soup", true, false, "NO_RECIPE", 0L)));
+
+		mockMvc.perform(post("/api/admin/menu/availability/recalculate").with(csrf()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].menuItemName").value("Soup"));
 	}
 
 	@Test
@@ -89,12 +135,15 @@ class MenuControllerSecurityTest {
 						new BigDecimal("3.50"),
 						true,
 						true,
+						true,
+						"AVAILABLE",
 						2L,
 						"Drinks")));
 
 		mockMvc.perform(get("/api/public/menu"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].name").value("Lemonade"));
+				.andExpect(jsonPath("$[0].name").value("Lemonade"))
+				.andExpect(jsonPath("$[0].availabilityReason").value("AVAILABLE"));
 	}
 
 	@Test
@@ -139,10 +188,10 @@ class MenuControllerSecurityTest {
 	@Test
 	@WithMockUser(roles = "ADMIN")
 	void missingResourceReturns404() throws Exception {
-		when(menuCategoryService.getCategoryById(eq(99L)))
-				.thenThrow(new ResourceNotFoundException("Menu category not found: 99"));
+		when(menuItemService.getAvailability(eq(99L)))
+				.thenThrow(new ResourceNotFoundException("Menu item not found: 99"));
 
-		mockMvc.perform(get("/api/admin/menu/categories/99"))
+		mockMvc.perform(get("/api/admin/menu/items/99/availability"))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404));
 	}
