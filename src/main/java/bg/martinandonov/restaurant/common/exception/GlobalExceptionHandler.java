@@ -19,11 +19,18 @@ public class GlobalExceptionHandler {
 		return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request);
 	}
 
+	@ExceptionHandler(InvalidRequestException.class)
+	public ResponseEntity<ApiError> handleInvalidRequest(
+			InvalidRequestException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+	}
+
 	@ExceptionHandler(BusinessRuleException.class)
 	public ResponseEntity<ApiError> handleBusinessRule(
 			BusinessRuleException exception,
 			HttpServletRequest request) {
-		return buildResponse(HttpStatus.UNPROCESSABLE_CONTENT, exception.getMessage(), request);
+		return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request);
 	}
 
 	@ExceptionHandler(Exception.class)
