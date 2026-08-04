@@ -302,7 +302,8 @@ Statuses (`DiningTableStatus`):
 - Deactivating a table sets `active=false` and forces `status=OUT_OF_SERVICE`.
 - Reactivating a table sets `active=true` and `status=AVAILABLE`.
 - Inactive tables cannot be moved to `AVAILABLE`, `OCCUPIED`, or `RESERVED`.
-- In this PR statuses are managed manually. Future order and reservation modules will drive `OCCUPIED` and `RESERVED`.
+- Tables with an open order must stay `OCCUPIED` and cannot be set to `AVAILABLE`/`RESERVED` or deactivated.
+- Order creation automatically sets a table to `OCCUPIED`. Future reservation and payment modules will drive additional status changes.
 
 Admin endpoints (`ADMIN` only):
 
@@ -359,6 +360,90 @@ Update status example:
 }
 ```
 
+## Orders API
+
+Entities:
+
+- `RestaurantOrder` (`restaurant_orders`) — table, waiter, status, closed flag, total, timestamps
+- `OrderItem` (`order_items`) — snapshot `menuItemName` / `unitPrice`, quantity, line total
+
+Order statuses (`OrderStatus`):
+
+- `ACCEPTED` (new orders always start here)
+- `COOKING`, `READY`, `SERVED`, `CANCELLED` (kitchen workflow — not changed in this PR)
+
+### Creation flow
+
+1. Lock dining table; require `active` and `AVAILABLE`; reject if another open order exists
+2. Validate items (non-empty, no duplicate menu item ids, quantity 1–100)
+3. Validate each menu item: active, category active, manual/effective available, has recipe
+4. Aggregate ingredient requirements across all ordered items (`recipe.quantityRequired × quantity`)
+5. Lock ingredients by id ascending; verify stock; deduct only after all checks pass
+6. Create order (`ACCEPTED`, `closed=false`) and snapshot order items
+7. Set table to `OCCUPIED`; recalculate menu availability in the same transaction
+
+Any failure rolls back stock, table status, order, and availability changes.
+
+### Snapshot pricing
+
+- `unitPrice` and `menuItemName` are copied at order time
+- Later menu price changes do not alter existing order lines
+- Adding quantity to an existing line keeps the original snapshot unit price
+
+### Waiter order endpoints (`WAITER` or `ADMIN`)
+
+- `POST /api/waiter/orders` → 201
+- `GET /api/waiter/orders` — open orders (`closed=false`)
+- `GET /api/waiter/orders?tableId={id}` — open orders for a table
+- `GET /api/waiter/orders/{id}`
+- `POST /api/waiter/orders/{id}/items` — add items to an `ACCEPTED` open order
+
+Create order example:
+
+```json
+{
+  "diningTableId": 1,
+  "items": [
+    { "menuItemId": 10, "quantity": 2 },
+    { "menuItemId": 11, "quantity": 1 }
+  ]
+}
+```
+
+Example order response:
+
+```json
+{
+  "id": 1,
+  "orderNumber": "3f1c9e2a-....",
+  "diningTableId": 1,
+  "tableNumber": 5,
+  "waiterId": 2,
+  "waiterName": "Ada Waiter",
+  "status": "ACCEPTED",
+  "closed": false,
+  "totalAmount": 28.50,
+  "createdAt": "2026-08-05T01:00:00",
+  "updatedAt": "2026-08-05T01:00:00",
+  "items": [
+    {
+      "id": 1,
+      "menuItemId": 10,
+      "menuItemName": "Caesar Salad",
+      "unitPrice": 12.50,
+      "quantity": 2,
+      "lineTotal": 25.00
+    }
+  ]
+}
+```
+
+### Payments (future, simulation only)
+
+This PR does not include payments. A later PR will add simulated `CASH` / `CARD` payment records that set `closed=true`. There will be no Stripe, PayPal, bank API, real card numbers, IBAN, or live money movement.
+
+Kitchen WebSocket updates are also out of scope for this PR.
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
@@ -368,6 +453,6 @@ Update status example:
 - Menu catalog (categories and items) is implemented with admin and public APIs
 - Ingredients, stock quantities, and recipes are implemented for ADMIN management
 - Automatic menu availability is computed from recipes and stock (with manual override)
-- Dining tables are managed by ADMIN and operable by WAITER (manual status only)
-- Order-time stock deduction is not implemented yet
-- Orders, reservations, and remaining modules are not implemented yet
+- Dining tables are managed by ADMIN and operable by WAITER
+- Order creation with transactional stock deduction is implemented for WAITER/ADMIN
+- Kitchen WebSocket, simulated payments, reservations, and reports are not implemented yet

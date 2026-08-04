@@ -1,5 +1,6 @@
 package bg.martinandonov.restaurant.inventory.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +27,8 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select i from Ingredient i where i.id = :id")
 	Optional<Ingredient> findByIdForUpdate(@Param("id") Long id);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select i from Ingredient i where i.id in :ids order by i.id asc")
+	List<Ingredient> findAllByIdInOrderByIdAscForUpdate(@Param("ids") Collection<Long> ids);
 }

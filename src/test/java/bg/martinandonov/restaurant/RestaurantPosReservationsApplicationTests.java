@@ -9,6 +9,8 @@ import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
 import bg.martinandonov.restaurant.menu.repository.MenuCategoryRepository;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
+import bg.martinandonov.restaurant.order.repository.OrderItemRepository;
+import bg.martinandonov.restaurant.order.repository.RestaurantOrderRepository;
 import bg.martinandonov.restaurant.user.repository.AppUserRepository;
 import bg.martinandonov.restaurant.user.repository.RoleRepository;
 
@@ -35,6 +37,12 @@ class RestaurantPosReservationsApplicationTests {
 
 	@MockitoBean
 	private DiningTableRepository diningTableRepository;
+
+	@MockitoBean
+	private RestaurantOrderRepository restaurantOrderRepository;
+
+	@MockitoBean
+	private OrderItemRepository orderItemRepository;
 
 	@Test
 	void contextLoads() {
