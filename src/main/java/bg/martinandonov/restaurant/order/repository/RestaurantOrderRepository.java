@@ -1,5 +1,6 @@
 package bg.martinandonov.restaurant.order.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import bg.martinandonov.restaurant.order.entity.OrderStatus;
 import bg.martinandonov.restaurant.order.entity.RestaurantOrder;
 import jakarta.persistence.LockModeType;
 
@@ -57,4 +59,22 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
 			where o.id = :id
 			""")
 	Optional<RestaurantOrder> findByIdWithDetails(@Param("id") Long id);
+
+	@Query("""
+			select distinct o from RestaurantOrder o
+			join fetch o.diningTable
+			where o.closed = false
+			and o.status in :statuses
+			order by o.createdAt asc, o.id asc
+			""")
+	List<RestaurantOrder> findActiveKitchenOrders(@Param("statuses") Collection<OrderStatus> statuses);
+
+	@Query("""
+			select distinct o from RestaurantOrder o
+			join fetch o.diningTable
+			where o.closed = false
+			and o.status = :status
+			order by o.createdAt asc, o.id asc
+			""")
+	List<RestaurantOrder> findActiveKitchenOrdersByStatus(@Param("status") OrderStatus status);
 }

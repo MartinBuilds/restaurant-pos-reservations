@@ -31,6 +31,7 @@ import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.order.dto.OrderItemResponse;
 import bg.martinandonov.restaurant.order.dto.OrderResponse;
 import bg.martinandonov.restaurant.order.service.OrderService;
+import bg.martinandonov.restaurant.order.service.OrderWorkflowService;
 import bg.martinandonov.restaurant.security.SecurityConfig;
 
 @WebMvcTest(controllers = WaiterOrderController.class)
@@ -42,6 +43,9 @@ class OrderControllerSecurityTest {
 
 	@MockitoBean
 	private OrderService orderService;
+
+	@MockitoBean
+	private OrderWorkflowService orderWorkflowService;
 
 	@MockitoBean
 	private UserDetailsService userDetailsService;
