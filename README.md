@@ -38,7 +38,7 @@ Passwords are stored only as BCrypt hashes. Never commit real passwords.
 | `common` | Shared exceptions and cross-cutting API concerns |
 | `security` | Authentication and authorization |
 | `user` | Staff users and role assignment |
-| `menu` | Menu categories and items |
+| `menu` | Menu categories and items (catalog) |
 | `inventory` | Stock levels and ingredients |
 | `diningtable` | Restaurant floor and table layout |
 | `order` | Guest orders and POS flow |
@@ -121,10 +121,81 @@ Static assets are served from:
 - `PUT /api/admin/users/{id}/roles`
 - `PATCH /api/admin/users/{id}/status`
 
+## Menu catalog API
+
+Admin-only category endpoints:
+
+- `POST /api/admin/menu/categories`
+- `GET /api/admin/menu/categories`
+- `GET /api/admin/menu/categories/{id}`
+- `PUT /api/admin/menu/categories/{id}`
+- `PATCH /api/admin/menu/categories/{id}/status`
+
+Admin-only menu item endpoints:
+
+- `POST /api/admin/menu/items`
+- `GET /api/admin/menu/items`
+- `GET /api/admin/menu/items?categoryId={id}`
+- `GET /api/admin/menu/items/{id}`
+- `PUT /api/admin/menu/items/{id}`
+- `PATCH /api/admin/menu/items/{id}/status`
+- `PATCH /api/admin/menu/items/{id}/availability`
+
+Public endpoints (no login):
+
+- `GET /api/public/menu`
+- `GET /api/public/menu/categories`
+
+### Active vs available
+
+- `active` marks whether a category/item is part of the catalog (soft disable, no hard deletes).
+- `available` is a manual flag on menu items (for temporary unavailability).
+- Public menu returns only items where the item is `active` and `available`, and its category is `active`.
+- Ingredient-based automatic availability will be added in a later inventory PR.
+
+### Example requests
+
+Create category:
+
+```json
+{
+  "name": "Salads",
+  "description": "Fresh salads"
+}
+```
+
+Create menu item:
+
+```json
+{
+  "name": "Caesar Salad",
+  "description": "Romaine, parmesan, croutons",
+  "price": 12.50,
+  "categoryId": 1,
+  "available": true
+}
+```
+
+Example menu item response:
+
+```json
+{
+  "id": 10,
+  "name": "Caesar Salad",
+  "description": "Romaine, parmesan, croutons",
+  "price": 12.50,
+  "active": true,
+  "available": true,
+  "categoryId": 1,
+  "categoryName": "Salads"
+}
+```
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
 - Users, roles, BCrypt passwords, and session-based Spring Security are implemented
 - Roles are seeded idempotently on startup (`ADMIN`, `WAITER`, `COOK`, `CLIENT`)
 - Optional initial ADMIN can be created from environment variables
-- Menu and remaining business modules are not implemented yet
+- Menu catalog (categories and items) is implemented with admin and public APIs
+- Inventory, orders, reservations, and remaining modules are not implemented yet
