@@ -31,6 +31,7 @@ Desktop.ini
 .env.*
 !.env.example
 smoke-env.ps1
+local-smoke/
 *.pem
 *.p12
 *.jks

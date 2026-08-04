@@ -403,7 +403,7 @@ Waiter status endpoint (`WAITER` or `ADMIN`):
 
 - `PATCH /api/waiter/orders/{id}/status` with `SERVED` only
 
-There is no WebSocket/STOMP in this workflow PR.
+There is no SockJS, HTML kitchen screen, or WebSocket message persistence in this PR. See **Kitchen WebSocket / STOMP** below.
 
 ### Creation flow
 
@@ -474,9 +474,153 @@ Example order response:
 
 ### Payments (future, simulation only)
 
-This PR does not include payments. A later PR will add simulated `CASH` / `CARD` payment records that set `closed=true`. There will be no Stripe, PayPal, bank API, real card numbers, IBAN, or live money movement.
+This project does not include payment functionality yet. A later PR will add simulated `CASH` / `CARD` payment records that set `closed=true`. There will be no Stripe, PayPal, bank API, real card numbers, IBAN, or live money movement.
 
-Kitchen WebSocket updates are also out of scope for this PR.
+## Kitchen WebSocket / STOMP
+
+Real-time notifications only. REST and MySQL remain the source of truth.
+
+### Architecture
+
+```text
+REST operation
+    ↓
+@Transactional business logic
+    ↓
+MySQL commit
+    ↓
+AFTER_COMMIT application event
+    ↓
+STOMP notification
+```
+
+Notifications are never sent for rolled-back transactions. WebSocket messages are best-effort; they are not stored.
+
+### Endpoint and broker
+
+| Setting | Value |
+|---|---|
+| Handshake endpoint | `/ws` (authenticated HTTP session; no SockJS) |
+| Application destination prefix | `/app` (client business SEND denied) |
+| Broker destination prefix | `/topic` (in-memory simple broker) |
+| Heartbeats | server outgoing 10000 ms, expected incoming 10000 ms |
+
+Allowed origin patterns for local development only: `http(s)://localhost:*` and `http(s)://127.0.0.1:*`. No wildcard `*`.
+
+### Topics
+
+| Topic | Events |
+|---|---|
+| `/topic/kitchen/orders` | `ORDER_CREATED`, `ORDER_STATUS_CHANGED` |
+| `/topic/waiter/orders` | `ORDER_STATUS_CHANGED` only |
+
+`ORDER_CREATED` is not sent to the waiter topic (the waiter already has the REST create response). Status changes (`ACCEPTED→COOKING`, `COOKING→READY`, `READY→SERVED`) go to both topics so kitchen clients can remove served orders from the active queue.
+
+No event is published for `addItemsToOrder` or for idempotent same-status updates.
+
+### Event payload
+
+`OrderRealtimeMessage`:
+
+- `eventId` (UUID, unique per real event; usable for client deduplication)
+- `eventType` (`ORDER_CREATED` \| `ORDER_STATUS_CHANGED`)
+- `occurredAt` (UTC `Instant`)
+- `previousStatus` (`OrderStatus`, null for create)
+- `currentStatus` (`OrderStatus`)
+- `order` (`KitchenOrderResponse` — no unit prices, line totals, order total, or payment fields)
+
+Example `ORDER_CREATED`:
+
+```json
+{
+  "eventId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "eventType": "ORDER_CREATED",
+  "occurredAt": "2026-08-05T01:05:00Z",
+  "previousStatus": null,
+  "currentStatus": "ACCEPTED",
+  "order": {
+    "id": 1,
+    "orderNumber": "3f1c9e2a-....",
+    "diningTableId": 1,
+    "tableNumber": 5,
+    "status": "ACCEPTED",
+    "createdAt": "2026-08-05T01:05:00",
+    "updatedAt": "2026-08-05T01:05:00",
+    "items": [
+      {
+        "orderItemId": 1,
+        "menuItemId": 10,
+        "menuItemName": "Caesar Salad",
+        "quantity": 2
+      }
+    ]
+  }
+}
+```
+
+Example `ORDER_STATUS_CHANGED`:
+
+```json
+{
+  "eventId": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+  "eventType": "ORDER_STATUS_CHANGED",
+  "occurredAt": "2026-08-05T01:10:00Z",
+  "previousStatus": "ACCEPTED",
+  "currentStatus": "COOKING",
+  "order": {
+    "id": 1,
+    "orderNumber": "3f1c9e2a-....",
+    "diningTableId": 1,
+    "tableNumber": 5,
+    "status": "COOKING",
+    "createdAt": "2026-08-05T01:05:00",
+    "updatedAt": "2026-08-05T01:10:00",
+    "items": [
+      {
+        "orderItemId": 1,
+        "menuItemId": 10,
+        "menuItemName": "Caesar Salad",
+        "quantity": 2
+      }
+    ]
+  }
+}
+```
+
+### Authentication and subscription authorization
+
+Handshake `/ws` requires the existing session-based Spring Security authentication (same cookie as REST). No JWT and no separate WebSocket login.
+
+STOMP `CONNECT` also requires the session CSRF token (Spring Security messaging default). Authenticated clients read it from:
+
+- `GET /api/csrf`
+
+and send the token in STOMP CONNECT headers (`headerName` / `token` from that response). HTTP CSRF for REST is unchanged.
+
+| Destination | Allowed roles |
+|---|---|
+| `SUBSCRIBE /topic/kitchen/**` | `COOK`, `ADMIN` |
+| `SUBSCRIBE /topic/waiter/**` | `WAITER`, `ADMIN` |
+
+`CLIENT` and anonymous users cannot subscribe. Client `SEND` to `/app/**` is denied. There are no `@MessageMapping` business controllers.
+
+If the in-memory broker fails to deliver a notification after commit, the failure is logged (eventId + orderId only) and the REST response remains successful.
+
+### Reconnect
+
+On connect or reconnect, clients should:
+
+1. Load current state via REST (`GET /api/kitchen/orders` or the waiter order endpoints)
+2. Then subscribe to STOMP updates
+
+Missed WebSocket events are not replayed. There is no `websocket_messages` table and no outbox in this PR.
+
+### Out of scope here
+
+- HTML kitchen screen / frontend frameworks
+- SockJS
+- External brokers (Kafka, RabbitMQ, Redis, ActiveMQ)
+- Payments, reservations, reports, cancellation workflow
 
 ## Current development status
 
@@ -490,4 +634,5 @@ Kitchen WebSocket updates are also out of scope for this PR.
 - Dining tables are managed by ADMIN and operable by WAITER
 - Order creation with transactional stock deduction is implemented for WAITER/ADMIN
 - Order status workflow ACCEPTED → COOKING → READY → SERVED is implemented over REST
-- Kitchen WebSocket, simulated payments, reservations, and reports are not implemented yet
+- Kitchen/waiter STOMP notifications are implemented (AFTER_COMMIT, no message persistence)
+- Simulated payments, reservations, and reports are not implemented yet

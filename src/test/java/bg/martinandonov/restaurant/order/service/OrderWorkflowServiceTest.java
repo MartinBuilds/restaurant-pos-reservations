@@ -17,9 +17,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
@@ -27,6 +29,8 @@ import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
+import bg.martinandonov.restaurant.kitchen.websocket.dto.OrderRealtimeEventType;
+import bg.martinandonov.restaurant.kitchen.websocket.event.OrderStatusChangedRealtimeEvent;
 import bg.martinandonov.restaurant.menu.entity.MenuCategory;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.order.dto.KitchenOrderResponse;
@@ -47,6 +51,9 @@ class OrderWorkflowServiceTest {
 
 	@Mock
 	private OrderItemRepository orderItemRepository;
+
+	@Mock
+	private ApplicationEventPublisher applicationEventPublisher;
 
 	@InjectMocks
 	private OrderWorkflowService orderWorkflowService;
@@ -86,6 +93,7 @@ class OrderWorkflowServiceTest {
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.COOKING);
 		assertThat(order.isClosed()).isFalse();
 		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.OCCUPIED);
+		assertStatusEvent(OrderStatus.ACCEPTED, OrderStatus.COOKING);
 	}
 
 	@Test
@@ -97,6 +105,7 @@ class OrderWorkflowServiceTest {
 		KitchenOrderResponse response = orderWorkflowService.updateFromKitchen(100L, statusRequest("READY"));
 
 		assertThat(response.getStatus()).isEqualTo("READY");
+		assertStatusEvent(OrderStatus.COOKING, OrderStatus.READY);
 	}
 
 	@Test
@@ -111,6 +120,7 @@ class OrderWorkflowServiceTest {
 		assertThat(response.isClosed()).isFalse();
 		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.OCCUPIED);
 		assertThat(order.getTotalAmount()).isEqualByComparingTo("0.00");
+		assertStatusEvent(OrderStatus.READY, OrderStatus.SERVED);
 	}
 
 	@Test
@@ -124,6 +134,7 @@ class OrderWorkflowServiceTest {
 
 		assertThat(response.getStatus()).isEqualTo("COOKING");
 		assertThat(order.getUpdatedAt()).isEqualTo(updatedAt);
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test
@@ -135,6 +146,7 @@ class OrderWorkflowServiceTest {
 		OrderResponse response = orderWorkflowService.markServedByWaiter(100L);
 
 		assertThat(response.getStatus()).isEqualTo("SERVED");
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test
@@ -158,6 +170,8 @@ class OrderWorkflowServiceTest {
 		order.setStatus(OrderStatus.CANCELLED);
 		assertThatThrownBy(() -> orderWorkflowService.updateFromKitchen(100L, statusRequest("COOKING")))
 				.isInstanceOf(BusinessRuleException.class);
+
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test
@@ -166,6 +180,7 @@ class OrderWorkflowServiceTest {
 				.isInstanceOf(InvalidRequestException.class)
 				.hasMessageContaining("COOKING or READY");
 		verify(restaurantOrderRepository, never()).findByIdForUpdate(any());
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test
@@ -176,6 +191,7 @@ class OrderWorkflowServiceTest {
 		assertThatThrownBy(() -> orderWorkflowService.updateFromKitchen(100L, statusRequest("COOKING")))
 				.isInstanceOf(BusinessRuleException.class)
 				.hasMessageContaining("closed");
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test
@@ -184,6 +200,7 @@ class OrderWorkflowServiceTest {
 
 		assertThatThrownBy(() -> orderWorkflowService.markServedByWaiter(99L))
 				.isInstanceOf(ResourceNotFoundException.class);
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test
@@ -240,6 +257,18 @@ class OrderWorkflowServiceTest {
 				new BigDecimal("12.50"));
 		ReflectionTestUtils.setField(item, "id", 50L);
 		when(orderItemRepository.findByOrderIdOrderByIdAsc(100L)).thenReturn(List.of(item));
+	}
+
+	private void assertStatusEvent(OrderStatus previous, OrderStatus current) {
+		ArgumentCaptor<OrderStatusChangedRealtimeEvent> eventCaptor =
+				ArgumentCaptor.forClass(OrderStatusChangedRealtimeEvent.class);
+		verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getMessage().getEventType())
+				.isEqualTo(OrderRealtimeEventType.ORDER_STATUS_CHANGED);
+		assertThat(eventCaptor.getValue().getMessage().getPreviousStatus()).isEqualTo(previous);
+		assertThat(eventCaptor.getValue().getMessage().getCurrentStatus()).isEqualTo(current);
+		assertThat(eventCaptor.getValue().getMessage().getOrder().getId()).isEqualTo(100L);
+		assertThat(eventCaptor.getValue().getMessage().getEventId()).isNotNull();
 	}
 
 	private UpdateOrderStatusRequest statusRequest(String status) {
