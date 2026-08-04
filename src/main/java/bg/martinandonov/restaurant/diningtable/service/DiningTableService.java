@@ -27,9 +27,13 @@ public class DiningTableService {
 	private static final int MAX_DISPLAY_NAME_LENGTH = 100;
 
 	private final DiningTableRepository diningTableRepository;
+	private final DiningTableOperationalGuard diningTableOperationalGuard;
 
-	public DiningTableService(DiningTableRepository diningTableRepository) {
+	public DiningTableService(
+			DiningTableRepository diningTableRepository,
+			DiningTableOperationalGuard diningTableOperationalGuard) {
 		this.diningTableRepository = diningTableRepository;
+		this.diningTableOperationalGuard = diningTableOperationalGuard;
 	}
 
 	public DiningTableResponse createTable(CreateDiningTableRequest request) {
@@ -104,6 +108,7 @@ public class DiningTableService {
 		DiningTableStatus status = requireStatus(request.getStatus());
 		DiningTable table = diningTableRepository.findByIdForUpdate(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Dining table not found: " + id));
+		assertOpenOrderAllowsStatus(table, status);
 		applyStatus(table, status, false);
 		return toResponse(table);
 	}
@@ -119,6 +124,7 @@ public class DiningTableService {
 		if (!table.isActive()) {
 			throw new ResourceNotFoundException("Dining table not found: " + id);
 		}
+		assertOpenOrderAllowsStatus(table, status);
 		applyStatus(table, status, true);
 		return toResponse(table);
 	}
@@ -132,6 +138,10 @@ public class DiningTableService {
 		DiningTable table = diningTableRepository.findByIdForUpdate(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Dining table not found: " + id));
 
+		if (diningTableOperationalGuard.hasOpenOrder(table.getId())) {
+			throw new BusinessRuleException("Cannot change a table that has an open order");
+		}
+
 		if (request.getActive()) {
 			table.setActive(true);
 			table.setStatus(DiningTableStatus.AVAILABLE);
@@ -141,6 +151,12 @@ public class DiningTableService {
 			table.setStatus(DiningTableStatus.OUT_OF_SERVICE);
 		}
 		return toResponse(table);
+	}
+
+	private void assertOpenOrderAllowsStatus(DiningTable table, DiningTableStatus status) {
+		if (status != DiningTableStatus.OCCUPIED && diningTableOperationalGuard.hasOpenOrder(table.getId())) {
+			throw new BusinessRuleException("Cannot change a table that has an open order");
+		}
 	}
 
 	private void applyStatus(DiningTable table, DiningTableStatus status, boolean waiterContext) {
