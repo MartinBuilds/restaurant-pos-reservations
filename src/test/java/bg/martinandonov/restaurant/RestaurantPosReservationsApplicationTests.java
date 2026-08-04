@@ -44,6 +44,9 @@ class RestaurantPosReservationsApplicationTests {
 	@MockitoBean
 	private OrderItemRepository orderItemRepository;
 
+	@MockitoBean
+	private bg.martinandonov.restaurant.reservation.repository.ReservationRepository reservationRepository;
+
 	@Test
 	void contextLoads() {
 	}
