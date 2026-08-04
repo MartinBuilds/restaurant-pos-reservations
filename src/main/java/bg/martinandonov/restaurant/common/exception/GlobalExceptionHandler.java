@@ -2,11 +2,14 @@ package bg.martinandonov.restaurant.common.exception;
 
 import java.time.Instant;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
@@ -31,6 +34,20 @@ public class GlobalExceptionHandler {
 			BusinessRuleException exception,
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler({
+			ObjectOptimisticLockingFailureException.class,
+			OptimisticLockingFailureException.class,
+			OptimisticLockException.class
+	})
+	public ResponseEntity<ApiError> handleOptimisticLock(
+			RuntimeException exception,
+			HttpServletRequest request) {
+		return buildResponse(
+				HttpStatus.CONFLICT,
+				"The resource was modified concurrently. Please retry the operation.",
+				request);
 	}
 
 	@ExceptionHandler(Exception.class)
