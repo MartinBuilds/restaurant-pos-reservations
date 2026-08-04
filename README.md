@@ -750,9 +750,61 @@ Example response:
 }
 ```
 
-### Payments (future, simulation only)
+## Simulated payments and receipt
 
-This PR does not include payments. Later simulated payments will record `CASH` or `CARD` in MySQL only — no Stripe, PayPal, bank, gateway, real cards, or money movement.
+Local-only payment simulation for `SERVED` orders. There is **no** Stripe, PayPal, bank, POS terminal, gateway, webhook, card number, CVV, IBAN, or payment token. `CARD` is a text enum stored in MySQL — never enter real card data.
+
+### Entity
+
+Table `payments`:
+
+- unique `receiptNumber` (server-generated `SIM-…` UUID)
+- unique `order_id` (one payment per order)
+- `method` (`CASH` | `CARD`, STRING)
+- `amount` `DECIMAL(12,2)` snapshot of `RestaurantOrder.totalAmount`
+- `processedBy` (authenticated WAITER/ADMIN)
+- `paidAt` via configured `Clock`
+- `@Version`
+
+Indexes: `paid_at`, `method+paid_at`, `processed_by_id+paid_at`.
+
+### Process flow
+
+1. Resolve `diningTableId` for the order (no write lock)
+2. `PESSIMISTIC_WRITE` dining table, then order (same lock order as other table flows)
+3. Require `status=SERVED`, `closed=false`, no existing payment, `totalAmount > 0`, table `active` and `OCCUPIED`
+4. Insert `Payment` with server amount (request cannot set amount)
+5. Set `order.closed=true` (status stays `SERVED` — SERVED is not PAID until a Payment exists)
+6. Set `table.status=AVAILABLE`
+7. Return simulated receipt (`simulated=true`) with OrderItem snapshot lines
+
+Duplicate / concurrency: table+order locks, `closed` check, `existsByOrderId`, unique `order_id`, `@Version`. Parallel requests → one `201`, one `409`, exactly one payment.
+
+Does **not** change stock, menu availability, recipes, order items, order status, reservations, or publish WebSocket events. No partial/split/refund/tips/tax. Receipt is not a legal tax invoice or fiscal bon. Aggregated sales reports come in a later PR.
+
+Future confirmed reservations do not block freeing the table after payment.
+
+### Endpoints
+
+Waiter / Admin:
+
+- `POST /api/waiter/orders/{orderId}/payment` → `201`
+- `GET /api/waiter/orders/{orderId}/payment` → `200` / `404`
+
+Admin only:
+
+- `GET /api/admin/payments?method=&from=&to=&processedById=`
+- `GET /api/admin/payments/{id}`
+
+### Example requests
+
+```json
+{ "method": "CASH" }
+```
+
+```json
+{ "method": "CARD" }
+```
 
 ## Current development status
 
@@ -768,4 +820,5 @@ This PR does not include payments. Later simulated payments will record `CASH` o
 - Order status workflow ACCEPTED → COOKING → READY → SERVED is implemented over REST
 - Kitchen/waiter STOMP notifications are implemented (AFTER_COMMIT, no message persistence)
 - Table reservations with conflict checks and schedule are implemented
-- Simulated payments and reports are not implemented yet
+- Simulated CASH/CARD payments and receipts are implemented
+- Aggregated sales reports are not implemented yet

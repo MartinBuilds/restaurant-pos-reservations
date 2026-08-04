@@ -16,6 +16,11 @@ import jakarta.persistence.LockModeType;
 public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder, Long> {
 
 	Optional<RestaurantOrder> findByOrderNumber(String orderNumber);
+	@Query("""
+			select o.diningTable.id from RestaurantOrder o
+			where o.id = :id
+			""")
+	Optional<Long> findDiningTableIdByOrderId(@Param("id") Long id);
 
 	boolean existsByDiningTableIdAndClosedFalse(Long diningTableId);
 

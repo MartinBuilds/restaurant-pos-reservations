@@ -3,9 +3,11 @@ package bg.martinandonov.restaurant.common.exception;
 import java.time.Instant;
 
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,6 +26,13 @@ public class GlobalExceptionHandler {
 			ResourceNotFoundException exception,
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ApiError> handleUnreadable(
+			HttpMessageNotReadableException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request body", request);
 	}
 
 	@ExceptionHandler(InvalidRequestException.class)
@@ -45,6 +54,17 @@ public class GlobalExceptionHandler {
 			AccessDeniedException exception,
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.FORBIDDEN, exception.getMessage(), request);
+	}
+
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ApiError> handleDataIntegrity(
+			DataIntegrityViolationException exception,
+			HttpServletRequest request) {
+		return buildResponse(
+				HttpStatus.CONFLICT,
+				"The operation conflicts with an existing resource constraint.",
+				request);
 	}
 
 	@ExceptionHandler({
