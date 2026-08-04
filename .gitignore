@@ -30,6 +30,9 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+*.pem
+*.p12
+*.jks
 application-local.properties
 **/application-local.properties
 
