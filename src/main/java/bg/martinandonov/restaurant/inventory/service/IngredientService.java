@@ -20,6 +20,7 @@ import bg.martinandonov.restaurant.inventory.entity.Ingredient;
 import bg.martinandonov.restaurant.inventory.entity.IngredientUnit;
 import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
+import bg.martinandonov.restaurant.menu.service.MenuAvailabilityService;
 
 @Service
 @Transactional
@@ -29,12 +30,15 @@ public class IngredientService {
 
 	private final IngredientRepository ingredientRepository;
 	private final RecipeIngredientRepository recipeIngredientRepository;
+	private final MenuAvailabilityService menuAvailabilityService;
 
 	public IngredientService(
 			IngredientRepository ingredientRepository,
-			RecipeIngredientRepository recipeIngredientRepository) {
+			RecipeIngredientRepository recipeIngredientRepository,
+			MenuAvailabilityService menuAvailabilityService) {
 		this.ingredientRepository = ingredientRepository;
 		this.recipeIngredientRepository = recipeIngredientRepository;
+		this.menuAvailabilityService = menuAvailabilityService;
 	}
 
 	public IngredientResponse createIngredient(CreateIngredientRequest request) {
@@ -99,6 +103,7 @@ public class IngredientService {
 		}
 		Ingredient ingredient = findIngredient(id);
 		ingredient.setActive(request.getActive());
+		menuAvailabilityService.recalculateForIngredient(id);
 		return toResponse(ingredient);
 	}
 
@@ -117,6 +122,7 @@ public class IngredientService {
 		}
 
 		ingredient.setStockQuantity(updated);
+		menuAvailabilityService.recalculateForIngredient(id);
 		return toResponse(ingredient);
 	}
 

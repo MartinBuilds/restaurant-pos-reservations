@@ -140,19 +140,38 @@ Admin-only menu item endpoints:
 - `PUT /api/admin/menu/items/{id}`
 - `PATCH /api/admin/menu/items/{id}/status`
 - `PATCH /api/admin/menu/items/{id}/availability`
+- `GET /api/admin/menu/items/{id}/availability`
+- `POST /api/admin/menu/availability/recalculate`
 
 Public endpoints (no login):
 
 - `GET /api/public/menu`
 - `GET /api/public/menu/categories`
 
-### Active vs available
+### Manual vs effective availability
 
-- `active` marks whether a category/item is part of the catalog (soft disable, no hard deletes).
-- `available` is a manual flag on menu items (for temporary unavailability).
-- Public menu returns only items where the item is `active` and `available`, and its category is `active`.
-- Ingredient-based automatic availability is not yet implemented (planned for a later PR).
-- Stock is not deducted automatically when orders are placed (planned for the order PR).
+- `manualAvailable` is the admin on/off switch (`PATCH .../availability` request field `available` updates this flag).
+- `available` is the effective, automatically computed availability stored on `MenuItem`.
+- Effective availability is `true` only when:
+  1. `manualAvailable` is `true`
+  2. the item has a recipe
+  3. every recipe ingredient is active
+  4. every recipe ingredient has `stockQuantity >= quantityRequired`
+- Items without a recipe are always unavailable (`availabilityReason = NO_RECIPE`).
+- `minimumStockLevel` is only used for low-stock indicators; it does not decide availability.
+- Availability is recalculated after stock adjustments, ingredient status changes, recipe replace/remove, manual availability updates, menu item creation, and on application startup.
+- Public menu returns only items where the item is `active` and effectively `available`, and its category is `active`. Public GET uses the stored `available` flag (no per-request recalculation).
+- This PR does not create orders and does not deduct stock on sale (planned for the order PR).
+
+### Availability reasons
+
+- `AVAILABLE`
+- `MANUALLY_DISABLED`
+- `NO_RECIPE`
+- `INACTIVE_INGREDIENT`
+- `INSUFFICIENT_STOCK`
+
+Priority follows the list above when multiple conditions apply.
 
 ### Example requests
 
@@ -186,9 +205,24 @@ Example menu item response:
   "description": "Romaine, parmesan, croutons",
   "price": 12.50,
   "active": true,
-  "available": true,
+  "manualAvailable": true,
+  "available": false,
+  "availabilityReason": "NO_RECIPE",
   "categoryId": 1,
   "categoryName": "Salads"
+}
+```
+
+Example availability response:
+
+```json
+{
+  "menuItemId": 10,
+  "menuItemName": "Caesar Salad",
+  "manualAvailable": true,
+  "available": true,
+  "availabilityReason": "AVAILABLE",
+  "maxPossibleServings": 4
 }
 ```
 
@@ -261,5 +295,6 @@ Replace recipe example:
 - Optional initial ADMIN can be created from environment variables
 - Menu catalog (categories and items) is implemented with admin and public APIs
 - Ingredients, stock quantities, and recipes are implemented for ADMIN management
-- Automatic availability and order-time stock deduction are not implemented yet
+- Automatic menu availability is computed from recipes and stock (with manual override)
+- Order-time stock deduction is not implemented yet
 - Orders, reservations, and remaining modules are not implemented yet

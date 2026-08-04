@@ -29,6 +29,7 @@ import bg.martinandonov.restaurant.inventory.entity.Ingredient;
 import bg.martinandonov.restaurant.inventory.entity.IngredientUnit;
 import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
+import bg.martinandonov.restaurant.menu.service.MenuAvailabilityService;
 
 @ExtendWith(MockitoExtension.class)
 class IngredientServiceTest {
@@ -38,6 +39,9 @@ class IngredientServiceTest {
 
 	@Mock
 	private RecipeIngredientRepository recipeIngredientRepository;
+
+	@Mock
+	private MenuAvailabilityService menuAvailabilityService;
 
 	@InjectMocks
 	private IngredientService ingredientService;
@@ -109,6 +113,7 @@ class IngredientServiceTest {
 
 		assertThat(response.getStockQuantity()).isEqualByComparingTo("1250");
 		assertThat(response.isLowStock()).isFalse();
+		verify(menuAvailabilityService).recalculateForIngredient(1L);
 	}
 
 	@Test
@@ -122,6 +127,7 @@ class IngredientServiceTest {
 		IngredientResponse response = ingredientService.adjustStock(1L, request);
 
 		assertThat(response.getStockQuantity()).isEqualByComparingTo("800");
+		verify(menuAvailabilityService).recalculateForIngredient(1L);
 	}
 
 	@Test

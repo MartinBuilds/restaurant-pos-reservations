@@ -29,9 +29,11 @@ import bg.martinandonov.restaurant.inventory.entity.Ingredient;
 import bg.martinandonov.restaurant.inventory.entity.IngredientUnit;
 import bg.martinandonov.restaurant.inventory.entity.RecipeIngredient;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
+import bg.martinandonov.restaurant.menu.dto.MenuAvailabilityResponse;
 import bg.martinandonov.restaurant.menu.entity.MenuCategory;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
+import bg.martinandonov.restaurant.menu.service.MenuAvailabilityService;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
@@ -44,6 +46,9 @@ class RecipeServiceTest {
 
 	@Mock
 	private IngredientService ingredientService;
+
+	@Mock
+	private MenuAvailabilityService menuAvailabilityService;
 
 	@InjectMocks
 	private RecipeService recipeService;
@@ -71,6 +76,8 @@ class RecipeServiceTest {
 		when(ingredientService.getActiveIngredientEntity(1L)).thenReturn(tomato);
 		when(ingredientService.getActiveIngredientEntity(2L)).thenReturn(oil);
 		when(recipeIngredientRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(menuAvailabilityService.recalculateAvailability(10L)).thenReturn(
+				new MenuAvailabilityResponse(10L, "Caesar Salad", true, true, "AVAILABLE", 1L));
 
 		RecipeResponse response = recipeService.replaceRecipeForMenuItem(10L, replaceRequest(
 				component(1L, "150"),
@@ -78,6 +85,7 @@ class RecipeServiceTest {
 
 		verify(recipeIngredientRepository).deleteByMenuItemId(10L);
 		verify(recipeIngredientRepository).saveAll(anyList());
+		verify(menuAvailabilityService).recalculateAvailability(10L);
 		assertThat(response.getMenuItemId()).isEqualTo(10L);
 		assertThat(response.getComponents()).hasSize(2);
 	}
@@ -166,10 +174,13 @@ class RecipeServiceTest {
 	@Test
 	void removeRecipeDeletesOnlyRecipeComponents() {
 		when(menuItemRepository.findById(10L)).thenReturn(Optional.of(menuItem));
+		when(menuAvailabilityService.recalculateAvailability(10L)).thenReturn(
+				new MenuAvailabilityResponse(10L, "Caesar Salad", true, false, "NO_RECIPE", 0L));
 
 		recipeService.removeRecipeForMenuItem(10L);
 
 		verify(recipeIngredientRepository).deleteByMenuItemId(10L);
+		verify(menuAvailabilityService).recalculateAvailability(10L);
 		verify(menuItemRepository, never()).delete(menuItem);
 	}
 

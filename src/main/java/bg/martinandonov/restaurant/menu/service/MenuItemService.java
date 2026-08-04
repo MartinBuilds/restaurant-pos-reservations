@@ -11,10 +11,12 @@ import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.menu.dto.CreateMenuItemRequest;
+import bg.martinandonov.restaurant.menu.dto.MenuAvailabilityResponse;
 import bg.martinandonov.restaurant.menu.dto.MenuItemResponse;
 import bg.martinandonov.restaurant.menu.dto.UpdateMenuItemAvailabilityRequest;
 import bg.martinandonov.restaurant.menu.dto.UpdateMenuItemRequest;
 import bg.martinandonov.restaurant.menu.dto.UpdateMenuItemStatusRequest;
+import bg.martinandonov.restaurant.menu.entity.MenuAvailabilityReason;
 import bg.martinandonov.restaurant.menu.entity.MenuCategory;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
@@ -28,10 +30,15 @@ public class MenuItemService {
 
 	private final MenuItemRepository menuItemRepository;
 	private final MenuCategoryService menuCategoryService;
+	private final MenuAvailabilityService menuAvailabilityService;
 
-	public MenuItemService(MenuItemRepository menuItemRepository, MenuCategoryService menuCategoryService) {
+	public MenuItemService(
+			MenuItemRepository menuItemRepository,
+			MenuCategoryService menuCategoryService,
+			MenuAvailabilityService menuAvailabilityService) {
 		this.menuItemRepository = menuItemRepository;
 		this.menuCategoryService = menuCategoryService;
+		this.menuAvailabilityService = menuAvailabilityService;
 	}
 
 	public MenuItemResponse createMenuItem(CreateMenuItemRequest request) {
@@ -40,13 +47,15 @@ public class MenuItemService {
 		String description = normalizeDescription(request.getDescription());
 		BigDecimal price = requirePositivePrice(request.getPrice());
 		MenuCategory category = menuCategoryService.getCategoryEntity(request.getCategoryId());
-		boolean available = request.getAvailable() == null || request.getAvailable();
+		boolean manualAvailable = request.getAvailable() == null || request.getAvailable();
 
 		ensureCategoryAllowsActiveItem(category);
 		ensureUniqueItemName(category.getId(), name, null);
 
-		MenuItem item = new MenuItem(name, description, price, true, available, category);
-		return toResponse(menuItemRepository.save(item));
+		MenuItem item = new MenuItem(name, description, price, true, manualAvailable, category);
+		MenuItem saved = menuItemRepository.save(item);
+		menuAvailabilityService.recalculateAvailability(saved.getId());
+		return toResponse(findItem(saved.getId()));
 	}
 
 	@Transactional(readOnly = true)
@@ -76,6 +85,15 @@ public class MenuItemService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public MenuAvailabilityResponse getAvailability(Long id) {
+		return menuAvailabilityService.getAvailability(id);
+	}
+
+	public List<MenuAvailabilityResponse> recalculateAllAvailability() {
+		return menuAvailabilityService.recalculateAllMenuItems();
+	}
+
 	public MenuItemResponse updateMenuItem(Long id, UpdateMenuItemRequest request) {
 		Objects.requireNonNull(request, "request must not be null");
 		MenuItem item = findItem(id);
@@ -83,7 +101,6 @@ public class MenuItemService {
 		String description = normalizeDescription(request.getDescription());
 		BigDecimal price = requirePositivePrice(request.getPrice());
 		MenuCategory category = menuCategoryService.getCategoryEntity(request.getCategoryId());
-		boolean available = request.getAvailable() == null ? item.isAvailable() : request.getAvailable();
 
 		if (item.isActive()) {
 			ensureCategoryAllowsActiveItem(category);
@@ -94,8 +111,11 @@ public class MenuItemService {
 		item.setDescription(description);
 		item.setPrice(price);
 		item.setCategory(category);
-		item.setAvailable(available);
-		return toResponse(item);
+		if (request.getAvailable() != null) {
+			item.setManualAvailable(request.getAvailable());
+			menuAvailabilityService.recalculateAvailability(id);
+		}
+		return toResponse(findItem(id));
 	}
 
 	public MenuItemResponse updateMenuItemStatus(Long id, UpdateMenuItemStatusRequest request) {
@@ -117,8 +137,9 @@ public class MenuItemService {
 			throw new InvalidRequestException("available must be provided");
 		}
 		MenuItem item = findItem(id);
-		item.setAvailable(request.getAvailable());
-		return toResponse(item);
+		item.setManualAvailable(request.getAvailable());
+		menuAvailabilityService.recalculateAvailability(id);
+		return toResponse(findItem(id));
 	}
 
 	private MenuItem findItem(Long id) {
@@ -179,13 +200,16 @@ public class MenuItemService {
 
 	private MenuItemResponse toResponse(MenuItem item) {
 		MenuCategory category = item.getCategory();
+		MenuAvailabilityReason reason = item.getAvailabilityReason();
 		return new MenuItemResponse(
 				item.getId(),
 				item.getName(),
 				item.getDescription(),
 				item.getPrice(),
 				item.isActive(),
+				item.isManualAvailable(),
 				item.isAvailable(),
+				reason == null ? null : reason.name(),
 				category.getId(),
 				category.getName());
 	}

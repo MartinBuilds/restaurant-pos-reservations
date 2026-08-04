@@ -9,7 +9,9 @@ public class MenuItemResponse {
 	private final String description;
 	private final BigDecimal price;
 	private final boolean active;
+	private final boolean manualAvailable;
 	private final boolean available;
+	private final String availabilityReason;
 	private final Long categoryId;
 	private final String categoryName;
 
@@ -19,7 +21,9 @@ public class MenuItemResponse {
 			String description,
 			BigDecimal price,
 			boolean active,
+			boolean manualAvailable,
 			boolean available,
+			String availabilityReason,
 			Long categoryId,
 			String categoryName) {
 		this.id = id;
@@ -27,7 +31,9 @@ public class MenuItemResponse {
 		this.description = description;
 		this.price = price;
 		this.active = active;
+		this.manualAvailable = manualAvailable;
 		this.available = available;
+		this.availabilityReason = availabilityReason;
 		this.categoryId = categoryId;
 		this.categoryName = categoryName;
 	}
@@ -52,8 +58,16 @@ public class MenuItemResponse {
 		return active;
 	}
 
+	public boolean isManualAvailable() {
+		return manualAvailable;
+	}
+
 	public boolean isAvailable() {
 		return available;
+	}
+
+	public String getAvailabilityReason() {
+		return availabilityReason;
 	}
 
 	public Long getCategoryId() {

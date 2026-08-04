@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import bg.martinandonov.restaurant.menu.dto.CreateMenuItemRequest;
+import bg.martinandonov.restaurant.menu.dto.MenuAvailabilityResponse;
 import bg.martinandonov.restaurant.menu.dto.MenuItemResponse;
 import bg.martinandonov.restaurant.menu.dto.UpdateMenuItemAvailabilityRequest;
 import bg.martinandonov.restaurant.menu.dto.UpdateMenuItemRequest;
@@ -48,6 +49,11 @@ public class AdminMenuItemController {
 	@GetMapping("/{id}")
 	public ResponseEntity<MenuItemResponse> getMenuItemById(@PathVariable Long id) {
 		return ResponseEntity.ok(menuItemService.getMenuItemById(id));
+	}
+
+	@GetMapping("/{id}/availability")
+	public ResponseEntity<MenuAvailabilityResponse> getAvailability(@PathVariable Long id) {
+		return ResponseEntity.ok(menuItemService.getAvailability(id));
 	}
 
 	@PutMapping("/{id}")

@@ -20,6 +20,7 @@ import bg.martinandonov.restaurant.inventory.entity.RecipeIngredient;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
+import bg.martinandonov.restaurant.menu.service.MenuAvailabilityService;
 
 @Service
 @Transactional
@@ -28,14 +29,17 @@ public class RecipeService {
 	private final RecipeIngredientRepository recipeIngredientRepository;
 	private final MenuItemRepository menuItemRepository;
 	private final IngredientService ingredientService;
+	private final MenuAvailabilityService menuAvailabilityService;
 
 	public RecipeService(
 			RecipeIngredientRepository recipeIngredientRepository,
 			MenuItemRepository menuItemRepository,
-			IngredientService ingredientService) {
+			IngredientService ingredientService,
+			MenuAvailabilityService menuAvailabilityService) {
 		this.recipeIngredientRepository = recipeIngredientRepository;
 		this.menuItemRepository = menuItemRepository;
 		this.ingredientService = ingredientService;
+		this.menuAvailabilityService = menuAvailabilityService;
 	}
 
 	@Transactional(readOnly = true)
@@ -75,12 +79,14 @@ public class RecipeService {
 		recipeIngredientRepository.deleteByMenuItemId(menuItemId);
 		recipeIngredientRepository.flush();
 		List<RecipeIngredient> saved = recipeIngredientRepository.saveAll(replacements);
+		menuAvailabilityService.recalculateAvailability(menuItemId);
 		return toResponse(menuItem, saved);
 	}
 
 	public void removeRecipeForMenuItem(Long menuItemId) {
 		findMenuItem(menuItemId);
 		recipeIngredientRepository.deleteByMenuItemId(menuItemId);
+		menuAvailabilityService.recalculateAvailability(menuItemId);
 	}
 
 	private MenuItem findMenuItem(Long menuItemId) {

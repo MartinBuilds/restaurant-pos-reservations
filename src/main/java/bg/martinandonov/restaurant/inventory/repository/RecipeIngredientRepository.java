@@ -19,6 +19,15 @@ public interface RecipeIngredientRepository extends JpaRepository<RecipeIngredie
 			""")
 	List<RecipeIngredient> findByMenuItemIdOrderByIngredientNameAsc(@Param("menuItemId") Long menuItemId);
 
+	@Query("""
+			select distinct m.id from RecipeIngredient ri
+			join ri.menuItem m
+			join ri.ingredient i
+			where i.id = :ingredientId
+			order by m.id asc
+			""")
+	List<Long> findDistinctMenuItemIdsByIngredientIdOrderByMenuItemIdAsc(@Param("ingredientId") Long ingredientId);
+
 	boolean existsByIngredientId(Long ingredientId);
 
 	void deleteByMenuItemId(Long menuItemId);
