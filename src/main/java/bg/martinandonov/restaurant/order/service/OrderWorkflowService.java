@@ -7,12 +7,15 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
+import bg.martinandonov.restaurant.kitchen.websocket.dto.OrderRealtimeMessage;
+import bg.martinandonov.restaurant.kitchen.websocket.event.OrderStatusChangedRealtimeEvent;
 import bg.martinandonov.restaurant.order.dto.KitchenOrderItemResponse;
 import bg.martinandonov.restaurant.order.dto.KitchenOrderResponse;
 import bg.martinandonov.restaurant.order.dto.OrderItemResponse;
@@ -33,12 +36,15 @@ public class OrderWorkflowService {
 
 	private final RestaurantOrderRepository restaurantOrderRepository;
 	private final OrderItemRepository orderItemRepository;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public OrderWorkflowService(
 			RestaurantOrderRepository restaurantOrderRepository,
-			OrderItemRepository orderItemRepository) {
+			OrderItemRepository orderItemRepository,
+			ApplicationEventPublisher applicationEventPublisher) {
 		this.restaurantOrderRepository = restaurantOrderRepository;
 		this.orderItemRepository = orderItemRepository;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	public KitchenOrderResponse updateFromKitchen(Long orderId, UpdateOrderStatusRequest request) {
@@ -53,10 +59,13 @@ public class OrderWorkflowService {
 		if (order.getStatus() == requested) {
 			return toKitchenResponse(order);
 		}
-		assertValidTransition(order.getStatus(), requested);
+		OrderStatus previousStatus = order.getStatus();
+		assertValidTransition(previousStatus, requested);
 		order.setStatus(requested);
 		order.setUpdatedAt(LocalDateTime.now());
-		return toKitchenResponse(order);
+		KitchenOrderResponse kitchenSnapshot = toKitchenResponse(order);
+		publishStatusChanged(previousStatus, requested, kitchenSnapshot);
+		return kitchenSnapshot;
 	}
 
 	public OrderResponse markServedByWaiter(Long orderId) {
@@ -65,9 +74,11 @@ public class OrderWorkflowService {
 		if (order.getStatus() == OrderStatus.SERVED) {
 			return toWaiterResponse(order);
 		}
-		assertValidTransition(order.getStatus(), OrderStatus.SERVED);
+		OrderStatus previousStatus = order.getStatus();
+		assertValidTransition(previousStatus, OrderStatus.SERVED);
 		order.setStatus(OrderStatus.SERVED);
 		order.setUpdatedAt(LocalDateTime.now());
+		publishStatusChanged(previousStatus, OrderStatus.SERVED, toKitchenResponse(order));
 		return toWaiterResponse(order);
 	}
 
@@ -155,6 +166,14 @@ public class OrderWorkflowService {
 				item.getMenuItem().getId(),
 				item.getMenuItemName(),
 				item.getQuantity());
+	}
+
+	private void publishStatusChanged(
+			OrderStatus previousStatus,
+			OrderStatus currentStatus,
+			KitchenOrderResponse kitchenSnapshot) {
+		applicationEventPublisher.publishEvent(new OrderStatusChangedRealtimeEvent(
+				OrderRealtimeMessage.statusChanged(previousStatus, currentStatus, kitchenSnapshot)));
 	}
 
 	private OrderResponse toWaiterResponse(RestaurantOrder order) {

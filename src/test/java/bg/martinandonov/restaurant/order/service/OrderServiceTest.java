@@ -24,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,6 +41,8 @@ import bg.martinandonov.restaurant.inventory.entity.IngredientUnit;
 import bg.martinandonov.restaurant.inventory.entity.RecipeIngredient;
 import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
+import bg.martinandonov.restaurant.kitchen.websocket.dto.OrderRealtimeEventType;
+import bg.martinandonov.restaurant.kitchen.websocket.event.OrderCreatedRealtimeEvent;
 import bg.martinandonov.restaurant.menu.entity.MenuCategory;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
@@ -86,6 +89,9 @@ class OrderServiceTest {
 
 	@Mock
 	private AppUserRepository appUserRepository;
+
+	@Mock
+	private ApplicationEventPublisher applicationEventPublisher;
 
 	@InjectMocks
 	private OrderService orderService;
@@ -168,6 +174,21 @@ class OrderServiceTest {
 		assertThat(response.getItems().get(0).getLineTotal()).isEqualByComparingTo("25.00");
 
 		verify(menuAvailabilityService).recalculateForIngredient(100L);
+
+		ArgumentCaptor<OrderCreatedRealtimeEvent> eventCaptor =
+				ArgumentCaptor.forClass(OrderCreatedRealtimeEvent.class);
+		verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getMessage().getEventType())
+				.isEqualTo(OrderRealtimeEventType.ORDER_CREATED);
+		assertThat(eventCaptor.getValue().getMessage().getPreviousStatus()).isNull();
+		assertThat(eventCaptor.getValue().getMessage().getCurrentStatus()).isEqualTo(OrderStatus.ACCEPTED);
+		assertThat(eventCaptor.getValue().getMessage().getEventId()).isNotNull();
+		assertThat(eventCaptor.getValue().getMessage().getOrder().getId()).isEqualTo(50L);
+		assertThat(eventCaptor.getValue().getMessage().getOrder().getItems()).hasSize(1);
+		assertThat(eventCaptor.getValue().getMessage().getOrder().getItems().get(0).getQuantity())
+				.isEqualTo(2);
+		assertThat(eventCaptor.getValue().getMessage().getOrder().getItems().get(0).getMenuItemName())
+				.isEqualTo("Grilled Salmon");
 	}
 
 	@Test
@@ -383,6 +404,7 @@ class OrderServiceTest {
 		verify(restaurantOrderRepository, never()).save(any());
 		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.AVAILABLE);
 		verify(orderItemRepository, never()).save(any());
+		verify(applicationEventPublisher, never()).publishEvent(any());
 	}
 
 	@Test

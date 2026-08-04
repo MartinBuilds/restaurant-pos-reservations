@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,12 +29,16 @@ import bg.martinandonov.restaurant.inventory.entity.Ingredient;
 import bg.martinandonov.restaurant.inventory.entity.RecipeIngredient;
 import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
+import bg.martinandonov.restaurant.kitchen.websocket.dto.OrderRealtimeMessage;
+import bg.martinandonov.restaurant.kitchen.websocket.event.OrderCreatedRealtimeEvent;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.menu.repository.MenuItemRepository;
 import bg.martinandonov.restaurant.menu.service.MenuAvailabilityService;
 import bg.martinandonov.restaurant.order.dto.AddOrderItemsRequest;
 import bg.martinandonov.restaurant.order.dto.CreateOrderItemRequest;
 import bg.martinandonov.restaurant.order.dto.CreateOrderRequest;
+import bg.martinandonov.restaurant.order.dto.KitchenOrderItemResponse;
+import bg.martinandonov.restaurant.order.dto.KitchenOrderResponse;
 import bg.martinandonov.restaurant.order.dto.OrderItemResponse;
 import bg.martinandonov.restaurant.order.dto.OrderResponse;
 import bg.martinandonov.restaurant.order.entity.OrderItem;
@@ -61,6 +66,7 @@ public class OrderService {
 	private final IngredientRepository ingredientRepository;
 	private final MenuAvailabilityService menuAvailabilityService;
 	private final AppUserRepository appUserRepository;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public OrderService(
 			RestaurantOrderRepository restaurantOrderRepository,
@@ -70,7 +76,8 @@ public class OrderService {
 			RecipeIngredientRepository recipeIngredientRepository,
 			IngredientRepository ingredientRepository,
 			MenuAvailabilityService menuAvailabilityService,
-			AppUserRepository appUserRepository) {
+			AppUserRepository appUserRepository,
+			ApplicationEventPublisher applicationEventPublisher) {
 		this.restaurantOrderRepository = restaurantOrderRepository;
 		this.orderItemRepository = orderItemRepository;
 		this.diningTableRepository = diningTableRepository;
@@ -79,6 +86,7 @@ public class OrderService {
 		this.ingredientRepository = ingredientRepository;
 		this.menuAvailabilityService = menuAvailabilityService;
 		this.appUserRepository = appUserRepository;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	public OrderResponse createOrder(CreateOrderRequest request) {
@@ -122,6 +130,10 @@ public class OrderService {
 		savedOrder.setUpdatedAt(now);
 		table.setStatus(DiningTableStatus.OCCUPIED);
 		recalculateAvailabilityForIngredients(requiredStock.keySet());
+
+		KitchenOrderResponse kitchenSnapshot = toKitchenResponse(savedOrder);
+		applicationEventPublisher.publishEvent(
+				new OrderCreatedRealtimeEvent(OrderRealtimeMessage.orderCreated(kitchenSnapshot)));
 
 		return toResponse(savedOrder);
 	}
@@ -410,6 +422,26 @@ public class OrderService {
 				order.getStatus().name(),
 				order.isClosed(),
 				order.getTotalAmount(),
+				order.getCreatedAt(),
+				order.getUpdatedAt(),
+				items);
+	}
+
+	private KitchenOrderResponse toKitchenResponse(RestaurantOrder order) {
+		List<KitchenOrderItemResponse> items = orderItemRepository.findByOrderIdOrderByIdAsc(order.getId())
+				.stream()
+				.map(item -> new KitchenOrderItemResponse(
+						item.getId(),
+						item.getMenuItem().getId(),
+						item.getMenuItemName(),
+						item.getQuantity()))
+				.toList();
+		return new KitchenOrderResponse(
+				order.getId(),
+				order.getOrderNumber(),
+				order.getDiningTable().getId(),
+				order.getDiningTable().getTableNumber(),
+				order.getStatus().name(),
 				order.getCreatedAt(),
 				order.getUpdatedAt(),
 				items);

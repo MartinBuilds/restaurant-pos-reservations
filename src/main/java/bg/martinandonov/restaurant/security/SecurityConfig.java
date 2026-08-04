@@ -42,12 +42,17 @@ public class SecurityConfig {
 						.requestMatchers("/api/kitchen/**").hasAnyRole("COOK", "ADMIN")
 						.requestMatchers("/api/client/**").hasAnyRole("CLIENT", "ADMIN")
 						.requestMatchers("/api/**").authenticated()
+						.requestMatchers("/ws", "/ws/**").authenticated()
 						.anyRequest().authenticated())
 				.formLogin(Customizer.withDefaults())
 				.logout(Customizer.withDefaults())
-				.exceptionHandling(ex -> ex.defaultAuthenticationEntryPointFor(
-						new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
-						PathPatternRequestMatcher.pathPattern("/api/**")));
+				.exceptionHandling(ex -> ex
+						.defaultAuthenticationEntryPointFor(
+								new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+								PathPatternRequestMatcher.pathPattern("/api/**"))
+						.defaultAuthenticationEntryPointFor(
+								new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+								PathPatternRequestMatcher.pathPattern("/ws/**")));
 
 		return http.build();
 	}
