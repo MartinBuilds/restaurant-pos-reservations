@@ -287,6 +287,78 @@ Replace recipe example:
 }
 ```
 
+## Dining tables API
+
+Statuses (`DiningTableStatus`):
+
+- `AVAILABLE` — active and ready for use
+- `OCCUPIED` — currently in use
+- `RESERVED` — marked as reserved
+- `OUT_OF_SERVICE` — temporarily unusable
+
+### Active vs status
+
+- `active` is the catalog/soft-delete flag. Inactive tables remain in the database.
+- Deactivating a table sets `active=false` and forces `status=OUT_OF_SERVICE`.
+- Reactivating a table sets `active=true` and `status=AVAILABLE`.
+- Inactive tables cannot be moved to `AVAILABLE`, `OCCUPIED`, or `RESERVED`.
+- In this PR statuses are managed manually. Future order and reservation modules will drive `OCCUPIED` and `RESERVED`.
+
+Admin endpoints (`ADMIN` only):
+
+- `POST /api/admin/tables`
+- `GET /api/admin/tables`
+- `GET /api/admin/tables/{id}`
+- `PUT /api/admin/tables/{id}`
+- `PATCH /api/admin/tables/{id}/status`
+- `PATCH /api/admin/tables/{id}/active`
+
+Waiter endpoints (`WAITER` or `ADMIN`):
+
+- `GET /api/waiter/tables`
+- `GET /api/waiter/tables?status=AVAILABLE`
+- `GET /api/waiter/tables/{id}`
+- `PATCH /api/waiter/tables/{id}/status`
+
+Waiter rules:
+
+- lists only active tables
+- may set `AVAILABLE`, `OCCUPIED`, or `RESERVED`
+- may not set `OUT_OF_SERVICE`
+- inactive tables are not visible (404 by id)
+
+Create table example:
+
+```json
+{
+  "tableNumber": 5,
+  "displayName": "Window",
+  "capacity": 4
+}
+```
+
+Example response:
+
+```json
+{
+  "id": 1,
+  "tableNumber": 5,
+  "displayName": "Window",
+  "capacity": 4,
+  "status": "AVAILABLE",
+  "active": true,
+  "version": 0
+}
+```
+
+Update status example:
+
+```json
+{
+  "status": "OCCUPIED"
+}
+```
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
@@ -296,5 +368,6 @@ Replace recipe example:
 - Menu catalog (categories and items) is implemented with admin and public APIs
 - Ingredients, stock quantities, and recipes are implemented for ADMIN management
 - Automatic menu availability is computed from recipes and stock (with manual override)
+- Dining tables are managed by ADMIN and operable by WAITER (manual status only)
 - Order-time stock deduction is not implemented yet
 - Orders, reservations, and remaining modules are not implemented yet
