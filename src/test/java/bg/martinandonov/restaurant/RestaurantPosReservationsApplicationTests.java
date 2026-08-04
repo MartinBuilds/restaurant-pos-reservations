@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
 import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
 import bg.martinandonov.restaurant.inventory.repository.RecipeIngredientRepository;
 import bg.martinandonov.restaurant.menu.repository.MenuCategoryRepository;
@@ -31,6 +32,9 @@ class RestaurantPosReservationsApplicationTests {
 
 	@MockitoBean
 	private RecipeIngredientRepository recipeIngredientRepository;
+
+	@MockitoBean
+	private DiningTableRepository diningTableRepository;
 
 	@Test
 	void contextLoads() {
