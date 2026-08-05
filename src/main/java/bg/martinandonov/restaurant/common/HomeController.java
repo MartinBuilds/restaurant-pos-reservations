@@ -17,7 +17,12 @@ public class HomeController {
 		if (hasRole(authentication, "ROLE_ADMIN")) {
 			return "redirect:/admin";
 		}
-		// Waiter/kitchen/client UIs are not available yet.
+		if (hasRole(authentication, "ROLE_WAITER")) {
+			return "redirect:/waiter";
+		}
+		if (hasRole(authentication, "ROLE_COOK")) {
+			return "redirect:/kitchen";
+		}
 		return "redirect:/login";
 	}
 

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.ico">
+  <title>Сервитьор — Restaurant POS</title>
+  <link rel="stylesheet" href="/operations/css/operations.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Навигация сервитьор">
+      <div class="brand">
+        <p class="brand-kicker">Restaurant POS</p>
+        <p class="brand-title">Сервитьор</p>
+      </div>
+      <nav class="nav" id="main-nav">
+        <a class="nav-link" href="#/tables" data-route="tables">Маси</a>
+        <a class="nav-link" href="#/orders" data-route="orders">Поръчки</a>
+        <a class="nav-link" href="#/reservations" data-route="reservations">Резервации</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="connection-status" class="conn" role="status" aria-live="polite"></div>
+        <button type="button" class="btn btn-ghost" id="logout-btn">Изход</button>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <button type="button" class="btn btn-ghost nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="sidebar">Меню</button>
+        <div class="topbar-text">
+          <h1 class="page-title" id="page-title">Маси</h1>
+          <p class="page-subtitle" id="page-subtitle">Оперативен панел</p>
+        </div>
+      </header>
+      <div class="status-region" id="status-region" role="status" aria-live="polite"></div>
+      <div class="toast-region" id="toast-region" aria-live="polite"></div>
+      <main class="content" id="content" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" hidden></div>
+  <div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" hidden>
+    <div class="dialog-header">
+      <h2 class="dialog-title" id="dialog-title">Диалог</h2>
+      <button type="button" class="btn btn-ghost" id="dialog-close" aria-label="Затвори">Затвори</button>
+    </div>
+    <div class="dialog-body" id="dialog-body"></div>
+    <div class="dialog-footer" id="dialog-footer"></div>
+  </div>
+
+  <script type="module" src="/waiter/js/app.js"></script>
+</body>
+</html>
