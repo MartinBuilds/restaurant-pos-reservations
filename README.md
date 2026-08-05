@@ -780,7 +780,7 @@ Indexes: `paid_at`, `method+paid_at`, `processed_by_id+paid_at`.
 
 Duplicate / concurrency: table+order locks, `closed` check, `existsByOrderId`, unique `order_id`, `@Version`. Parallel requests → one `201`, one `409`, exactly one payment.
 
-Does **not** change stock, menu availability, recipes, order items, order status, reservations, or publish WebSocket events. No partial/split/refund/tips/tax. Receipt is not a legal tax invoice or fiscal bon. Aggregated sales reports come in a later PR.
+Does **not** change stock, menu availability, recipes, order items, order status, reservations, or publish WebSocket events. No partial/split/refund/tips/tax. Receipt is not a legal tax invoice or fiscal bon. Aggregated admin sales reports are available under `/api/admin/reports/sales`.
 
 Future confirmed reservations do not block freeing the table after payment.
 
@@ -806,6 +806,50 @@ Admin only:
 { "method": "CARD" }
 ```
 
+## Sales reports
+
+Admin-only read-only sales reports over simulated payments. Included rows require:
+
+- a `Payment` exists
+- `order.closed = true`
+- `order.status = SERVED`
+- `Payment.paidAt` in the selected period
+
+Period is half-open `[from, to)` in the restaurant zone (`app.restaurant.time-zone`, default `Europe/Sofia`):
+
+- `paidAt >= from`
+- `paidAt < to`
+
+ISO local date-time example: `2026-08-01T00:00:00`.
+
+### Endpoints
+
+- `GET /api/admin/reports/sales/summary?from=&to=`
+- `GET /api/admin/reports/sales/by-item?from=&to=`
+- `GET /api/admin/reports/sales/by-payment-method?from=&to=`
+
+### Metrics
+
+Summary: `totalRevenue` (sum of payment amounts), `paidOrdersCount`, `soldItemsCount` (sum of order-item quantities), `averageOrderValue` (`HALF_UP`, scale 2). Empty period returns zeros.
+
+Sales by item: groups by `menuItemId` + historical `OrderItem.menuItemName` snapshot; revenue from `lineTotal`. Renames/price changes after payment do not rewrite history. Ordered by revenue desc, quantity desc, name asc, id asc.
+
+Sales by payment method: always returns `CASH` then `CARD` with counts, amounts, and `percentageOfRevenue`. Missing methods are zero-filled.
+
+Reports are not legal accounting/tax documents. There is no frontend charting and no PDF/CSV/Excel export in this PR. Payments remain simulated CASH/CARD only.
+
+Example summary response:
+
+```json
+{
+  "period": { "from": "2026-08-01T00:00:00", "to": "2026-08-02T00:00:00", "timeZone": "Europe/Sofia" },
+  "totalRevenue": 100.00,
+  "paidOrdersCount": 2,
+  "soldItemsCount": 5,
+  "averageOrderValue": 50.00
+}
+```
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
@@ -821,4 +865,4 @@ Admin only:
 - Kitchen/waiter STOMP notifications are implemented (AFTER_COMMIT, no message persistence)
 - Table reservations with conflict checks and schedule are implemented
 - Simulated CASH/CARD payments and receipts are implemented
-- Aggregated sales reports are not implemented yet
+- Admin sales reports (summary, by item, by payment method) are implemented
