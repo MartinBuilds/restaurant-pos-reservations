@@ -23,9 +23,9 @@ Built as a single Spring Boot modular monolith.
 | `ADMIN` | `/admin/**`, `/api/admin/**`, and all other role-restricted areas |
 | `WAITER` | `/waiter/**`, `/api/waiter/**`, `/operations/**` |
 | `COOK` | `/kitchen/**`, `/api/kitchen/**`, `/operations/**` |
-| `CLIENT` | `/api/client/**` |
+| `CLIENT` | `/client/**`, `/api/client/**` |
 
-Public (no authentication): `/`, `/login`, `/css/**`, `/js/**`, `/images/**`, `/api/public/**`. Admin UI at `/admin/**` requires `ADMIN`.
+Public (no authentication): `/`, `/login`, `/css/**`, `/js/**`, `/images/**`, `/api/public/**`. Role UIs: `/admin/**` (`ADMIN`), `/waiter/**` (`WAITER`/`ADMIN`), `/kitchen/**` (`COOK`/`ADMIN`), `/client/**` (`CLIENT` only — ADMIN without CLIENT is denied).
 
 All other `/api/**` endpoints require authentication.
 
@@ -864,7 +864,7 @@ Vanilla HTML/CSS/JavaScript administrative panel served as static resources.
 - LocalDateTime fields are sent without `Z`/offset (restaurant zone, default `Europe/Sofia`)
 - Payments are simulated CASH/CARD history only — no card data, no fiscal invoice UI
 - Sales reports are operational, not tax/accounting documents
-- Waiter and Kitchen UIs are separate apps (see below); client reservation UI is a future PR
+- Waiter, Kitchen, and Client reservation UIs are separate role-based apps (see below)
 - Browsers: current evergreen desktop/mobile browsers; responsive from ~390px to 1440px+
 
 ### Admin sections
@@ -922,6 +922,38 @@ Vanilla HTML/CSS/JavaScript kitchen queue display.
 - `ORDER_CREATED` / `ORDER_STATUS_CHANGED` trigger REST queue refresh; payload is not treated as final state
 - READY cards have no kitchen action; SERVED/CANCELLED/closed orders are absent from the active queue API
 
+## Client Reservations UI
+
+Vanilla HTML/CSS/JavaScript client panel for online table reservations.
+
+- URL: `/client` (forwards to `/client/index.html`)
+- Role: `CLIENT` only (`ADMIN` without `CLIENT`, `WAITER`, `COOK`, and anonymous are denied)
+- Login redirect: `CLIENT` → `/client` (precedence: ADMIN → WAITER → COOK → CLIENT)
+- Auth: existing session-based Spring Security login (no registration, password reset, or anonymous reservation form)
+- CSRF: `GET /api/csrf`, token kept in JavaScript memory only; sent on POST/PUT/PATCH/DELETE
+- Hash routes: `#/availability`, `#/new`, `#/reservations`, `#/reservations/{id}`, `#/reservations/{id}/edit`
+- Stack: HTML5, CSS3, ES modules, Fetch API — no Node.js, npm, React/Angular/Vue, jQuery, Bootstrap/Tailwind, CDN, external fonts, or WebSocket
+- REST and MySQL remain the source of truth; no new business endpoints, entities, or reservation-rule changes
+- Does **not** use `/operations/**` assets (CLIENT has no access)
+- LocalDateTime values use restaurant local time without UTC/`Z` conversion (`datetime-local`)
+- Ownership: clients see and mutate only their own reservations; foreign ids return **404** (no existence leak)
+- Conflict: overlapping create/update returns **409** with backend business message; UI does not keep optimistic state
+- Status labels: CONFIRMED (Потвърдена), CANCELLED (Отказана), COMPLETED (Завършена), NO_SHOW (Неявяване)
+- No payments, card fields, client ordering, email/SMS, calendar integration, or notifications
+
+### Client flows
+
+| Flow | Uses |
+|---|---|
+| Availability search | `GET /api/client/reservations/availability?startTime=&endTime=&guestCount=` |
+| Create reservation | `POST /api/client/reservations` (`diningTableId`, `startTime`, `endTime`, `guestCount`, optional `notes`) |
+| My reservations | `GET /api/client/reservations` |
+| Reservation details | `GET /api/client/reservations/{id}` |
+| Reschedule | `PUT /api/client/reservations/{id}` (UI hint: CONFIRMED only) |
+| Cancel | `PATCH /api/client/reservations/{id}/cancel` (UI hint: CONFIRMED only; confirmation dialog) |
+| Logout | `POST /logout` with CSRF |
+
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
@@ -940,3 +972,4 @@ Vanilla HTML/CSS/JavaScript kitchen queue display.
 - Admin sales reports (summary, by item, by payment method) are implemented
 - Admin UI (vanilla HTML/CSS/JS) is implemented for ADMIN session users
 - Waiter and Kitchen UIs with native WebSocket/STOMP notifications are implemented
+- Client Reservations UI (vanilla HTML/CSS/JS, REST-only, CLIENT role) is implemented

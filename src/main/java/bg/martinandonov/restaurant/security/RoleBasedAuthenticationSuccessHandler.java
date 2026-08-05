@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Redirects after form login by role. Always uses the computed target (no saved request).
+ * Precedence: ADMIN, WAITER, COOK, CLIENT.
  */
 public class RoleBasedAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
@@ -29,7 +30,7 @@ public class RoleBasedAuthenticationSuccessHandler extends SimpleUrlAuthenticati
 		super.onAuthenticationSuccess(request, response, authentication);
 	}
 
-	private static String resolveTarget(Authentication authentication) {
+	static String resolveTarget(Authentication authentication) {
 		if (hasRole(authentication, "ROLE_ADMIN")) {
 			return "/admin";
 		}
@@ -38,6 +39,9 @@ public class RoleBasedAuthenticationSuccessHandler extends SimpleUrlAuthenticati
 		}
 		if (hasRole(authentication, "ROLE_COOK")) {
 			return "/kitchen";
+		}
+		if (hasRole(authentication, "ROLE_CLIENT")) {
+			return "/client";
 		}
 		return "/";
 	}
