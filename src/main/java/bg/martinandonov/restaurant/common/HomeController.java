@@ -23,6 +23,9 @@ public class HomeController {
 		if (hasRole(authentication, "ROLE_COOK")) {
 			return "redirect:/kitchen";
 		}
+		if (hasRole(authentication, "ROLE_CLIENT")) {
+			return "redirect:/client";
+		}
 		return "redirect:/login";
 	}
 

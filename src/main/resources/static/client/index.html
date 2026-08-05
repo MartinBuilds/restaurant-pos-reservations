@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.ico">
+  <title>Резервации — Restaurant POS</title>
+  <link rel="stylesheet" href="/client/css/client.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top">
+      <div class="brand">
+        <p class="brand-kicker">Restaurant POS</p>
+        <h1 class="brand-title">Онлайн резервации</h1>
+      </div>
+      <button type="button" class="btn btn-ghost nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="main-nav">Меню</button>
+      <nav class="nav" id="main-nav" aria-label="Клиентска навигация">
+        <a class="nav-link" href="#/availability" data-route="availability">Нова резервация</a>
+        <a class="nav-link" href="#/reservations" data-route="reservations">Моите резервации</a>
+        <button type="button" class="btn btn-ghost" id="logout-btn">Изход</button>
+      </nav>
+    </header>
+
+    <div class="status-region" id="status-region" role="status" aria-live="polite"></div>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+
+    <main class="content" id="content" tabindex="-1">
+      <div class="page-head">
+        <h2 class="page-title" id="page-title">Нова резервация</h2>
+        <p class="page-subtitle" id="page-subtitle">Търсене на свободни маси</p>
+      </div>
+      <div id="view-root"></div>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay" hidden></div>
+  <div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" hidden>
+    <div class="dialog-header">
+      <h2 class="dialog-title" id="dialog-title">Диалог</h2>
+      <button type="button" class="btn btn-ghost" id="dialog-close" aria-label="Затвори">Затвори</button>
+    </div>
+    <div class="dialog-body" id="dialog-body"></div>
+    <div class="dialog-footer" id="dialog-footer"></div>
+  </div>
+
+  <script type="module" src="/client/js/app.js"></script>
+</body>
+</html>

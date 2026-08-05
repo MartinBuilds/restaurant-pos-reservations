@@ -54,6 +54,7 @@ public class SecurityConfig {
 						.requestMatchers("/kitchen", "/kitchen/", "/kitchen/**").hasAnyRole("COOK", "ADMIN")
 						.requestMatchers("/operations", "/operations/", "/operations/**")
 						.hasAnyRole("WAITER", "COOK", "ADMIN")
+						.requestMatchers("/client", "/client/", "/client/**").hasRole("CLIENT")
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/waiter/**").hasAnyRole("WAITER", "ADMIN")
 						.requestMatchers("/api/kitchen/**").hasAnyRole("COOK", "ADMIN")
