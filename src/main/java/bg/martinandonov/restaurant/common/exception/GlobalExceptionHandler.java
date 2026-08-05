@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PessimisticLockException;
@@ -28,6 +29,13 @@ public class GlobalExceptionHandler {
 			ResourceNotFoundException exception,
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<ApiError> handleMissingStaticResource(
+			NoResourceFoundException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.NOT_FOUND, "Resource not found", request);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)

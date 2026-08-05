@@ -20,12 +20,12 @@ Built as a single Spring Boot modular monolith.
 
 | Role | Access |
 |---|---|
-| `ADMIN` | `/api/admin/**`, and all other role-restricted areas |
+| `ADMIN` | `/admin/**`, `/api/admin/**`, and all other role-restricted areas |
 | `WAITER` | `/api/waiter/**` |
 | `COOK` | `/api/kitchen/**` |
 | `CLIENT` | `/api/client/**` |
 
-Public (no authentication): `/`, `/login`, `/css/**`, `/js/**`, `/images/**`, `/api/public/**`.
+Public (no authentication): `/`, `/login`, `/css/**`, `/js/**`, `/images/**`, `/api/public/**`. Admin UI at `/admin/**` requires `ADMIN`.
 
 All other `/api/**` endpoints require authentication.
 
@@ -850,6 +850,35 @@ Example summary response:
 }
 ```
 
+## Admin UI
+
+Vanilla HTML/CSS/JavaScript administrative panel served as static resources.
+
+- URL: `/admin` (forwards to `/admin/index.html`)
+- Role: `ADMIN` only (WAITER/COOK/CLIENT denied; anonymous redirected to login)
+- Auth: existing session-based Spring Security login
+- CSRF: `GET /api/csrf`, then send token header on POST/PUT/PATCH/DELETE
+- Routing: hash routes `#/dashboard`, `#/users`, `#/menu`, `#/inventory`, `#/tables`, `#/reservations`, `#/payments`, `#/reports`
+- Stack: HTML5, CSS3, ES modules, Fetch API — no Node.js, npm, React/Angular/Vue, jQuery, Bootstrap/Tailwind, CDN, or external fonts
+- REST is the source of truth; no new business endpoints or JPA changes in this UI
+- LocalDateTime fields are sent without `Z`/offset (restaurant zone, default `Europe/Sofia`)
+- Payments are simulated CASH/CARD history only — no card data, no fiscal invoice UI
+- Sales reports are operational, not tax/accounting documents
+- Waiter, kitchen, and client UIs are not included (future PRs)
+- Browsers: current evergreen desktop/mobile browsers; responsive from ~390px to 1440px+
+
+### Admin sections
+
+| Section | Uses |
+|---|---|
+| Users | `/api/admin/users` |
+| Menu | `/api/admin/menu/categories`, `/api/admin/menu/items`, availability |
+| Inventory | `/api/admin/inventory/ingredients`, recipes |
+| Tables | `/api/admin/tables` |
+| Reservations | `/api/admin/reservations`, `/schedule` |
+| Payments | `/api/admin/payments` (read-only) |
+| Reports | `/api/admin/reports/sales/*` |
+
 ## Current development status
 
 - Project foundation and shared API error handling are in place
@@ -866,3 +895,4 @@ Example summary response:
 - Table reservations with conflict checks and schedule are implemented
 - Simulated CASH/CARD payments and receipts are implemented
 - Admin sales reports (summary, by item, by payment method) are implemented
+- Admin UI (vanilla HTML/CSS/JS) is implemented for ADMIN session users
