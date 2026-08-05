@@ -21,8 +21,8 @@ Built as a single Spring Boot modular monolith.
 | Role | Access |
 |---|---|
 | `ADMIN` | `/admin/**`, `/api/admin/**`, and all other role-restricted areas |
-| `WAITER` | `/api/waiter/**` |
-| `COOK` | `/api/kitchen/**` |
+| `WAITER` | `/waiter/**`, `/api/waiter/**`, `/operations/**` |
+| `COOK` | `/kitchen/**`, `/api/kitchen/**`, `/operations/**` |
 | `CLIENT` | `/api/client/**` |
 
 Public (no authentication): `/`, `/login`, `/css/**`, `/js/**`, `/images/**`, `/api/public/**`. Admin UI at `/admin/**` requires `ADMIN`.
@@ -864,7 +864,7 @@ Vanilla HTML/CSS/JavaScript administrative panel served as static resources.
 - LocalDateTime fields are sent without `Z`/offset (restaurant zone, default `Europe/Sofia`)
 - Payments are simulated CASH/CARD history only — no card data, no fiscal invoice UI
 - Sales reports are operational, not tax/accounting documents
-- Waiter, kitchen, and client UIs are not included (future PRs)
+- Waiter and Kitchen UIs are separate apps (see below); client reservation UI is a future PR
 - Browsers: current evergreen desktop/mobile browsers; responsive from ~390px to 1440px+
 
 ### Admin sections
@@ -878,6 +878,49 @@ Vanilla HTML/CSS/JavaScript administrative panel served as static resources.
 | Reservations | `/api/admin/reservations`, `/schedule` |
 | Payments | `/api/admin/payments` (read-only) |
 | Reports | `/api/admin/reports/sales/*` |
+
+
+## Waiter UI
+
+Vanilla HTML/CSS/JavaScript waiter operations panel.
+
+- URL: `/waiter` (forwards to `/waiter/index.html`)
+- Roles: `WAITER` or `ADMIN`
+- Shared assets: `/operations/**` (WAITER, COOK, or ADMIN)
+- Auth: existing session-based Spring Security login
+- CSRF: `GET /api/csrf` for HTTP mutating requests and STOMP `CONNECT`
+- Hash routes: `#/tables`, `#/orders`, `#/reservations`
+- Stack: HTML5, CSS3, ES modules, Fetch API, native WebSocket, **internal minimal STOMP 1.2 client** — no Node/npm, no SockJS, no CDN, no external STOMP library, no frontend framework
+- REST/MySQL remain the source of truth; WebSocket messages are notification-only triggers for debounced REST reload
+- Topics: subscribes only to `/topic/waiter/orders` (no kitchen topic, no STOMP SEND to `/app`)
+- Heartbeat preference `10000,10000` with negotiated STOMP 1.2 intervals; controlled reconnect backoff (1s→2s→5s→10s→max 30s + jitter)
+- No event replay: after reconnect, re-subscribe and reload state via REST
+- In-memory `eventId` deduplication (bounded) and ~220ms refresh debounce
+- Flows: tables → create order / add items → READY→SERVED → simulated CASH/CARD payment + receipt; reservation schedule is **read-only**
+- Payment UI sends only `{ "method": "CASH" | "CARD" }` — no card number/CVV/holder fields; clearly labeled simulation (not a fiscal bon)
+- LocalDateTime filters are sent without `Z`/offset (restaurant zone, default `Europe/Sofia`)
+- Client reservation UI is **not** included (next PR)
+
+### Waiter sections
+
+| Section | Uses |
+|---|---|
+| Tables | `GET /api/waiter/tables`, create order via `POST /api/waiter/orders` |
+| Orders | `GET /api/waiter/orders`, `POST .../items`, `PATCH .../status` (SERVED only), payment |
+| Reservations | `GET /api/waiter/reservations/schedule` (read-only) |
+
+## Kitchen UI
+
+Vanilla HTML/CSS/JavaScript kitchen queue display.
+
+- URL: `/kitchen` (forwards to `/kitchen/index.html`)
+- Roles: `COOK` or `ADMIN`
+- Large order cards; columns **ACCEPTED**, **COOKING**, **READY**; no prices/totals/payment data
+- REST: `GET /api/kitchen/orders`, `PATCH /api/kitchen/orders/{id}/status` (`COOKING` or `READY` only — never `SERVED`)
+- WebSocket: `/ws` + STOMP subscribe `/topic/kitchen/orders` only
+- Same CSRF CONNECT, heartbeat, reconnect, dedup/debounce rules as Waiter UI
+- `ORDER_CREATED` / `ORDER_STATUS_CHANGED` trigger REST queue refresh; payload is not treated as final state
+- READY cards have no kitchen action; SERVED/CANCELLED/closed orders are absent from the active queue API
 
 ## Current development status
 
@@ -896,3 +939,4 @@ Vanilla HTML/CSS/JavaScript administrative panel served as static resources.
 - Simulated CASH/CARD payments and receipts are implemented
 - Admin sales reports (summary, by item, by payment method) are implemented
 - Admin UI (vanilla HTML/CSS/JS) is implemented for ADMIN session users
+- Waiter and Kitchen UIs with native WebSocket/STOMP notifications are implemented

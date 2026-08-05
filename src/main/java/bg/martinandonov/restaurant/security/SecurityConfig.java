@@ -14,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import jakarta.servlet.DispatcherType;
@@ -33,9 +32,7 @@ public class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		SimpleUrlAuthenticationSuccessHandler successHandler =
-				new SimpleUrlAuthenticationSuccessHandler("/admin");
-		successHandler.setAlwaysUseDefaultTargetUrl(true);
+		RoleBasedAuthenticationSuccessHandler successHandler = new RoleBasedAuthenticationSuccessHandler();
 		successHandler.setRedirectStrategy(seeOtherRedirectStrategy());
 
 		http
@@ -53,6 +50,10 @@ public class SecurityConfig {
 								"/api/public/**")
 						.permitAll()
 						.requestMatchers("/admin", "/admin/", "/admin/**").hasRole("ADMIN")
+						.requestMatchers("/waiter", "/waiter/", "/waiter/**").hasAnyRole("WAITER", "ADMIN")
+						.requestMatchers("/kitchen", "/kitchen/", "/kitchen/**").hasAnyRole("COOK", "ADMIN")
+						.requestMatchers("/operations", "/operations/", "/operations/**")
+						.hasAnyRole("WAITER", "COOK", "ADMIN")
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/waiter/**").hasAnyRole("WAITER", "ADMIN")
 						.requestMatchers("/api/kitchen/**").hasAnyRole("COOK", "ADMIN")
