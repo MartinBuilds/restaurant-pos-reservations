@@ -7,12 +7,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PessimisticLockException;
@@ -35,6 +37,20 @@ public class GlobalExceptionHandler {
 		return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request body", request);
 	}
 
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<ApiError> handleMissingParam(
+			MissingServletRequestParameterException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ApiError> handleTypeMismatch(
+			MethodArgumentTypeMismatchException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request parameter", request);
+	}
+
 	@ExceptionHandler(InvalidRequestException.class)
 	public ResponseEntity<ApiError> handleInvalidRequest(
 			InvalidRequestException exception,
@@ -55,7 +71,6 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.FORBIDDEN, exception.getMessage(), request);
 	}
-
 
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiError> handleDataIntegrity(
