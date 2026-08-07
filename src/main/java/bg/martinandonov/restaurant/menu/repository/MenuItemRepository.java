@@ -14,6 +14,8 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
 
 	boolean existsByCategoryIdAndNameIgnoreCase(Long categoryId, String name);
 
+	Optional<MenuItem> findByCategoryIdAndNameIgnoreCase(Long categoryId, String name);
+
 	boolean existsByCategoryIdAndNameIgnoreCaseAndIdNot(Long categoryId, String name, Long id);
 
 	List<MenuItem> findAllByOrderByIdAsc();
