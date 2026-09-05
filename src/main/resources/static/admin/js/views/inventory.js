@@ -4,12 +4,13 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field
 } from '../ui.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const UNITS = ['GRAM', 'MILLILITER', 'PIECE'];
 
 export async function renderInventory() {
-  setPageMeta('Склад и рецепти', 'Съставки, запас и рецепти по ястия');
-  mount(loading());
+  setPageMeta(t('page.inventory.title'), t('page.inventory.subtitle'));
+  mount(loading(t('common.loading')));
   await reload();
 }
 
@@ -26,17 +27,17 @@ async function reload() {
       ing.unit || '—',
       quantity(ing.stockQuantity),
       quantity(ing.minimumStockLevel),
-      badge(ing.active ? 'Активна' : 'Неактивна', ing.active ? 'ok' : 'muted'),
-      badge(ing.lowStock ? 'Нисък запас' : 'OK', ing.lowStock ? 'warn' : 'ok'),
+      badge(ing.active ? t('common.active') : t('common.inactive'), ing.active ? 'ok' : 'muted'),
+      badge(ing.lowStock ? t('inventory.lowStock') : t('inventory.stockOk'), ing.lowStock ? 'warn' : 'ok'),
       el('div', { className: 'row-actions' }, [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Редакция', onClick: () => openIngredientDialog(ing, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Запас', onClick: () => openStockDialog(ing, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.edit'), onClick: () => openIngredientDialog(ing, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.stock'), onClick: () => openStockDialog(ing, () => reload()) }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: ing.active ? 'Деактивирай' : 'Активирай',
+          type: 'button', className: 'btn btn-secondary', text: ing.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/inventory/ingredients/${ing.id}/status`, { active: !ing.active });
-              toast('Статусът е обновен.', 'success');
+              toast(t('msg.statusUpdated'), 'success');
               await reload();
             } catch (err) { handleError(err); }
           }
@@ -45,16 +46,16 @@ async function reload() {
     ]);
 
     mount(el('div', { className: 'stack' }, [
-      panel('Съставки', [
+      panel(t('inventory.ingredients'), [
         ingredients.length
-          ? table('Съставки', ['ID', 'Име', 'Единица', 'Запас', 'Минимум', 'Активна', 'Сигнал', 'Действия'], rows)
-          : emptyState('Няма съставки.')
+          ? table(t('inventory.ingredients'), [t('col.id'), t('col.name'), t('col.unit'), t('col.stock'), t('col.min'), t('col.activeFem'), t('col.signal'), t('common.actions')], rows)
+          : emptyState(t('common.empty'))
       ], [
-        el('button', { type: 'button', className: 'btn', text: 'Нова съставка', onClick: () => openIngredientDialog(null, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Презареди', onClick: () => reload() })
+        el('button', { type: 'button', className: 'btn', text: t('action.newIngredient'), onClick: () => openIngredientDialog(null, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
       ]),
-      panel('Рецепти', [
-        el('p', { className: 'muted', text: 'Изберете ястие, за да заредите/запишете рецепта. Frontend не преизчислява availability.' }),
+      panel(t('inventory.recipes'), [
+        el('p', { className: 'muted', text: t('inventory.recipeNote') }),
         recipePicker(items, ingredients)
       ])
     ]));
@@ -65,12 +66,12 @@ async function reload() {
 
 function recipePicker(items, ingredients) {
   const select = el('select', {}, [
-    el('option', { value: '', text: 'Изберете ястие' }),
+    el('option', { value: '', text: t('inventory.selectItem') }),
     ...items.map((i) => el('option', { value: String(i.id), text: i.name }))
   ]);
   const area = el('div', { className: 'stack' });
   const loadBtn = el('button', {
-    type: 'button', className: 'btn btn-secondary', text: 'Зареди рецепта',
+    type: 'button', className: 'btn btn-secondary', text: t('action.loadRecipe'),
     onClick: async () => {
       if (!select.value) return;
       try {
@@ -84,7 +85,7 @@ function recipePicker(items, ingredients) {
     }
   });
   return el('div', { className: 'stack' }, [
-    el('div', { className: 'filters' }, [field('Ястие', select), loadBtn]),
+    el('div', { className: 'filters' }, [field(t('col.menuItem'), select), loadBtn]),
     area
   ]);
 }
@@ -102,7 +103,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
     while (list.firstChild) list.removeChild(list.firstChild);
     rowsState.forEach((row, idx) => {
       const ingSelect = el('select', {}, [
-        el('option', { value: '', text: 'Съставка' }),
+        el('option', { value: '', text: t('col.ingredient') }),
         ...ingredients.map((ing) => el('option', {
           value: String(ing.id),
           text: `${ing.name} (${ing.unit})`,
@@ -113,10 +114,10 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
       const qty = el('input', { type: 'number', step: '0.001', min: '0', value: row.quantityRequired ?? '' });
       qty.addEventListener('input', () => { row.quantityRequired = qty.value; });
       list.appendChild(el('div', { className: 'filters' }, [
-        field('Съставка', ingSelect),
-        field('Количество', qty),
+        field(t('col.ingredient'), ingSelect),
+        field(t('col.quantity'), qty),
         el('button', {
-          type: 'button', className: 'btn btn-ghost', text: 'Премахни',
+          type: 'button', className: 'btn btn-ghost', text: t('common.delete'),
           onClick: () => { rowsState.splice(idx, 1); redraw(); }
         })
       ]));
@@ -125,7 +126,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
   redraw();
 
   const save = el('button', {
-    type: 'button', className: 'btn', text: 'Запази рецепта',
+    type: 'button', className: 'btn', text: t('common.save'),
     onClick: async () => {
       save.disabled = true;
       try {
@@ -133,7 +134,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
           .filter((r) => r.ingredientId && r.quantityRequired !== '')
           .map((r) => ({ ingredientId: Number(r.ingredientId), quantityRequired: r.quantityRequired }));
         await api.put(`/api/admin/menu/items/${menuItemId}/recipe`, { components });
-        toast('Рецептата е записана.', 'success');
+        toast(t('msg.saved'), 'success');
         await onDone();
       } catch (err) {
         handleError(err);
@@ -143,22 +144,22 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
   });
 
   const clearBtn = el('button', {
-    type: 'button', className: 'btn btn-danger', text: 'Изтрий рецепта',
+    type: 'button', className: 'btn btn-danger', text: t('common.delete'),
     onClick: async () => {
       try {
         await api.delete(`/api/admin/menu/items/${menuItemId}/recipe`);
-        toast('Рецептата е изтрита.', 'success');
+        toast(t('msg.saved'), 'success');
         await onDone();
       } catch (err) { handleError(err); }
     }
   });
 
   area.appendChild(el('div', { className: 'stack' }, [
-    el('h3', { text: recipe.menuItemName || `Ястие #${menuItemId}` }),
+    el('h3', { text: recipe.menuItemName || t('inventory.itemFallback', { id: menuItemId }) }),
     list,
     el('div', { className: 'row-actions' }, [
       el('button', {
-        type: 'button', className: 'btn btn-secondary', text: 'Добави ред',
+        type: 'button', className: 'btn btn-secondary', text: t('action.addRow'),
         onClick: () => { rowsState.push({ ingredientId: '', quantityRequired: '' }); redraw(); }
       }),
       save,
@@ -174,7 +175,7 @@ function openIngredientDialog(existing, onDone) {
   })));
   const stockQuantity = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.stockQuantity ?? '0' });
   const minimumStockLevel = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.minimumStockLevel ?? '0' });
-  const submit = el('button', { type: 'button', className: 'btn', text: existing ? 'Запази' : 'Създай' });
+  const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -193,7 +194,7 @@ function openIngredientDialog(existing, onDone) {
         });
       }
       closeDialog();
-      toast('Съставката е записана.', 'success');
+      toast(existing ? t('msg.saved') : t('msg.created'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -201,15 +202,15 @@ function openIngredientDialog(existing, onDone) {
     }
   });
   openDialog({
-    title: existing ? 'Редакция на съставка' : 'Нова съставка',
+    title: existing ? t('inventory.editIngredient') : t('inventory.newIngredient'),
     body: el('div', { className: 'stack' }, [
-      field('Име', name),
-      field('Единица', unit),
-      existing ? null : field('Начален запас', stockQuantity),
-      field('Минимален запас', minimumStockLevel)
+      field(t('col.name'), name),
+      field(t('col.unit'), unit),
+      existing ? null : field(t('inventory.initialStock'), stockQuantity),
+      field(t('inventory.minStock'), minimumStockLevel)
     ].filter(Boolean)),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });
@@ -218,7 +219,7 @@ function openIngredientDialog(existing, onDone) {
 function openStockDialog(ing, onDone) {
   const quantityChange = el('input', { type: 'number', step: '0.001', value: '0' });
   const note = el('input', { type: 'text' });
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Приложи' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.confirm') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -227,7 +228,7 @@ function openStockDialog(ing, onDone) {
         note: note.value.trim() || null
       });
       closeDialog();
-      toast('Запасът е обновен.', 'success');
+      toast(t('msg.saved'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -235,14 +236,14 @@ function openStockDialog(ing, onDone) {
     }
   });
   openDialog({
-    title: `Корекция на запас — ${ing.name}`,
+    title: t('inventory.adjustTitle', { name: ing.name }),
     body: el('div', { className: 'stack' }, [
-      el('p', { className: 'muted', text: `Текущ запас: ${quantity(ing.stockQuantity)} ${ing.unit}` }),
-      field('Промяна (+/−)', quantityChange),
-      field('Бележка', note)
+      el('p', { className: 'muted', text: t('inventory.currentStock', { qty: quantity(ing.stockQuantity), unit: ing.unit }) }),
+      field(t('inventory.qtyChange'), quantityChange),
+      field(t('col.note'), note)
     ]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });

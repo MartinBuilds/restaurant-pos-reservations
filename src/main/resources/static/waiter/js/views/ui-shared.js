@@ -1,31 +1,38 @@
 import { clear, el } from '/operations/js/dom.js';
 import { statusLabel } from '/operations/js/format.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let opener = null;
 
 export function setPageMeta(title, subtitle) {
-  const t = document.getElementById('page-title');
+  const titleEl = document.getElementById('page-title');
   const s = document.getElementById('page-subtitle');
-  if (t) t.textContent = title;
+  if (titleEl) titleEl.textContent = title;
   if (s) s.textContent = subtitle;
+  document.title = `${title} — ${t('waiter.titleSuffix')}`;
 }
 
 export function badge(status) {
   return el('span', { className: `badge badge-${status || 'info'}`, text: `${statusLabel(status)} (${status || '—'})` });
 }
 
-export function loadingBox(text = 'Зареждане…') {
-  return el('div', { className: 'loading', text });
+export function loadingBox(text) {
+  return el('div', { className: 'loading', text: text || t('common.loading') });
 }
 
 export function emptyBox(text) {
-  return el('div', { className: 'empty', text });
+  return el('div', { className: 'empty', text: text || t('common.empty') });
 }
 
 export function errorBox(message, onRetry) {
   return el('div', { className: 'error-box stack' }, [
     el('p', { text: message }),
-    onRetry ? el('button', { type: 'button', className: 'btn btn-primary', onClick: onRetry, text: 'Опитай отново' }) : null
+    onRetry ? el('button', {
+      type: 'button',
+      className: 'btn btn-primary',
+      onClick: onRetry,
+      text: t('common.retry')
+    }) : null
   ]);
 }
 
@@ -36,7 +43,7 @@ export function openDialog({ title, body, footer, openerEl }) {
   const titleEl = document.getElementById('dialog-title');
   const bodyEl = document.getElementById('dialog-body');
   const footerEl = document.getElementById('dialog-footer');
-  titleEl.textContent = title || 'Диалог';
+  titleEl.textContent = title || t('common.dialog');
   clear(bodyEl);
   clear(footerEl);
   if (body) bodyEl.appendChild(body);

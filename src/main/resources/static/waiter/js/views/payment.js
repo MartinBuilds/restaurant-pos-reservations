@@ -3,27 +3,29 @@ import { el } from '/operations/js/dom.js';
 import { dateTime, money, text } from '/operations/js/format.js';
 import { handleError, toast } from '/operations/js/notifications.js';
 import { closeDialog, openDialog } from './ui-shared.js';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 function receiptView(payment) {
   const items = payment.items || [];
   return el('div', { className: 'stack' }, [
     el('div', { className: 'sim-note' }, [
-      el('strong', { text: 'Симулационно плащане' }),
-      el('p', { text: 'Това не е реален фискален бон или банкова транзакция.' })
+      el('strong', { text: t('payment.simulationWarning') })
     ]),
-    el('p', { text: `Бон: ${text(payment.receiptNumber)}` }),
-    el('p', { text: `Поръчка: ${text(payment.orderNumber)}` }),
-    el('p', { text: `Маса: ${text(payment.tableNumber)}` }),
-    el('p', { text: `Метод: ${text(payment.method)}` }),
-    el('p', { text: `Сума: ${money(payment.amount)}` }),
-    el('p', { text: `Обработено от: ${text(payment.processedByName)}` }),
-    el('p', { text: `Платено на: ${dateTime(payment.paidAt)}` }),
+    el('p', { text: t('payment.receipt', { number: text(payment.receiptNumber) }) }),
+    el('p', { text: t('payment.order', { number: text(payment.orderNumber) }) }),
+    el('p', { text: t('payment.table', { number: text(payment.tableNumber) }) }),
+    el('p', { text: t('payment.method', {
+      method: payment.method ? `${statusLabel(payment.method)} (${payment.method})` : '—'
+    }) }),
+    el('p', { text: t('payment.amount', { amount: money(payment.amount) }) }),
+    el('p', { text: t('payment.processedBy', { name: text(payment.processedByName) }) }),
+    el('p', { text: t('payment.paidAt', { time: dateTime(payment.paidAt) }) }),
     el('p', { text: `simulated=${payment.simulated === true ? 'true' : String(payment.simulated)}` }),
     el('div', { className: 'table-wrap' }, [
       el('table', { className: 'data' }, [
         el('thead', {}, [el('tr', {}, [
-          el('th', { text: 'Артикул' }), el('th', { text: 'Кол.' }),
-          el('th', { text: 'Ед. цена' }), el('th', { text: 'Ред' })
+          el('th', { text: t('col.item') }), el('th', { text: t('col.qtyShort') }),
+          el('th', { text: t('col.unitPrice') }), el('th', { text: t('col.lineTotal') })
         ])]),
         el('tbody', {}, items.map((it) => el('tr', {}, [
           el('td', { text: text(it.menuItemName) }),
@@ -38,9 +40,9 @@ function receiptView(payment) {
 
 export function showReceipt(payment, openerEl) {
   openDialog({
-    title: 'Симулационен бон',
+    title: t('page.payments.title'),
     body: receiptView(payment),
-    footer: el('button', { type: 'button', className: 'btn btn-primary', onClick: () => closeDialog(), text: 'Затвори' }),
+    footer: el('button', { type: 'button', className: 'btn btn-primary', onClick: () => closeDialog(), text: t('common.close') }),
     openerEl
   });
 }
@@ -52,24 +54,26 @@ export async function openPaymentDialog(order, { onDone, openerEl }) {
 
   const body = el('div', { className: 'stack' }, [
     el('div', { className: 'sim-note' }, [
-      el('strong', { text: 'Симулационно плащане' }),
-      el('p', { text: 'CASH и CARD са симулация. Няма данни за карта.' })
+      el('strong', { text: t('payment.simulationWarning') })
     ]),
-    el('p', { text: `Поръчка ${order.orderNumber} · сума ${money(order.totalAmount)}` }),
-    el('label', { className: 'row' }, [methodCash, el('span', { text: 'CASH — симулация' })]),
-    el('label', { className: 'row' }, [methodCard, el('span', { text: 'CARD — симулация' })])
+    el('p', { text: t('payment.orderSummary', {
+      number: order.orderNumber,
+      amount: money(order.totalAmount)
+    }) }),
+    el('label', { className: 'row' }, [methodCash, el('span', { text: `${statusLabel('CASH')} (CASH)` })]),
+    el('label', { className: 'row' }, [methodCard, el('span', { text: `${statusLabel('CARD')} (CARD)` })])
   ]);
 
-  const submitBtn = el('button', { type: 'button', className: 'btn btn-primary', text: 'Потвърди плащане' });
+  const submitBtn = el('button', { type: 'button', className: 'btn btn-primary', text: t('common.confirm') });
   submitBtn.addEventListener('click', async () => {
     if (submitting) return;
-    if (!window.confirm('Потвърждавате ли симулационното плащане?')) return;
+    if (!window.confirm(t('payment.simulationWarning'))) return;
     const method = methodCard.checked ? 'CARD' : 'CASH';
     submitting = true;
     submitBtn.disabled = true;
     try {
       const payment = await api.post(`/api/waiter/orders/${order.id}/payment`, { method });
-      toast('Плащането е записано.', 'success');
+      toast(t('msg.paymentSaved'), 'success');
       closeDialog();
       showReceipt(payment, openerEl);
       if (onDone) await onDone();
@@ -83,7 +87,7 @@ export async function openPaymentDialog(order, { onDone, openerEl }) {
         } catch { /* ignore */ }
         if (onDone) await onDone();
       } else {
-        handleError(err, 'Плащането неуспешно.');
+        handleError(err, t('payment.failed'));
       }
     } finally {
       submitting = false;
@@ -92,10 +96,10 @@ export async function openPaymentDialog(order, { onDone, openerEl }) {
   });
 
   openDialog({
-    title: 'Симулационно плащане',
+    title: t('action.pay'),
     body,
     footer: el('div', { className: 'actions' }, [
-      el('button', { type: 'button', className: 'btn', onClick: () => closeDialog(), text: 'Отказ' }),
+      el('button', { type: 'button', className: 'btn', onClick: () => closeDialog(), text: t('common.cancel') }),
       submitBtn
     ]),
     openerEl

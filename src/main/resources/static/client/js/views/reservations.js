@@ -3,23 +3,30 @@ import { clear, el } from '../dom.js';
 import { dateTime, text } from '../format.js';
 import { badge, emptyBox, errorBox, handleError, loadingBox, setBanner, setPageMeta } from '../ui.js';
 import { navigate } from '../router.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let abortController = null;
 
 function row(reservation) {
   return el('tr', {}, [
-    el('td', { 'data-label': 'Номер', text: text(reservation.reservationNumber) }),
-    el('td', { 'data-label': 'Маса', text: `${text(reservation.tableNumber)} — ${text(reservation.tableDisplayName)}` }),
-    el('td', { 'data-label': 'Начало', text: dateTime(reservation.startTime) }),
-    el('td', { 'data-label': 'Край', text: dateTime(reservation.endTime) }),
-    el('td', { 'data-label': 'Гости', text: text(reservation.guestCount) }),
-    el('td', { 'data-label': 'Статус' }, [badge(reservation.status)]),
-    el('td', { 'data-label': 'Бележки', className: 'wrap', text: reservation.notes ? text(reservation.notes) : '—' }),
-    el('td', { 'data-label': 'Действия' }, [
+    el('td', { 'data-label': t('col.number'), text: text(reservation.reservationNumber) }),
+    el('td', {
+      'data-label': t('col.table'),
+      text: t('label.tableNamed', {
+        number: text(reservation.tableNumber),
+        name: text(reservation.tableDisplayName)
+      })
+    }),
+    el('td', { 'data-label': t('col.start'), text: dateTime(reservation.startTime) }),
+    el('td', { 'data-label': t('col.end'), text: dateTime(reservation.endTime) }),
+    el('td', { 'data-label': t('msg.guests'), text: text(reservation.guestCount) }),
+    el('td', { 'data-label': t('col.status') }, [badge(reservation.status)]),
+    el('td', { 'data-label': t('col.notes'), className: 'wrap', text: reservation.notes ? text(reservation.notes) : '—' }),
+    el('td', { 'data-label': t('common.actions') }, [
       el('button', {
         type: 'button',
         className: 'btn btn-ghost btn-sm',
-        text: 'Детайли',
+        text: t('action.details'),
         onClick: () => navigate(`#/reservations/${reservation.id}`)
       })
     ])
@@ -32,15 +39,18 @@ function card(reservation) {
       el('h3', { className: 'wrap', text: text(reservation.reservationNumber) }),
       badge(reservation.status)
     ]),
-    el('p', { text: `Маса ${text(reservation.tableNumber)} — ${text(reservation.tableDisplayName)}` }),
+    el('p', { text: t('label.tableNamed', {
+      number: text(reservation.tableNumber),
+      name: text(reservation.tableDisplayName)
+    }) }),
     el('p', { text: `${dateTime(reservation.startTime)} – ${dateTime(reservation.endTime)}` }),
-    el('p', { text: `Гости: ${text(reservation.guestCount)}` }),
+    el('p', { text: `${t('msg.guests')}: ${text(reservation.guestCount)}` }),
     reservation.notes ? el('p', { className: 'wrap muted', text: text(reservation.notes) }) : null,
     el('div', { className: 'actions' }, [
       el('button', {
         type: 'button',
         className: 'btn btn-primary btn-sm',
-        text: 'Детайли',
+        text: t('action.details'),
         onClick: () => navigate(`#/reservations/${reservation.id}`)
       })
     ])
@@ -48,25 +58,25 @@ function card(reservation) {
 }
 
 export async function renderReservations(root) {
-  setPageMeta('Моите резервации', 'Списък със собствените ви резервации от сървъра.');
+  setPageMeta(t('page.myReservations.title'), t('page.myReservations.subtitle'));
   setBanner('');
   clear(root);
 
   if (abortController) abortController.abort();
   abortController = new AbortController();
-  root.appendChild(loadingBox('Зареждане на резервации…'));
+  root.appendChild(loadingBox(t('common.loading')));
 
   try {
     const list = await api.get('/api/client/reservations', { signal: abortController.signal });
     clear(root);
 
     if (!list || !list.length) {
-      root.appendChild(emptyBox('Все още нямате резервации.'));
+      root.appendChild(emptyBox(t('common.empty')));
       root.appendChild(el('div', { className: 'actions' }, [
         el('button', {
           type: 'button',
           className: 'btn btn-primary',
-          text: 'Нова резервация',
+          text: t('page.availability.title'),
           onClick: () => navigate('#/availability')
         })
       ]));
@@ -76,13 +86,13 @@ export async function renderReservations(root) {
     const table = el('table', { className: 'data-table desktop-only' }, [
       el('thead', {}, [
         el('tr', {}, [
-          el('th', { text: 'Номер' }),
-          el('th', { text: 'Маса' }),
-          el('th', { text: 'Начало' }),
-          el('th', { text: 'Край' }),
-          el('th', { text: 'Гости' }),
-          el('th', { text: 'Статус' }),
-          el('th', { text: 'Бележки' }),
+          el('th', { text: t('col.number') }),
+          el('th', { text: t('col.table') }),
+          el('th', { text: t('col.start') }),
+          el('th', { text: t('col.end') }),
+          el('th', { text: t('msg.guests') }),
+          el('th', { text: t('col.status') }),
+          el('th', { text: t('col.notes') }),
           el('th', { text: '' })
         ])
       ]),
@@ -94,7 +104,7 @@ export async function renderReservations(root) {
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     clear(root);
-    root.appendChild(errorBox(e.message || 'Грешка при зареждане.', () => renderReservations(root)));
+    root.appendChild(errorBox(e.message || t('common.error'), () => renderReservations(root)));
     handleError(e);
   }
 }

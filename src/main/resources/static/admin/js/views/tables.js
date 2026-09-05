@@ -3,6 +3,7 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field, confirmDialog
 } from '../ui.js';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const STATUSES = ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'OUT_OF_SERVICE'];
 
@@ -13,43 +14,44 @@ function statusBadge(status) {
     RESERVED: 'info',
     OUT_OF_SERVICE: 'danger'
   };
-  return badge(status || '—', map[status] || 'muted');
+  if (!status) return badge('—', 'muted');
+  return badge(`${statusLabel(status)} (${status})`, map[status] || 'muted');
 }
 
 export async function renderTables() {
-  setPageMeta('Маси', 'Номера, капацитет, статус и активност');
-  mount(loading());
+  setPageMeta(t('page.tables.title'), t('page.tables.subtitle'));
+  mount(loading(t('common.loading')));
   await reload();
 }
 
 async function reload() {
   try {
     const tables = await api.get('/api/admin/tables');
-    const rows = tables.map((t) => [
-      String(t.id),
-      String(t.tableNumber),
-      t.displayName || '—',
-      String(t.capacity),
-      statusBadge(t.status),
-      badge(t.active ? 'Активна' : 'Неактивна', t.active ? 'ok' : 'muted'),
+    const rows = tables.map((row) => [
+      String(row.id),
+      String(row.tableNumber),
+      row.displayName || '—',
+      String(row.capacity),
+      statusBadge(row.status),
+      badge(row.active ? t('common.active') : t('common.inactive'), row.active ? 'ok' : 'muted'),
       el('div', { className: 'row-actions' }, [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Редакция', onClick: () => openTableDialog(t, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Статус', onClick: () => openStatusDialog(t, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.edit'), onClick: () => openTableDialog(row, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.status'), onClick: () => openStatusDialog(row, () => reload()) }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t.active ? 'Деактивирай' : 'Активирай',
+          type: 'button', className: 'btn btn-secondary', text: row.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
-            if (t.active) {
+            if (row.active) {
               const ok = await confirmDialog({
-                title: 'Деактивиране на маса',
-                message: 'Деактивирането може да бъде блокирано при отворена поръчка или бъдеща резервация.',
-                confirmLabel: 'Деактивирай',
+                title: t('tables.deactivateTitle'),
+                message: t('tables.deactivateMsg'),
+                confirmLabel: t('common.confirm'),
                 danger: true
               });
               if (!ok) return;
             }
             try {
-              await api.patch(`/api/admin/tables/${t.id}/active`, { active: !t.active });
-              toast('Активността е обновена.', 'success');
+              await api.patch(`/api/admin/tables/${row.id}/active`, { active: !row.active });
+              toast(t('msg.statusUpdated'), 'success');
               await reload();
             } catch (err) { handleError(err); }
           }
@@ -57,13 +59,13 @@ async function reload() {
       ])
     ]);
 
-    mount(panel('Маси', [
+    mount(panel(t('page.tables.title'), [
       tables.length
-        ? table('Маси', ['ID', 'Номер', 'Име', 'Капацитет', 'Статус', 'Активна', 'Действия'], rows)
-        : emptyState('Няма маси.')
+        ? table(t('page.tables.title'), [t('col.id'), t('col.number'), t('col.name'), t('col.capacity'), t('col.status'), t('col.activeFem'), t('common.actions')], rows)
+        : emptyState(t('msg.tablesEmpty'))
     ], [
-      el('button', { type: 'button', className: 'btn', text: 'Нова маса', onClick: () => openTableDialog(null, () => reload()) }),
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Презареди', onClick: () => reload() })
+      el('button', { type: 'button', className: 'btn', text: t('action.newTable'), onClick: () => openTableDialog(null, () => reload()) }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
     ]));
   } catch (err) {
     mount(errorBox(handleError(err), () => reload()));
@@ -74,7 +76,7 @@ function openTableDialog(existing, onDone) {
   const tableNumber = el('input', { type: 'number', min: '1', value: existing?.tableNumber ?? '' });
   const displayName = el('input', { type: 'text', value: existing?.displayName || '' });
   const capacity = el('input', { type: 'number', min: '1', value: existing?.capacity ?? '' });
-  const submit = el('button', { type: 'button', className: 'btn', text: existing ? 'Запази' : 'Създай' });
+  const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -86,7 +88,7 @@ function openTableDialog(existing, onDone) {
       if (existing) await api.put(`/api/admin/tables/${existing.id}`, body);
       else await api.post('/api/admin/tables', body);
       closeDialog();
-      toast('Масата е записана.', 'success');
+      toast(existing ? t('msg.saved') : t('msg.created'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -94,14 +96,14 @@ function openTableDialog(existing, onDone) {
     }
   });
   openDialog({
-    title: existing ? 'Редакция на маса' : 'Нова маса',
+    title: existing ? t('tables.edit') : t('tables.new'),
     body: el('div', { className: 'stack' }, [
-      field('Номер', tableNumber),
-      field('Име', displayName),
-      field('Капацитет', capacity)
+      field(t('col.number'), tableNumber),
+      field(t('col.name'), displayName),
+      field(t('col.capacity'), capacity)
     ]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });
@@ -109,15 +111,15 @@ function openTableDialog(existing, onDone) {
 
 function openStatusDialog(tableRow, onDone) {
   const status = el('select', {}, STATUSES.map((s) => el('option', {
-    value: s, text: s, selected: tableRow.status === s ? 'true' : null
+    value: s, text: `${statusLabel(s)} (${s})`, selected: tableRow.status === s ? 'true' : null
   })));
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Запази статус' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
     if (status.value === 'OUT_OF_SERVICE') {
       const ok = await confirmDialog({
         title: 'OUT_OF_SERVICE',
-        message: 'Потвърдете преминаване към OUT_OF_SERVICE.',
-        confirmLabel: 'Потвърди',
+        message: t('tables.confirmOutOfService'),
+        confirmLabel: t('common.confirm'),
         danger: true
       });
       if (!ok) return;
@@ -126,7 +128,7 @@ function openStatusDialog(tableRow, onDone) {
     try {
       await api.patch(`/api/admin/tables/${tableRow.id}/status`, { status: status.value });
       closeDialog();
-      toast('Статусът е обновен.', 'success');
+      toast(t('msg.statusUpdated'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -134,10 +136,10 @@ function openStatusDialog(tableRow, onDone) {
     }
   });
   openDialog({
-    title: `Статус — маса ${tableRow.tableNumber}`,
-    body: field('Статус', status),
+    title: t('tables.statusTitle', { number: tableRow.tableNumber }),
+    body: field(t('col.status'), status),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });

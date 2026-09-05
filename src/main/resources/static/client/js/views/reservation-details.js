@@ -6,6 +6,7 @@ import {
   setBanner, setPageMeta, toast
 } from '../ui.js';
 import { navigate } from '../router.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let abortController = null;
 
@@ -17,7 +18,7 @@ function detailRow(label, valueNode) {
 }
 
 export async function renderReservationDetails(root, reservationId) {
-  setPageMeta('Детайли за резервация', 'Данни от REST за собствена резервация.');
+  setPageMeta(t('page.myReservations.title'), t('page.myReservations.subtitle'));
   setBanner('');
   clear(root);
 
@@ -32,9 +33,9 @@ export async function renderReservationDetails(root, reservationId) {
     if (e && e.name === 'AbortError') return;
     clear(root);
     if (e && e.status === 404) {
-      root.appendChild(errorBox('Резервацията не е намерена.', () => navigate('#/reservations')));
+      root.appendChild(errorBox(t('common.error'), () => navigate('#/reservations')));
     } else {
-      root.appendChild(errorBox(e.message || 'Грешка.', () => renderReservationDetails(root, reservationId)));
+      root.appendChild(errorBox(e.message || t('common.error'), () => renderReservationDetails(root, reservationId)));
       handleError(e);
     }
     return;
@@ -44,22 +45,25 @@ export async function renderReservationDetails(root, reservationId) {
   const canMutate = reservation.status === 'CONFIRMED';
 
   const dl = el('dl', { className: 'detail-list' }, [
-    detailRow('Номер', text(reservation.reservationNumber)),
-    detailRow('Статус', badge(reservation.status)),
-    detailRow('Маса', `Маса ${text(reservation.tableNumber)} — ${text(reservation.tableDisplayName)}`),
-    detailRow('Начало', dateTime(reservation.startTime)),
-    detailRow('Край', dateTime(reservation.endTime)),
-    detailRow('Гости', text(reservation.guestCount)),
-    detailRow('Бележки', reservation.notes ? text(reservation.notes) : '—'),
-    reservation.createdAt ? detailRow('Създадена', dateTime(reservation.createdAt)) : null,
-    reservation.updatedAt ? detailRow('Обновена', dateTime(reservation.updatedAt)) : null
+    detailRow(t('col.number'), text(reservation.reservationNumber)),
+    detailRow(t('col.status'), badge(reservation.status)),
+    detailRow(t('col.table'), t('label.tableNamed', {
+      number: text(reservation.tableNumber),
+      name: text(reservation.tableDisplayName)
+    })),
+    detailRow(t('col.start'), dateTime(reservation.startTime)),
+    detailRow(t('col.end'), dateTime(reservation.endTime)),
+    detailRow(t('msg.guests'), text(reservation.guestCount)),
+    detailRow(t('col.notes'), reservation.notes ? text(reservation.notes) : '—'),
+    reservation.createdAt ? detailRow(t('col.created'), dateTime(reservation.createdAt)) : null,
+    reservation.updatedAt ? detailRow(t('col.updated'), dateTime(reservation.updatedAt)) : null
   ].filter(Boolean));
 
   const actions = el('div', { className: 'actions' }, [
     el('button', {
       type: 'button',
       className: 'btn btn-ghost',
-      text: 'Към списъка',
+      text: t('common.back'),
       onClick: () => navigate('#/reservations')
     })
   ]);
@@ -69,13 +73,13 @@ export async function renderReservationDetails(root, reservationId) {
       el('button', {
         type: 'button',
         className: 'btn btn-primary',
-        text: 'Пренасрочи',
+        text: t('action.reschedule'),
         onClick: () => navigate(`#/reservations/${reservationId}/edit`)
       }),
       el('button', {
         type: 'button',
         className: 'btn btn-danger',
-        text: 'Откажи резервацията',
+        text: t('action.cancelReservation'),
         onClick: (ev) => confirmCancel(ev.currentTarget, reservation, root)
       })
     );
@@ -83,7 +87,7 @@ export async function renderReservationDetails(root, reservationId) {
 
   root.append(
     el('section', { className: 'detail-panel' }, [dl]),
-    el('p', { className: 'hint', text: 'Всички часове са в локалната часова зона на ресторанта.' }),
+    el('p', { className: 'hint', text: t('hint.localTimezone') }),
     actions
   );
 }
@@ -92,20 +96,23 @@ function confirmCancel(openerEl, reservation, root) {
   const confirmBtn = el('button', {
     type: 'button',
     className: 'btn btn-danger',
-    text: 'Потвърди отказ'
+    text: t('common.confirm')
   });
 
   openDialog({
-    title: 'Отказване на резервация',
+    title: t('action.cancelReservation'),
     body: el('div', { className: 'stack' }, [
-      el('p', { text: `Номер: ${text(reservation.reservationNumber)}` }),
+      el('p', { text: t('reservations.numberLabel', { number: text(reservation.reservationNumber) }) }),
       el('p', {
-        text: `Интервал: ${dateTime(reservation.startTime)} – ${dateTime(reservation.endTime)}`
+        text: t('reservations.intervalLabel', {
+          start: dateTime(reservation.startTime),
+          end: dateTime(reservation.endTime)
+        })
       }),
-      el('p', { text: 'Сигурни ли сте, че искате да откажете тази резервация?' })
+      el('p', { text: t('common.confirm') })
     ]),
     footer: el('div', { className: 'actions' }, [
-      el('button', { type: 'button', className: 'btn btn-ghost', text: 'Назад', onClick: closeDialog }),
+      el('button', { type: 'button', className: 'btn btn-ghost', text: t('common.back'), onClick: closeDialog }),
       confirmBtn
     ]),
     openerEl
@@ -116,7 +123,7 @@ function confirmCancel(openerEl, reservation, root) {
     try {
       await api.patch(`/api/client/reservations/${reservation.id}/cancel`);
       closeDialog();
-      toast('Резервацията е отказана.', 'success');
+      toast(t('msg.reservationCancelled'), 'success');
       await renderReservationDetails(root, reservation.id);
     } catch (e) {
       handleError(e);

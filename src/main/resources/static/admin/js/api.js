@@ -1,3 +1,5 @@
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+
 let csrfHeaderName = 'X-CSRF-TOKEN';
 let csrfToken = null;
 let csrfLoaded = false;
@@ -15,13 +17,13 @@ function extractMessage(status, body) {
   if (body && typeof body.message === 'string' && body.message.trim()) {
     return body.message;
   }
-  if (status === 400) return 'Невалидни входни данни или липсващи параметри.';
-  if (status === 401) return 'Сесията липсва или е изтекла.';
-  if (status === 403) return 'Нямате достъп или сесията/CSRF токенът е невалиден.';
-  if (status === 404) return 'Ресурсът не е намерен.';
-  if (status === 409) return 'Операцията е в конфликт с текущото състояние.';
-  if (status >= 500) return 'Възникна неочаквана сървърна грешка.';
-  return `Заявката неуспешна (${status}).`;
+  if (status === 400) return t('error.http400');
+  if (status === 401) return t('error.session');
+  if (status === 403) return t('error.http403');
+  if (status === 404) return t('error.http404');
+  if (status === 409) return t('error.http409');
+  if (status >= 500) return t('error.http5xx');
+  return t('error.requestFailed', { status });
 }
 
 async function parseBody(response) {
@@ -43,7 +45,7 @@ export async function loadCsrf() {
   });
   if (response.status === 401) {
     window.location.assign('/login');
-    throw new ApiClientError(401, 'Сесията липсва или е изтекла.');
+    throw new ApiClientError(401, t('error.session'));
   }
   if (!response.ok) {
     const body = await parseBody(response);
@@ -89,12 +91,12 @@ export async function apiRequest(method, url, { body, signal, headers } = {}) {
     });
   } catch (err) {
     if (err && err.name === 'AbortError') throw err;
-    throw new ApiClientError(0, 'Мрежова грешка при заявката.');
+    throw new ApiClientError(0, t('error.network'));
   }
 
   if (response.status === 401) {
     window.location.assign('/login');
-    throw new ApiClientError(401, 'Сесията липсва или е изтекла.');
+    throw new ApiClientError(401, t('error.session'));
   }
 
   const parsed = await parseBody(response);

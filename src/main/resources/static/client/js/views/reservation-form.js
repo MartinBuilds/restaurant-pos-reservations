@@ -1,11 +1,12 @@
 import { api } from '../api.js';
 import { clear, el } from '../dom.js';
-import { dateTime, text, toDateTimeLocalValue } from '../format.js';
+import { text, toDateTimeLocalValue } from '../format.js';
 import {
   badge, closeDialog, errorBox, handleError, loadingBox, openDialog,
   setBanner, setPageMeta, toast
 } from '../ui.js';
 import { navigate } from '../router.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const NOTES_MAX = 500;
 
@@ -17,28 +18,29 @@ function parseHashQuery() {
 }
 
 function validate(start, end, guestCount, diningTableId) {
-  if (!diningTableId) return 'Изберете маса.';
-  if (!start || !end || !guestCount) return 'Всички задължителни полета трябва да са попълнени.';
-  if (start >= end) return 'Началото трябва да е преди края.';
+  if (!diningTableId) return t('msg.requiredFields');
+  if (!start || !end || !guestCount) return t('msg.requiredFields');
+  if (start >= end) return t('msg.startBeforeEnd');
   const n = Number(guestCount);
-  if (!Number.isInteger(n) || n < 1) return 'Броят гости трябва да е положително цяло число.';
+  if (!Number.isInteger(n) || n < 1) return t('msg.guestCountInvalid');
   return null;
 }
 
 export async function renderCreateForm(root) {
-  setPageMeta('Създаване на резервация', 'Попълнете данните и потвърдете. Client identity идва от сесията.');
+  setPageMeta(t('action.createReservation'), t('page.availability.subtitle'));
   setBanner('');
   clear(root);
 
   const q = parseHashQuery();
   const diningTableId = q.get('diningTableId') || '';
-  const tableLabel = [q.get('tableNumber'), q.get('displayName')].filter(Boolean).join(' — ') || 'избрана от търсенето';
+  const tableLabel = [q.get('tableNumber'), q.get('displayName')].filter(Boolean).join(' — ')
+    || t('reservations.tableFromSearch');
   const start = toDateTimeLocalValue(q.get('startTime') || '');
   const end = toDateTimeLocalValue(q.get('endTime') || '');
   const guests = q.get('guestCount') || '2';
 
   if (!diningTableId) {
-    root.appendChild(errorBox('Няма избрана маса. Първо потърсете свободни маси.', () => navigate('#/availability')));
+    root.appendChild(errorBox(t('msg.requiredFields'), () => navigate('#/availability')));
     return;
   }
 
@@ -49,36 +51,39 @@ export async function renderCreateForm(root) {
   const notesInput = el('textarea', { id: 'cr-notes', rows: '3', maxlength: String(NOTES_MAX) });
   const tableIdHidden = el('input', { type: 'hidden', id: 'cr-table-id', value: diningTableId });
   const fieldError = el('p', { className: 'field-error', id: 'cr-error', hidden: true });
-  const submitBtn = el('button', { type: 'submit', className: 'btn btn-primary', text: 'Създай резервация' });
-  const progress = el('p', { className: 'muted', id: 'cr-progress', hidden: true, text: 'Изпращане…' });
+  const submitBtn = el('button', { type: 'submit', className: 'btn btn-primary', text: t('action.createReservation') });
+  const progress = el('p', { className: 'muted', id: 'cr-progress', hidden: true, text: t('common.loading') });
 
   form.append(
     el('div', { className: 'field' }, [
-      el('label', { text: 'Маса' }),
-      el('p', { className: 'readonly', text: `Маса ${tableLabel} (id ${diningTableId})` }),
+      el('label', { text: t('col.table') }),
+      el('p', {
+        className: 'readonly',
+        text: t('label.tableWithId', { label: tableLabel, id: diningTableId })
+      }),
       tableIdHidden
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'cr-start', text: 'Начало *' }),
+      el('label', { for: 'cr-start', text: t('col.startRequired') }),
       startInput,
-      el('p', { className: 'hint', text: 'Всички часове са в локалната часова зона на ресторанта.' })
+      el('p', { className: 'hint', text: t('hint.localTimezone') })
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'cr-end', text: 'Край *' }),
+      el('label', { for: 'cr-end', text: t('col.endRequired') }),
       endInput
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'cr-guests', text: 'Брой гости *' }),
+      el('label', { for: 'cr-guests', text: `${t('msg.guests')} *` }),
       guestInput
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'cr-notes', text: `Бележки (по избор, макс. ${NOTES_MAX})` }),
+      el('label', { for: 'cr-notes', text: t('col.notesOptionalMax', { max: NOTES_MAX }) }),
       notesInput
     ]),
     fieldError,
     progress,
     el('div', { className: 'actions' }, [
-      el('button', { type: 'button', className: 'btn btn-ghost', text: 'Назад към търсене', onClick: () => navigate('#/availability') }),
+      el('button', { type: 'button', className: 'btn btn-ghost', text: t('common.back'), onClick: () => navigate('#/availability') }),
       submitBtn
     ])
   );
@@ -108,30 +113,30 @@ export async function renderCreateForm(root) {
       if (notes) body.notes = notes;
 
       const created = await api.post('/api/client/reservations', body);
-      toast(`Резервацията е създадена: ${created.reservationNumber || created.id}`, 'success');
+      toast(t('msg.reservationCreated'), 'success');
       navigate(`#/reservations/${created.id}`);
     } catch (e) {
       if (e && e.status === 409) {
-        fieldError.textContent = e.message || 'Интервалът вече не е свободен.';
+        fieldError.textContent = e.message || t('common.error');
         fieldError.hidden = false;
         setBanner(e.message, 'error');
         openDialog({
-          title: 'Конфликт на резервация',
-          body: el('p', { text: e.message || 'Интервалът вече не е свободен. Потърсете отново свободни маси.' }),
+          title: t('common.error'),
+          body: el('p', { text: e.message || t('common.error') }),
           footer: el('div', { className: 'actions' }, [
             el('button', {
               type: 'button',
               className: 'btn btn-primary',
-              text: 'Ново търсене',
+              text: t('action.search'),
               onClick: () => { closeDialog(); navigate('#/availability'); }
             }),
-            el('button', { type: 'button', className: 'btn btn-ghost', text: 'Затвори', onClick: closeDialog })
+            el('button', { type: 'button', className: 'btn btn-ghost', text: t('common.close'), onClick: closeDialog })
           ]),
           openerEl: submitBtn
         });
       } else {
         handleError(e);
-        fieldError.textContent = e.message || 'Грешка при създаване.';
+        fieldError.textContent = e.message || t('common.error');
         fieldError.hidden = false;
       }
     } finally {
@@ -142,7 +147,7 @@ export async function renderCreateForm(root) {
 }
 
 export async function renderEditForm(root, reservationId) {
-  setPageMeta('Пренасрочване', 'Промяна на бъдеща потвърдена резервация.');
+  setPageMeta(t('action.reschedule'), t('page.myReservations.subtitle'));
   setBanner('');
   clear(root);
   root.appendChild(loadingBox());
@@ -153,9 +158,9 @@ export async function renderEditForm(root, reservationId) {
   } catch (e) {
     clear(root);
     if (e && e.status === 404) {
-      root.appendChild(errorBox('Резервацията не е намерена.', () => navigate('#/reservations')));
+      root.appendChild(errorBox(t('common.error'), () => navigate('#/reservations')));
     } else {
-      root.appendChild(errorBox(e.message || 'Грешка.', () => renderEditForm(root, reservationId)));
+      root.appendChild(errorBox(e.message || t('common.error'), () => renderEditForm(root, reservationId)));
       handleError(e);
     }
     return;
@@ -163,7 +168,7 @@ export async function renderEditForm(root, reservationId) {
 
   clear(root);
   if (reservation.status !== 'CONFIRMED') {
-    root.appendChild(errorBox('Редакцията е достъпна само за потвърдени резервации.', () => navigate(`#/reservations/${reservationId}`)));
+    root.appendChild(errorBox(t('common.error'), () => navigate(`#/reservations/${reservationId}`)));
     return;
   }
 
@@ -198,38 +203,44 @@ export async function renderEditForm(root, reservationId) {
   const notesInput = el('textarea', { id: 'ed-notes', rows: '3', maxlength: String(NOTES_MAX) });
   notesInput.value = reservation.notes || '';
   const fieldError = el('p', { className: 'field-error', hidden: true });
-  const submitBtn = el('button', { type: 'submit', className: 'btn btn-primary', text: 'Запази промените' });
-  const progress = el('p', { className: 'muted', hidden: true, text: 'Запазване…' });
+  const submitBtn = el('button', { type: 'submit', className: 'btn btn-primary', text: t('common.save') });
+  const progress = el('p', { className: 'muted', hidden: true, text: t('common.loading') });
 
   form.append(
     el('div', { className: 'field' }, [
-      el('label', { text: 'Номер' }),
+      el('label', { text: t('col.number') }),
       el('p', { className: 'readonly', text: text(reservation.reservationNumber) })
     ]),
     el('div', { className: 'field' }, [
-      el('label', { text: 'Статус' }),
+      el('label', { text: t('col.status') }),
       badge(reservation.status)
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'ed-table-id', text: 'ID на маса *' }),
+      el('label', { for: 'ed-table-id', text: t('col.tableIdRequired') }),
       tableIdInput,
-      el('p', { className: 'hint', text: `Текуща: маса ${text(reservation.tableNumber)} — ${text(reservation.tableDisplayName)}` })
+      el('p', {
+        className: 'hint',
+        text: t('reservations.currentTable', {
+          number: text(reservation.tableNumber),
+          name: text(reservation.tableDisplayName)
+        })
+      })
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'ed-start', text: 'Начало *' }),
+      el('label', { for: 'ed-start', text: t('col.startRequired') }),
       startInput,
-      el('p', { className: 'hint', text: 'Всички часове са в локалната часова зона на ресторанта.' })
+      el('p', { className: 'hint', text: t('hint.localTimezone') })
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'ed-end', text: 'Край *' }),
+      el('label', { for: 'ed-end', text: t('col.endRequired') }),
       endInput
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'ed-guests', text: 'Брой гости *' }),
+      el('label', { for: 'ed-guests', text: `${t('msg.guests')} *` }),
       guestInput
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'ed-notes', text: `Бележки (макс. ${NOTES_MAX})` }),
+      el('label', { for: 'ed-notes', text: t('col.notesMax', { max: NOTES_MAX }) }),
       notesInput
     ]),
     fieldError,
@@ -238,13 +249,13 @@ export async function renderEditForm(root, reservationId) {
       el('button', {
         type: 'button',
         className: 'btn btn-ghost',
-        text: 'Към търсене на маси',
+        text: t('action.search'),
         onClick: () => navigate('#/availability')
       }),
       el('button', {
         type: 'button',
         className: 'btn btn-ghost',
-        text: 'Отказ',
+        text: t('common.cancel'),
         onClick: () => navigate(`#/reservations/${reservationId}`)
       }),
       submitBtn
@@ -275,11 +286,11 @@ export async function renderEditForm(root, reservationId) {
         notes: notes || null
       };
       await api.put(`/api/client/reservations/${reservationId}`, body);
-      toast('Резервацията е обновена.', 'success');
+      toast(t('msg.reservationUpdated'), 'success');
       navigate(`#/reservations/${reservationId}`);
     } catch (e) {
       handleError(e);
-      fieldError.textContent = e.message || 'Грешка при обновяване.';
+      fieldError.textContent = e.message || t('common.error');
       fieldError.hidden = false;
     } finally {
       submitBtn.disabled = false;

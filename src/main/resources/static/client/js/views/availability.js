@@ -1,8 +1,9 @@
 import { api, queryString } from '../api.js';
 import { clear, el } from '../dom.js';
 import { dateTime, text } from '../format.js';
-import { emptyBox, errorBox, handleError, loadingBox, setBanner, setPageMeta, toast } from '../ui.js';
+import { emptyBox, errorBox, handleError, loadingBox, setBanner, setPageMeta } from '../ui.js';
 import { navigate } from '../router.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let abortController = null;
 
@@ -22,36 +23,38 @@ function defaultEnd(start) {
 }
 
 function validate(start, end, guestCount) {
-  if (!start || !end || !guestCount) return 'Всички полета са задължителни.';
-  if (start >= end) return 'Началото трябва да е преди края.';
+  if (!start || !end || !guestCount) return t('msg.requiredFields');
+  if (start >= end) return t('msg.startBeforeEnd');
   const n = Number(guestCount);
-  if (!Number.isInteger(n) || n < 1) return 'Броят гости трябва да е положително цяло число.';
+  if (!Number.isInteger(n) || n < 1) return t('msg.guestCountInvalid');
   return null;
 }
 
 function renderResults(host, data) {
   const meta = el('div', { className: 'meta-row' }, [
-    el('span', { text: `Период: ${dateTime(data.startTime)} – ${dateTime(data.endTime)}` }),
-    el('span', { text: `Гости: ${text(data.guestCount)}` })
+    el('span', { text: `${t('msg.period')}: ${dateTime(data.startTime)} – ${dateTime(data.endTime)}` }),
+    el('span', { text: `${t('msg.guests')}: ${text(data.guestCount)}` })
   ]);
   host.appendChild(meta);
 
   const tables = data.availableTables || [];
   if (!tables.length) {
-    host.appendChild(emptyBox('Няма свободни маси за избрания период и брой гости.'));
+    host.appendChild(emptyBox(t('msg.noResults')));
     return;
   }
+
+  host.appendChild(el('p', { className: 'muted', text: t('msg.availableTables') }));
 
   const cards = el('div', { className: 'card-grid' });
   tables.forEach((table) => {
     const card = el('article', { className: 'card' }, [
-      el('h3', { text: `Маса ${text(table.tableNumber)}` }),
+      el('h3', { text: t('label.table', { number: text(table.tableNumber) }) }),
       el('p', { className: 'muted', text: text(table.displayName) }),
-      el('p', { text: `Капацитет: ${text(table.capacity)}` }),
+      el('p', { text: t('label.capacity', { n: text(table.capacity) }) }),
       el('button', {
         type: 'button',
         className: 'btn btn-primary',
-        text: 'Резервирай',
+        text: t('action.book'),
         onClick: () => {
           const params = new URLSearchParams({
             diningTableId: String(table.diningTableId),
@@ -71,7 +74,7 @@ function renderResults(host, data) {
 }
 
 export async function renderAvailability(root) {
-  setPageMeta('Нова резервация', 'Търсене на свободни маси за избран период и брой гости.');
+  setPageMeta(t('page.availability.title'), t('page.availability.subtitle'));
   setBanner('');
   clear(root);
 
@@ -85,21 +88,21 @@ export async function renderAvailability(root) {
 
   form.append(
     el('div', { className: 'field' }, [
-      el('label', { for: 'av-start', text: 'Начало *' }),
+      el('label', { for: 'av-start', text: t('col.startRequired') }),
       startInput,
-      el('p', { className: 'hint', text: 'Всички часове са в локалната часова зона на ресторанта.' })
+      el('p', { className: 'hint', text: t('hint.localTimezone') })
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'av-end', text: 'Край *' }),
+      el('label', { for: 'av-end', text: t('col.endRequired') }),
       endInput
     ]),
     el('div', { className: 'field' }, [
-      el('label', { for: 'av-guests', text: 'Брой гости *' }),
+      el('label', { for: 'av-guests', text: `${t('msg.guests')} *` }),
       guestInput
     ]),
     fieldError,
     el('div', { className: 'actions' }, [
-      el('button', { type: 'submit', className: 'btn btn-primary', text: 'Търси свободни маси' })
+      el('button', { type: 'submit', className: 'btn btn-primary', text: t('action.search') })
     ])
   );
 
@@ -122,7 +125,7 @@ export async function renderAvailability(root) {
     if (abortController) abortController.abort();
     abortController = new AbortController();
     clear(results);
-    results.appendChild(loadingBox('Търсене на свободни маси…'));
+    results.appendChild(loadingBox(t('common.loading')));
 
     try {
       const data = await api.get(
@@ -134,7 +137,7 @@ export async function renderAvailability(root) {
     } catch (e) {
       if (e && e.name === 'AbortError') return;
       clear(results);
-      results.appendChild(errorBox(e.message || 'Грешка при търсене.', () => form.requestSubmit()));
+      results.appendChild(errorBox(e.message || t('common.error'), () => form.requestSubmit()));
       handleError(e);
     }
   });

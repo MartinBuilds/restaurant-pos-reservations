@@ -1,3 +1,5 @@
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+
 let csrfHeaderName = 'X-CSRF-TOKEN';
 let csrfParameterName = '_csrf';
 let csrfToken = null;
@@ -33,12 +35,12 @@ export async function loadCsrf() {
     headers: { Accept: 'application/json' }
   });
   if (response.status === 401) {
-    const err = new Error('Сесията липсва или е изтекла.');
+    const err = new Error(t('error.session'));
     err.status = 401;
     throw err;
   }
   if (!response.ok) {
-    const err = new Error('Неуспешно зареждане на CSRF токен.');
+    const err = new Error(t('session.csrfError'));
     err.status = response.status;
     throw err;
   }

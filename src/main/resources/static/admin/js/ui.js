@@ -1,4 +1,5 @@
 import { ApiClientError } from './api.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const content = () => document.getElementById('content');
 const toastRegion = () => document.getElementById('toast-region');
@@ -15,7 +16,7 @@ let escapeHandler = null;
 export function setPageMeta(title, subtitle) {
   document.getElementById('page-title').textContent = title;
   document.getElementById('page-subtitle').textContent = subtitle || '';
-  document.title = `${title} — Администрация`;
+  document.title = `${title} — ${t('admin.titleSuffix')}`;
 }
 
 export function clear(node) {
@@ -57,8 +58,8 @@ export function mount(viewRoot) {
   root.focus({ preventScroll: true });
 }
 
-export function loading(message = 'Зареждане...') {
-  return el('div', { className: 'loading', role: 'status' }, message);
+export function loading(message) {
+  return el('div', { className: 'loading', role: 'status' }, message || t('common.loading'));
 }
 
 export function emptyState(message, action) {
@@ -76,7 +77,7 @@ export function errorBox(message, onRetry) {
       type: 'button',
       className: 'btn btn-secondary',
       onClick: onRetry,
-      text: 'Опитай отново'
+      text: t('common.retry')
     }));
   }
   return box;
@@ -158,12 +159,12 @@ export function closeDialog() {
   }
 }
 
-export function confirmDialog({ title, message, confirmLabel = 'Потвърди', danger = false }) {
+export function confirmDialog({ title, message, confirmLabel, danger = false }) {
   return new Promise((resolve) => {
     const confirmBtn = el('button', {
       type: 'button',
       className: danger ? 'btn btn-danger' : 'btn',
-      text: confirmLabel,
+      text: confirmLabel || t('common.confirm'),
       onClick: () => {
         closeDialog();
         resolve(true);
@@ -172,7 +173,7 @@ export function confirmDialog({ title, message, confirmLabel = 'Потвърди
     const cancelBtn = el('button', {
       type: 'button',
       className: 'btn btn-secondary',
-      text: 'Отказ',
+      text: t('common.cancel'),
       onClick: () => {
         closeDialog();
         resolve(false);
@@ -187,9 +188,9 @@ export function confirmDialog({ title, message, confirmLabel = 'Потвърди
   });
 }
 
-export function handleError(err, fallback = 'Възникна грешка.') {
+export function handleError(err, fallback) {
   if (err && err.name === 'AbortError') return;
-  const message = err instanceof ApiClientError ? err.message : fallback;
+  const message = err instanceof ApiClientError ? err.message : (fallback || t('common.error'));
   toast(message, 'error');
   return message;
 }

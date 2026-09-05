@@ -5,29 +5,30 @@ import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { openAddItemsDialog } from './order-form.js';
 import { openPaymentDialog, showReceipt } from './payment.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let abort = null;
 
 async function markServed(order, btn, reload) {
-  if (!window.confirm(`Маркиране на ${order.orderNumber} като SERVED?`)) return;
+  if (!window.confirm(t('orders.confirmServe', { number: order.orderNumber }))) return;
   btn.disabled = true;
   try {
     await api.patch(`/api/waiter/orders/${order.id}/status`, { status: 'SERVED' });
-    toast('Поръчката е маркирана като сервирана.', 'success');
+    toast(t('msg.orderServed'), 'success');
     await reload();
   } catch (err) {
     if (err instanceof ApiClientError && err.status === 409) {
       handleError(err);
       await reload();
     } else {
-      handleError(err, 'Статусът не беше обновен.');
+      handleError(err, t('msg.statusNotUpdated'));
       btn.disabled = false;
     }
   }
 }
 
 export async function renderOrders() {
-  setPageMeta('Поръчки', 'Отворени поръчки, сервиране и плащане');
+  setPageMeta(t('page.orders.title'), t('page.orders.subtitle'));
   const content = document.getElementById('content');
   clear(content);
   content.appendChild(loadingBox());
@@ -39,7 +40,7 @@ export async function renderOrders() {
     clear(content);
     setBanner('');
     if (!orders || !orders.length) {
-      content.appendChild(emptyBox('Няма отворени поръчки.'));
+      content.appendChild(emptyBox(t('msg.ordersEmpty')));
       return;
     }
     const list = el('div', { className: 'stack' });
@@ -48,7 +49,7 @@ export async function renderOrders() {
       const actions = el('div', { className: 'actions' });
 
       if (!order.closed && (order.status === 'ACCEPTED' || order.status === 'COOKING' || order.status === 'READY')) {
-        const addBtn = el('button', { type: 'button', className: 'btn', text: 'Добави артикули' });
+        const addBtn = el('button', { type: 'button', className: 'btn', text: t('action.addItems') });
         addBtn.addEventListener('click', () => openAddItemsDialog(order, {
           openerEl: addBtn,
           onDone: () => renderOrders()
@@ -57,13 +58,13 @@ export async function renderOrders() {
       }
 
       if (order.status === 'READY' && !order.closed) {
-        const serveBtn = el('button', { type: 'button', className: 'btn btn-accent btn-lg', text: 'Маркирай като сервирана' });
+        const serveBtn = el('button', { type: 'button', className: 'btn btn-accent btn-lg', text: t('action.serve') });
         serveBtn.addEventListener('click', () => markServed(order, serveBtn, () => renderOrders()));
         actions.appendChild(serveBtn);
       }
 
       if (order.status === 'SERVED' && order.closed === false) {
-        const payBtn = el('button', { type: 'button', className: 'btn btn-primary btn-lg', text: 'Плащане (симулация)' });
+        const payBtn = el('button', { type: 'button', className: 'btn btn-primary btn-lg', text: t('action.pay') });
         payBtn.addEventListener('click', () => openPaymentDialog(order, {
           openerEl: payBtn,
           onDone: () => renderOrders()
@@ -72,13 +73,13 @@ export async function renderOrders() {
       }
 
       if (order.closed === true) {
-        const receiptBtn = el('button', { type: 'button', className: 'btn', text: 'Виж бон' });
+        const receiptBtn = el('button', { type: 'button', className: 'btn', text: t('action.viewReceipt') });
         receiptBtn.addEventListener('click', async () => {
           try {
             const payment = await api.get(`/api/waiter/orders/${order.id}/payment`);
             showReceipt(payment, receiptBtn);
           } catch (err) {
-            handleError(err, 'Бонът не е намерен.');
+            handleError(err, t('orders.receiptNotFound'));
           }
         });
         actions.appendChild(receiptBtn);
@@ -88,15 +89,18 @@ export async function renderOrders() {
         el('div', { className: 'panel-header' }, [
           el('div', {}, [
             el('h2', { text: text(order.orderNumber) }),
-            el('p', { className: 'muted', text: `Маса ${text(order.tableNumber)} · ${dateTime(order.createdAt)}` })
+            el('p', { className: 'muted', text: t('label.tableMeta', {
+              table: text(order.tableNumber),
+              time: dateTime(order.createdAt)
+            }) })
           ]),
           badge(order.status)
         ]),
         el('div', { className: 'table-wrap' }, [
           el('table', { className: 'data' }, [
             el('thead', {}, [el('tr', {}, [
-              el('th', { text: 'Артикул' }), el('th', { text: 'Кол.' }),
-              el('th', { text: 'Ед. цена' }), el('th', { text: 'Ред' })
+              el('th', { text: t('col.item') }), el('th', { text: t('col.qtyShort') }),
+              el('th', { text: t('col.unitPrice') }), el('th', { text: t('col.lineTotal') })
             ])]),
             el('tbody', {}, items.map((it) => el('tr', {}, [
               el('td', { text: text(it.menuItemName) }),
@@ -106,7 +110,10 @@ export async function renderOrders() {
             ])))
           ])
         ]),
-        el('p', { text: `Общо: ${money(order.totalAmount)} · closed=${order.closed}` }),
+        el('p', { text: t('orders.totalClosed', {
+          total: money(order.totalAmount),
+          closed: order.closed
+        }) }),
         actions
       ]));
     });
@@ -114,7 +121,7 @@ export async function renderOrders() {
   } catch (err) {
     if (err && err.name === 'AbortError') return;
     clear(content);
-    handleError(err, 'Поръчките не можаха да се заредят.');
-    content.appendChild(errorBox(err.message || 'Грешка', () => renderOrders()));
+    handleError(err, t('orders.loadError'));
+    content.appendChild(errorBox(err.message || t('common.error'), () => renderOrders()));
   }
 }

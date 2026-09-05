@@ -3,6 +3,7 @@ import { clear, el } from '/operations/js/dom.js';
 import { dateTime, text, toLocalDateTimeInputValue } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let abort = null;
 
@@ -18,7 +19,7 @@ function defaultRange() {
 }
 
 export async function renderReservations() {
-  setPageMeta('Резервации', 'Read-only график (Europe/Sofia LocalDateTime, без timezone offset)');
+  setPageMeta(t('page.reservations.title'), t('page.reservations.waiterSubtitle'));
   const content = document.getElementById('content');
   clear(content);
 
@@ -27,11 +28,14 @@ export async function renderReservations() {
   const toInput = el('input', { type: 'datetime-local', id: 'res-to', value: range.to });
   const tableInput = el('input', { type: 'number', id: 'res-table', min: '1', placeholder: 'tableId' });
   const statusInput = el('select', { id: 'res-status' }, [
-    el('option', { value: '', text: 'Всички статуси' }),
-    ...['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].map((s) => el('option', { value: s, text: s }))
+    el('option', { value: '', text: t('filter.allStatuses') }),
+    ...['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].map((s) => el('option', {
+      value: s,
+      text: `${statusLabel(s)} (${s})`
+    }))
   ]);
   const resultHost = el('div', { id: 'res-results' });
-  const loadBtn = el('button', { type: 'button', className: 'btn btn-primary', text: 'Зареди' });
+  const loadBtn = el('button', { type: 'button', className: 'btn btn-primary', text: t('action.reload') });
 
   const load = async () => {
     clear(resultHost);
@@ -49,14 +53,14 @@ export async function renderReservations() {
       clear(resultHost);
       setBanner('');
       if (!rows || !rows.length) {
-        resultHost.appendChild(emptyBox('Няма резервации за периода.'));
+        resultHost.appendChild(emptyBox(t('msg.noResults')));
         return;
       }
       resultHost.appendChild(el('div', { className: 'table-wrap' }, [
         el('table', { className: 'data' }, [
           el('thead', {}, [el('tr', {}, [
-            el('th', { text: 'Номер' }), el('th', { text: 'Маса' }), el('th', { text: 'Клиент' }),
-            el('th', { text: 'Начало' }), el('th', { text: 'Край' }), el('th', { text: 'Гости' }), el('th', { text: 'Статус' })
+            el('th', { text: t('col.number') }), el('th', { text: t('col.table') }), el('th', { text: t('col.client') }),
+            el('th', { text: t('col.start') }), el('th', { text: t('col.end') }), el('th', { text: t('msg.guests') }), el('th', { text: t('col.status') })
           ])]),
           el('tbody', {}, rows.map((r) => el('tr', {}, [
             el('td', { text: text(r.reservationNumber) }),
@@ -72,18 +76,18 @@ export async function renderReservations() {
     } catch (err) {
       if (err && err.name === 'AbortError') return;
       clear(resultHost);
-      handleError(err, 'Графикът не можа да се зареди.');
-      resultHost.appendChild(errorBox(err.message || 'Грешка', load));
+      handleError(err, t('reservations.scheduleLoadError'));
+      resultHost.appendChild(errorBox(err.message || t('common.error'), load));
     }
   };
 
   loadBtn.addEventListener('click', () => { load(); });
 
   content.appendChild(el('div', { className: 'panel stack' }, [
-    el('p', { className: 'muted', text: 'Само преглед. Няма create/update/cancel от сервитьорския UI. Часовете се изпращат като LocalDateTime без Z.' }),
+    el('p', { className: 'muted', text: t('reservations.waiterReadonlyNote') }),
     el('div', { className: 'grid grid-filters' }, [
-      el('label', { className: 'field' }, [el('span', { text: 'От' }), fromInput]),
-      el('label', { className: 'field' }, [el('span', { text: 'До' }), toInput]),
+      el('label', { className: 'field' }, [el('span', { text: t('col.from') }), fromInput]),
+      el('label', { className: 'field' }, [el('span', { text: t('col.to') }), toInput]),
       el('label', { className: 'field' }, [el('span', { text: 'tableId' }), tableInput]),
       el('label', { className: 'field' }, [el('span', { text: 'status' }), statusInput])
     ]),

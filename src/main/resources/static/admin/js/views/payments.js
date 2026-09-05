@@ -4,10 +4,11 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, handleError, field
 } from '../ui.js';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 export async function renderPayments() {
-  setPageMeta('Плащания', 'Read-only история на симулационни CASH/CARD плащания');
-  mount(loading());
+  setPageMeta(t('page.payments.title'), t('page.payments.subtitle'));
+  mount(loading(t('common.loading')));
   await reload({});
 }
 
@@ -15,9 +16,9 @@ async function reload(filters) {
   try {
     const payments = await api.get(`/api/admin/payments${queryString(filters)}`);
     const method = el('select', {}, [
-      el('option', { value: '', text: 'Всички методи' }),
-      el('option', { value: 'CASH', text: 'CASH', selected: filters.method === 'CASH' ? 'true' : null }),
-      el('option', { value: 'CARD', text: 'CARD', selected: filters.method === 'CARD' ? 'true' : null })
+      el('option', { value: '', text: t('filter.allMethods') }),
+      el('option', { value: 'CASH', text: `${statusLabel('CASH')} (CASH)`, selected: filters.method === 'CASH' ? 'true' : null }),
+      el('option', { value: 'CARD', text: `${statusLabel('CARD')} (CARD)`, selected: filters.method === 'CARD' ? 'true' : null })
     ]);
     const from = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
     const to = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
@@ -26,29 +27,28 @@ async function reload(filters) {
     const rows = payments.map((p) => [
       p.receiptNumber || '—',
       p.orderNumber || String(p.orderId),
-      badge(p.method || '—', p.method === 'CASH' ? 'ok' : 'info'),
+      badge(p.method ? `${statusLabel(p.method)} (${p.method})` : '—', p.method === 'CASH' ? 'ok' : 'info'),
       money(p.amount),
       p.processedByName || String(p.processedById),
       dateTime(p.paidAt),
       el('button', {
-        type: 'button', className: 'btn btn-secondary', text: 'Детайли',
+        type: 'button', className: 'btn btn-secondary', text: t('action.details'),
         onClick: () => openReceipt(p.id)
       })
     ]);
 
     mount(el('div', { className: 'stack' }, [
       el('div', { className: 'note' }, [
-        el('strong', { text: 'Симулационно плащане. ' }),
-        document.createTextNode('Не е реален фискален бон, не е банкова транзакция. CARD е само симулация — няма card fields.')
+        el('strong', { text: t('payment.simulationWarning') })
       ]),
-      panel('Филтри', [
+      panel(t('panel.filters'), [
         el('div', { className: 'filters' }, [
-          field('Метод', method),
-          field('От', from),
-          field('До', to),
-          field('Processed by ID', processedById),
+          field(t('col.method'), method),
+          field(t('col.from'), from),
+          field(t('col.to'), to),
+          field(t('col.processedById'), processedById),
           el('button', {
-            type: 'button', className: 'btn', text: 'Приложи',
+            type: 'button', className: 'btn', text: t('common.confirm'),
             onClick: () => reload({
               method: method.value || undefined,
               from: fromDateTimeLocalValue(from.value),
@@ -58,12 +58,12 @@ async function reload(filters) {
           })
         ])
       ]),
-      panel('Плащания', [
+      panel(t('page.payments.title'), [
         payments.length
-          ? table('Плащания', ['Касова бележка', 'Поръчка', 'Метод', 'Сума', 'Оператор', 'Платено на', ''], rows)
-          : emptyState('Няма плащания за избраните филтри.')
+          ? table(t('page.payments.title'), [t('col.receipt'), t('col.order'), t('col.method'), t('col.amount'), t('col.operator'), t('col.paidAt'), t('common.actions')], rows)
+          : emptyState(t('msg.noResults'))
       ], [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Презареди', onClick: () => reload(filters) })
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload(filters) })
       ])
     ]));
   } catch (err) {
@@ -81,20 +81,20 @@ async function openReceipt(id) {
       money(item.lineTotal)
     ]);
     openDialog({
-      title: `Бележка ${p.receiptNumber}`,
+      title: t('payments.receiptTitle', { number: p.receiptNumber }),
       body: el('div', { className: 'stack' }, [
-        el('div', { className: 'note' }, 'Симулационно плащане · не е фискален бон · не е банкова транзакция'),
+        el('div', { className: 'note' }, t('payment.simulationWarning')),
         el('p', { text: `simulated=${String(p.simulated)}` }),
-        el('p', { text: `Поръчка: ${p.orderNumber} · маса #${p.tableNumber}` }),
-        el('p', { text: `Метод: ${p.method} · сума: ${money(p.amount)}` }),
-        el('p', { text: `Оператор: ${p.processedByName} · ${dateTime(p.paidAt)}` }),
-        el('p', { text: `Статус на поръчката: ${p.orderStatus} · closed=${String(p.orderClosed)}` }),
+        el('p', { text: t('payments.orderTableLine', { order: p.orderNumber, table: p.tableNumber }) }),
+        el('p', { text: t('payments.methodAmountLine', { method: p.method ? `${statusLabel(p.method)} (${p.method})` : '—', amount: money(p.amount) }) }),
+        el('p', { text: t('payments.operatorPaidLine', { name: p.processedByName, paidAt: dateTime(p.paidAt) }) }),
+        el('p', { text: t('payments.orderStatusLine', { status: p.orderStatus ? `${statusLabel(p.orderStatus)} (${p.orderStatus})` : '—', closed: String(p.orderClosed) }) }),
         itemRows.length
-          ? table('Позиции (snapshot)', ['Ястие', 'Ед. цена', 'К-во', 'Ред'], itemRows)
-          : emptyState('Няма позиции.')
+          ? table(t('payments.itemsSnapshot'), [t('col.item'), t('col.unitPrice'), t('col.qtyShort'), t('col.lineTotal')], itemRows)
+          : emptyState(t('common.empty'))
       ]),
       footerButtons: [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Затвори', onClick: () => closeDialog() })
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.close'), onClick: () => closeDialog() })
       ]
     });
   } catch (err) {

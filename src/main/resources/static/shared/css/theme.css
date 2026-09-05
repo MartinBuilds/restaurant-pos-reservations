@@ -1,0 +1,72 @@
+:root,
+html[data-theme="light"] {
+  --color-bg: #eef2ec;
+  --color-bg-accent: rgba(47, 107, 82, 0.12);
+  --color-surface: #ffffff;
+  --color-surface-alt: #e9eee8;
+  --color-text: #1c241c;
+  --color-text-muted: #5c6b5c;
+  --color-border: #cfd8cf;
+  --color-primary: #1f4d3a;
+  --color-primary-2: #2f6b52;
+  --color-accent: #b45309;
+  --color-danger: #9b1c1c;
+  --color-success: #166534;
+  --color-warn: #92400e;
+  --color-info: #1e3a5f;
+  --color-shadow: 0 10px 30px rgba(28, 36, 28, 0.08);
+  --color-sidebar-start: #16382b;
+  --color-sidebar-end: #1f4d3a;
+  --color-sidebar-text: #f4f7f4;
+  --color-overlay: rgba(18, 28, 18, 0.45);
+  --color-input-bg: #ffffff;
+  --color-toast-bg: #ffffff;
+  --radius: 12px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sidebar-w: 16.5rem;
+  --sidebar-collapsed-w: 4.75rem;
+}
+
+html[data-theme="dark"] {
+  --color-bg: #121816;
+  --color-bg-accent: rgba(70, 140, 110, 0.16);
+  --color-surface: #1b2420;
+  --color-surface-alt: #24302a;
+  --color-text: #e8eee9;
+  --color-text-muted: #9aab9e;
+  --color-border: #334139;
+  --color-primary: #3f8f6d;
+  --color-primary-2: #54a882;
+  --color-accent: #d97706;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --color-warn: #fbbf24;
+  --color-info: #93c5fd;
+  --color-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --color-sidebar-start: #0d1612;
+  --color-sidebar-end: #15231d;
+  --color-sidebar-text: #eef5f0;
+  --color-overlay: rgba(0, 0, 0, 0.55);
+  --color-input-bg: #15201b;
+  --color-toast-bg: #1b2420;
+}
+
+/* Compatibility aliases used by existing role CSS */
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-surface-alt);
+  --ink: var(--color-text);
+  --muted: var(--color-text-muted);
+  --line: var(--color-border);
+  --brand: var(--color-primary);
+  --brand-2: var(--color-primary-2);
+  --accent: var(--color-accent);
+  --danger: var(--color-danger);
+  --ok: var(--color-success);
+  --warn: var(--color-warn);
+  --info: var(--color-info);
+  --shadow: var(--color-shadow);
+}

@@ -5,19 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="/favicon.ico">
   <title>Кухня — Restaurant POS</title>
+  <script src="/shared/js/theme-boot.js"></script>
+  <link rel="stylesheet" href="/shared/css/theme.css">
+  <link rel="stylesheet" href="/shared/css/shell.css">
   <link rel="stylesheet" href="/operations/css/operations.css">
 </head>
 <body class="kitchen-shell">
   <header class="kitchen-top">
     <div>
-      <p class="brand-kicker">Restaurant POS</p>
-      <h1 class="page-title">Кухненска опашка</h1>
-      <p class="page-subtitle">ACCEPTED → COOKING → READY (REST е източник на истина)</p>
+      <p class="brand-kicker" data-i18n="app.brand">Restaurant POS</p>
+      <h1 class="page-title" data-i18n="kitchen.title">Кухненска опашка</h1>
+      <p class="page-subtitle" data-i18n="kitchen.subtitle">ACCEPTED → COOKING → READY (REST е източник на истина)</p>
     </div>
-    <div class="row">
+    <div class="row kitchen-actions">
       <div id="connection-status" class="conn" role="status" aria-live="polite"></div>
-      <button type="button" class="btn btn-ghost" id="refresh-btn">Обнови</button>
-      <button type="button" class="btn btn-ghost" id="logout-btn">Изход</button>
+      <button type="button" class="btn btn-ghost" id="refresh-btn" data-i18n="common.refresh">Обнови</button>
+      <div id="account-mount" class="account-mount kitchen-account-slot"></div>
     </div>
   </header>
   <div class="status-region" id="status-region" role="status" aria-live="polite"></div>

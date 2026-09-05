@@ -1,0 +1,276 @@
+.sidebar-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sidebar-collapse-btn {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sidebar-collapse-btn:hover,
+.sidebar-collapse-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.nav-link .icon {
+  flex: 0 0 auto;
+  opacity: 0.95;
+}
+
+.nav-label {
+  min-width: 0;
+}
+
+.account-mount {
+  position: relative;
+  margin-top: auto;
+  z-index: 40;
+}
+
+.account-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  border-radius: 12px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.account-trigger:hover,
+.account-trigger:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.account-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.18);
+  flex: 0 0 auto;
+}
+
+.account-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.1rem;
+}
+
+.account-name {
+  font-weight: 650;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-email {
+  font-size: 0.78rem;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+  z-index: 60;
+  min-width: 15.5rem;
+  max-height: min(70vh, 28rem);
+  overflow-y: auto;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--color-shadow);
+  padding: 0.65rem;
+  gap: 0.55rem;
+}
+
+/* Single source of truth for open/closed — beat any display overrides. */
+.account-mount[data-account-menu="open"] > .account-menu {
+  display: grid !important;
+}
+
+.account-mount:not([data-account-menu="open"]) > .account-menu,
+.account-menu[hidden] {
+  display: none !important;
+}
+
+.account-menu-header {
+  padding: 0.35rem 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-menu-header .account-email {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.account-section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 0.2rem 0.45rem;
+}
+
+.account-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.account-menu-item:hover,
+.account-menu-item:focus-visible {
+  background: var(--color-surface-alt);
+  outline: none;
+}
+
+.account-menu-item.is-selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.account-logout {
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 8px 8px;
+  margin-top: 0.2rem;
+  color: var(--color-danger);
+}
+
+.sidebar.is-collapsed {
+  width: var(--sidebar-collapsed-w);
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+
+.sidebar.is-collapsed .brand-title,
+.sidebar.is-collapsed .brand-kicker,
+.sidebar.is-collapsed .nav-label,
+.sidebar.is-collapsed .account-meta,
+.sidebar.is-collapsed .conn-label {
+  display: none;
+}
+
+.sidebar.is-collapsed .nav-link {
+  justify-content: center;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+}
+
+.sidebar.is-collapsed .account-trigger {
+  justify-content: center;
+  padding: 0.45rem;
+}
+
+/* Fly out into the main column so the menu does not crush/cover nav icons. */
+.sidebar.is-collapsed .account-menu {
+  left: calc(100% + 0.55rem);
+  right: auto;
+  bottom: 0;
+  width: 16.5rem;
+}
+
+.sidebar.is-collapsed .sidebar-top {
+  justify-content: center;
+}
+
+.sidebar.is-collapsed .brand {
+  display: none;
+}
+
+.client-account-slot {
+  position: relative;
+  margin-left: auto;
+}
+
+.kitchen-account-slot {
+  position: relative;
+}
+
+.client-account-slot .account-menu,
+.kitchen-account-slot .account-menu {
+  bottom: auto;
+  top: calc(100% + 0.5rem);
+  left: auto;
+  right: 0;
+  min-width: 15rem;
+}
+
+.client-account-slot .account-trigger {
+  border-color: rgba(255, 255, 255, 0.28);
+  max-width: 16rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar-collapse-btn {
+    display: none;
+  }
+
+  .sidebar.is-collapsed {
+    width: min(18rem, 86vw);
+    padding-left: var(--space-4, 1rem);
+    padding-right: var(--space-4, 1rem);
+  }
+
+  .sidebar.is-collapsed .brand,
+  .sidebar.is-collapsed .brand-title,
+  .sidebar.is-collapsed .brand-kicker,
+  .sidebar.is-collapsed .nav-label,
+  .sidebar.is-collapsed .account-meta,
+  .sidebar.is-collapsed .conn-label {
+    display: revert;
+  }
+
+  .sidebar.is-collapsed .brand {
+    display: block;
+  }
+
+  .sidebar.is-collapsed .nav-link,
+  .sidebar.is-collapsed .account-trigger {
+    justify-content: flex-start;
+  }
+}
