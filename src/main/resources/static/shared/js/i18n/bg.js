@@ -337,6 +337,7 @@ export const bg = {
   'tables.confirmOutOfService': 'Потвърдете преминаване към OUT_OF_SERVICE.',
   'tables.statusTitle': 'Статус — маса {number}',
   'tables.loadError': 'Масите не можаха да се заредят.',
+  'tables.orderRequiresAvailable': 'Нова поръчка изисква статус {status}.',
 
   'reservations.datetimeNote': 'Изпращайте LocalDateTime без Z/offset. Часова зона на ресторанта: Europe/Sofia.',
   'reservations.scheduleHint': 'Задайте from/to филтри, за да заредите /schedule.',
@@ -385,6 +386,7 @@ export const bg = {
   'payment.paidAt': 'Платено на: {time}',
   'payment.orderSummary': 'Поръчка {number} · сума {amount}',
   'payment.failed': 'Плащането неуспешно.',
+  'payment.simulated': 'Симулирано плащане: {value}',
 
   'realtime.newOrder': 'Нова поръчка',
   'realtime.status': 'Статус',

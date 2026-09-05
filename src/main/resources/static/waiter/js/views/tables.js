@@ -4,7 +4,7 @@ import { text } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { openCreateOrderDialog } from './order-form.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let abort = null;
 
@@ -42,7 +42,10 @@ export async function renderTables() {
         });
         actions.appendChild(btn);
       } else {
-        actions.appendChild(el('span', { className: 'muted', text: `${t('action.newOrder')}: AVAILABLE` }));
+        actions.appendChild(el('span', {
+          className: 'muted',
+          text: t('tables.orderRequiresAvailable', { status: statusLabel('AVAILABLE') })
+        }));
       }
       grid.appendChild(el('article', { className: 'card' }, [
         el('h3', { text: t('label.table', { number: text(table.tableNumber) }) }),

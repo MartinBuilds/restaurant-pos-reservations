@@ -131,6 +131,11 @@ export function openDialog({ title, body, footerButtons = [], onClose }) {
   dialog().hidden = false;
   overlay().hidden = false;
 
+  if (escapeHandler) {
+    document.removeEventListener('keydown', escapeHandler);
+    escapeHandler = null;
+  }
+
   const close = () => {
     closeDialog();
     if (onClose) onClose();
@@ -161,29 +166,62 @@ export function closeDialog() {
 
 export function confirmDialog({ title, message, confirmLabel, danger = false }) {
   return new Promise((resolve) => {
-    const confirmBtn = el('button', {
-      type: 'button',
-      className: danger ? 'btn btn-danger' : 'btn',
-      text: confirmLabel || t('common.confirm'),
-      onClick: () => {
-        closeDialog();
-        resolve(true);
+    const wasOpen = !dialog().hidden;
+    const snapshot = wasOpen
+      ? {
+        title: dialogTitle().textContent,
+        body: Array.from(dialogBody().childNodes),
+        footer: Array.from(dialogFooter().childNodes)
       }
-    });
-    const cancelBtn = el('button', {
-      type: 'button',
-      className: 'btn btn-secondary',
-      text: t('common.cancel'),
-      onClick: () => {
+      : null;
+
+    let settled = false;
+    const settle = (result) => {
+      if (settled) return;
+      settled = true;
+      if (snapshot) {
+        dialogTitle().textContent = snapshot.title;
+        clear(dialogBody());
+        snapshot.body.forEach((node) => dialogBody().appendChild(node));
+        clear(dialogFooter());
+        snapshot.footer.forEach((node) => dialogFooter().appendChild(node));
+        dialog().hidden = false;
+        overlay().hidden = false;
+        if (escapeHandler) {
+          document.removeEventListener('keydown', escapeHandler);
+          escapeHandler = null;
+        }
+        const closeParent = () => closeDialog();
+        document.getElementById('dialog-close').onclick = closeParent;
+        overlay().onclick = closeParent;
+        escapeHandler = (event) => {
+          if (event.key === 'Escape') closeParent();
+        };
+        document.addEventListener('keydown', escapeHandler);
+      } else {
         closeDialog();
-        resolve(false);
       }
-    });
+      resolve(result);
+    };
+
     openDialog({
       title,
       body: el('p', { text: message }),
-      footerButtons: [cancelBtn, confirmBtn],
-      onClose: () => resolve(false)
+      footerButtons: [
+        el('button', {
+          type: 'button',
+          className: 'btn btn-secondary',
+          text: t('common.cancel'),
+          onClick: () => settle(false)
+        }),
+        el('button', {
+          type: 'button',
+          className: danger ? 'btn btn-danger' : 'btn',
+          text: confirmLabel || t('common.confirm'),
+          onClick: () => settle(true)
+        })
+      ],
+      onClose: () => settle(false)
     });
   });
 }

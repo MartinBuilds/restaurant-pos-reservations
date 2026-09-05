@@ -1,7 +1,7 @@
 import { setUnauthorizedHandler } from '/operations/js/api.js';
 import { loadCsrf } from '/operations/js/csrf.js';
 import { setConnectionStatus } from '/operations/js/connection-status.js';
-import { createStompClient } from '/operations/js/stomp-client.js';
+import { createStompClient } from '/operations/js/stomp-client.js?v=pr18-1';
 import { toast } from '/operations/js/notifications.js';
 import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 

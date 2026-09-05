@@ -26,10 +26,10 @@ export async function renderReservations() {
   const range = defaultRange();
   const fromInput = el('input', { type: 'datetime-local', id: 'res-from', value: range.from });
   const toInput = el('input', { type: 'datetime-local', id: 'res-to', value: range.to });
-  const tableInput = el('input', { type: 'number', id: 'res-table', min: '1', placeholder: 'tableId' });
+  const tableInput = el('input', { type: 'number', id: 'res-table', min: '1', placeholder: t('col.tableId') });
   const statusInput = el('select', { id: 'res-status' }, [
     el('option', { value: '', text: t('filter.allStatuses') }),
-    ...['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].map((s) => el('option', {
+    ...['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].map((s) => el('option', {
       value: s,
       text: `${statusLabel(s)} (${s})`
     }))
@@ -88,8 +88,8 @@ export async function renderReservations() {
     el('div', { className: 'grid grid-filters' }, [
       el('label', { className: 'field' }, [el('span', { text: t('col.from') }), fromInput]),
       el('label', { className: 'field' }, [el('span', { text: t('col.to') }), toInput]),
-      el('label', { className: 'field' }, [el('span', { text: 'tableId' }), tableInput]),
-      el('label', { className: 'field' }, [el('span', { text: 'status' }), statusInput])
+      el('label', { className: 'field' }, [el('span', { text: t('col.tableId') }), tableInput]),
+      el('label', { className: 'field' }, [el('span', { text: t('col.status') }), statusInput])
     ]),
     el('div', { className: 'actions' }, [loadBtn]),
     resultHost
