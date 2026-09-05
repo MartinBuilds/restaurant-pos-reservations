@@ -84,7 +84,9 @@ async function openReceipt(id) {
       title: t('payments.receiptTitle', { number: p.receiptNumber }),
       body: el('div', { className: 'stack' }, [
         el('div', { className: 'note' }, t('payment.simulationWarning')),
-        el('p', { text: `simulated=${String(p.simulated)}` }),
+        el('p', { text: t('payment.simulated', {
+          value: p.simulated ? t('common.yes') : t('common.no')
+        }) }),
         el('p', { text: t('payments.orderTableLine', { order: p.orderNumber, table: p.tableNumber }) }),
         el('p', { text: t('payments.methodAmountLine', { method: p.method ? `${statusLabel(p.method)} (${p.method})` : '—', amount: money(p.amount) }) }),
         el('p', { text: t('payments.operatorPaidLine', { name: p.processedByName, paidAt: dateTime(p.paidAt) }) }),

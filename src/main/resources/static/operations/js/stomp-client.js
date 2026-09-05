@@ -105,6 +105,8 @@ export function createStompClient(options = {}) {
   let reconnectAttempt = 0;
   let reconnectTimer = null;
   let explicitClose = false;
+  /** Last CSRF headers used for STOMP CONNECT; reused on automatic reconnect. */
+  let lastCsrf = null;
 
   const listeners = {
     onConnecting: options.onConnecting || (() => {}),
@@ -168,7 +170,8 @@ export function createStompClient(options = {}) {
     listeners.onReconnecting(delay);
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
-      connect();
+      // Reuse last CSRF — CONNECT requires it (EnableWebSocketSecurity).
+      connect(lastCsrf || undefined);
     }, delay);
   }
 
@@ -227,6 +230,9 @@ export function createStompClient(options = {}) {
   function connect(csrf) {
     if (stopped) return;
     explicitClose = false;
+    if (csrf && csrf.headerName && csrf.token) {
+      lastCsrf = { headerName: csrf.headerName, token: csrf.token };
+    }
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -240,8 +246,9 @@ export function createStompClient(options = {}) {
         host: window.location.hostname || 'localhost',
         'heart-beat': `${clientSendHb},${clientRecvHb}`
       };
-      if (csrf && csrf.headerName && csrf.token) {
-        headers[csrf.headerName] = csrf.token;
+      const effectiveCsrf = (csrf && csrf.headerName && csrf.token) ? csrf : lastCsrf;
+      if (effectiveCsrf && effectiveCsrf.headerName && effectiveCsrf.token) {
+        headers[effectiveCsrf.headerName] = effectiveCsrf.token;
       }
       socket.send(buildFrame('CONNECT', headers));
     });

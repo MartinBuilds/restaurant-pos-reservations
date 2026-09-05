@@ -20,7 +20,9 @@ function receiptView(payment) {
     el('p', { text: t('payment.amount', { amount: money(payment.amount) }) }),
     el('p', { text: t('payment.processedBy', { name: text(payment.processedByName) }) }),
     el('p', { text: t('payment.paidAt', { time: dateTime(payment.paidAt) }) }),
-    el('p', { text: `simulated=${payment.simulated === true ? 'true' : String(payment.simulated)}` }),
+    el('p', { text: t('payment.simulated', {
+      value: payment.simulated === true ? t('common.yes') : t('common.no')
+    }) }),
     el('div', { className: 'table-wrap' }, [
       el('table', { className: 'data' }, [
         el('thead', {}, [el('tr', {}, [

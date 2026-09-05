@@ -337,6 +337,7 @@ export const en = {
   'tables.confirmOutOfService': 'Confirm switching to OUT_OF_SERVICE.',
   'tables.statusTitle': 'Status — table {number}',
   'tables.loadError': 'Tables could not be loaded.',
+  'tables.orderRequiresAvailable': 'New order requires {status} status.',
 
   'reservations.datetimeNote': 'Send LocalDateTime without Z/offset. Restaurant time zone: Europe/Sofia.',
   'reservations.scheduleHint': 'Set from/to filters to load /schedule.',
@@ -385,6 +386,7 @@ export const en = {
   'payment.paidAt': 'Paid at: {time}',
   'payment.orderSummary': 'Order {number} · amount {amount}',
   'payment.failed': 'Payment failed.',
+  'payment.simulated': 'Simulated payment: {value}',
 
   'realtime.newOrder': 'New order',
   'realtime.status': 'Status',

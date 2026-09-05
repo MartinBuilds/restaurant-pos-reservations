@@ -117,7 +117,7 @@ function openStatusDialog(tableRow, onDone) {
   submit.addEventListener('click', async () => {
     if (status.value === 'OUT_OF_SERVICE') {
       const ok = await confirmDialog({
-        title: 'OUT_OF_SERVICE',
+        title: statusLabel('OUT_OF_SERVICE'),
         message: t('tables.confirmOutOfService'),
         confirmLabel: t('common.confirm'),
         danger: true
