@@ -3,6 +3,7 @@ import { loadCsrf } from '/operations/js/csrf.js';
 import { setConnectionStatus } from '/operations/js/connection-status.js';
 import { createStompClient } from '/operations/js/stomp-client.js';
 import { toast } from '/operations/js/notifications.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const seenEvents = [];
 const SEEN_MAX = 500;
@@ -72,7 +73,7 @@ export async function startKitchenRealtime() {
     const type = payload.eventType;
     if (type === 'ORDER_CREATED' || type === 'ORDER_STATUS_CHANGED') {
       const label = payload.order?.orderNumber || '';
-      toast(`${type === 'ORDER_CREATED' ? 'Нова поръчка' : 'Статус'}: ${label}`, 'info');
+      toast(`${t(type === 'ORDER_CREATED' ? 'realtime.newOrder' : 'realtime.status')}: ${label}`, 'info');
       scheduleRefresh('event');
       return;
     }

@@ -3,6 +3,7 @@ import { loadCsrf } from '/operations/js/csrf.js';
 import { setConnectionStatus } from '/operations/js/connection-status.js';
 import { createStompClient } from '/operations/js/stomp-client.js';
 import { toast } from '/operations/js/notifications.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const seenEvents = [];
 const SEEN_MAX = 500;
@@ -73,9 +74,9 @@ export async function startWaiterRealtime() {
     if (type === 'ORDER_STATUS_CHANGED') {
       const status = payload.currentStatus || (payload.order && payload.order.status);
       if (status === 'READY') {
-        toast(`Поръчка готова: ${payload.order?.orderNumber || ''}`, 'info');
+        toast(t('realtime.orderReady', { number: payload.order?.orderNumber || '' }), 'info');
       } else {
-        toast(`Статус: ${status || 'обновен'}`, 'info');
+        toast(t('realtime.statusUpdated', { status: status || t('realtime.statusFallback') }), 'info');
       }
       scheduleRefresh('event');
       return;

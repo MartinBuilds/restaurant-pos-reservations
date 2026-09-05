@@ -1,4 +1,4 @@
-import { clearCsrf, loadCsrf, logout, setUnauthorizedHandler } from './api.js';
+import { clearCsrf, loadCsrf, logout, setUnauthorizedHandler, api } from './api.js';
 import { clear } from './dom.js';
 import { registerRoute, setActiveNav, startRouter } from './router.js';
 import { handleError, setBanner, toast, wireDialogChrome } from './ui.js';
@@ -6,6 +6,8 @@ import { abortAvailability, renderAvailability } from './views/availability.js';
 import { renderCreateForm, renderEditForm } from './views/reservation-form.js';
 import { abortReservationDetails, renderReservationDetails } from './views/reservation-details.js';
 import { abortReservations, renderReservations } from './views/reservations.js';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const root = document.getElementById('view-root');
 
@@ -67,23 +69,16 @@ function wireNav() {
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   }
-
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    abortAll();
-    try {
-      await logout();
-      window.location.assign('/login');
-    } catch (e) {
-      clearCsrf();
-      handleError(e, 'Неуспешен изход.');
-      window.location.assign('/login');
-    }
-  });
 }
 
 async function boot() {
   wireDialogChrome();
   wireNav();
+  decorateNavIcons({
+    availability: 'availability',
+    reservations: 'reservations'
+  });
+
   setUnauthorizedHandler(() => {
     clearCsrf();
     window.location.assign('/login');
@@ -92,10 +87,30 @@ async function boot() {
   try {
     await loadCsrf();
   } catch (e) {
-    toast(e.message || 'Неуспешно зареждане на CSRF.', 'error');
+    toast(e.message || t('session.csrfError'), 'error');
   }
+
+  await mountShellChrome({
+    apiGet: (path) => api.get(path),
+    onLogout: async () => {
+      abortAll();
+      try {
+        await logout();
+      } catch (e) {
+        clearCsrf();
+        handleError(e, t('session.logoutError'));
+      }
+      window.location.assign('/login');
+    },
+    onLanguageApplied: () => {
+      window.dispatchEvent(new Event('hashchange'));
+    }
+  });
 
   await startRouter(onRoute);
 }
 
-boot();
+boot().catch((err) => {
+  console.error(err);
+  toast(t('boot.clientError'), 'error');
+});

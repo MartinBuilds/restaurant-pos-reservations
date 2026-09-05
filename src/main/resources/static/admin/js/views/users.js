@@ -3,13 +3,14 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field, confirmDialog
 } from '../ui.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const ROLES = ['ADMIN', 'WAITER', 'COOK', 'CLIENT'];
 let abortController = null;
 
 export async function renderUsers() {
-  setPageMeta('Потребители', 'Създаване, роли и enable/disable');
-  mount(loading('Зареждане на потребители...'));
+  setPageMeta(t('page.users.title'), t('page.users.subtitle'));
+  mount(loading(t('msg.loadingUsers')));
   await reload();
 }
 
@@ -19,16 +20,16 @@ async function reload() {
   try {
     const users = await api.get('/api/admin/users', { signal: abortController.signal });
     const createBtn = el('button', {
-      type: 'button', className: 'btn', text: 'Нов потребител',
+      type: 'button', className: 'btn', text: t('action.newUser'),
       onClick: () => openCreateDialog(() => reload())
     });
     const reloadBtn = el('button', {
-      type: 'button', className: 'btn btn-secondary', text: 'Презареди',
+      type: 'button', className: 'btn btn-secondary', text: t('action.reload'),
       onClick: () => reload()
     });
 
     if (!users.length) {
-      mount(panel('Потребители', [emptyState('Няма потребители.')], [createBtn, reloadBtn]));
+      mount(panel(t('page.users.title'), [emptyState(t('msg.usersEmpty'))], [createBtn, reloadBtn]));
       return;
     }
 
@@ -37,25 +38,25 @@ async function reload() {
       u.fullName || '—',
       u.email || '—',
       el('div', { className: 'row-actions' }, (u.roles || []).map((r) => badge(r, 'info'))),
-      badge(u.enabled ? 'Активен' : 'Неактивен', u.enabled ? 'ok' : 'danger'),
+      badge(u.enabled ? t('common.active') : t('common.inactive'), u.enabled ? 'ok' : 'danger'),
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Роли',
+          type: 'button', className: 'btn btn-secondary', text: t('action.roles'),
           onClick: () => openRolesDialog(u, () => reload())
         }),
         el('button', {
           type: 'button', className: 'btn btn-secondary',
-          text: u.enabled ? 'Деактивирай' : 'Активирай',
+          text: u.enabled ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             const ok = await confirmDialog({
-              title: u.enabled ? 'Деактивиране' : 'Активиране',
-              message: `Промяна на статус за ${u.email}?`,
-              confirmLabel: 'Потвърди'
+              title: u.enabled ? t('users.confirmDisableTitle') : t('users.confirmEnableTitle'),
+              message: t('users.confirmStatusMsg', { email: u.email }),
+              confirmLabel: t('common.confirm')
             });
             if (!ok) return;
             try {
               await api.patch(`/api/admin/users/${u.id}/status`, { enabled: !u.enabled });
-              toast('Статусът е обновен.', 'success');
+              toast(t('msg.statusUpdated'), 'success');
               await reload();
             } catch (err) {
               handleError(err);
@@ -65,13 +66,13 @@ async function reload() {
       ])
     ]);
 
-    mount(panel('Потребители', [
-      el('p', { className: 'muted', text: 'Паролите и hash стойностите не се показват. Няма endpoint за редакция на име/email.' }),
-      table('Списък с потребители', ['ID', 'Име', 'Email', 'Роли', 'Статус', 'Действия'], rows)
+    mount(panel(t('page.users.title'), [
+      el('p', { className: 'muted', text: t('users.passwordNote') }),
+      table(t('users.listTitle'), [t('col.id'), t('col.name'), t('col.email'), t('col.roles'), t('col.status'), t('common.actions')], rows)
     ], [createBtn, reloadBtn]));
   } catch (err) {
     if (err.name === 'AbortError') return;
-    mount(errorBox(handleError(err, 'Неуспешно зареждане на потребители.'), () => reload()));
+    mount(errorBox(handleError(err, t('users.loadError')), () => reload()));
   }
 }
 
@@ -85,14 +86,14 @@ function openCreateDialog(onDone) {
     return el('label', {}, [input, document.createTextNode(role)]);
   });
 
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Създай' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.create') });
   submit.addEventListener('click', async () => {
     const roles = roleBoxes
       .map((label) => label.querySelector('input'))
       .filter((i) => i.checked)
       .map((i) => i.value);
     submit.disabled = true;
-    submit.textContent = 'Запис...';
+    submit.textContent = t('common.loading');
     try {
       await api.post('/api/admin/users', {
         email: email.value.trim(),
@@ -102,28 +103,28 @@ function openCreateDialog(onDone) {
       });
       password.value = '';
       closeDialog();
-      toast('Потребителят е създаден.', 'success');
+      toast(t('msg.created'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
       submit.disabled = false;
-      submit.textContent = 'Създай';
+      submit.textContent = t('common.create');
     }
   });
 
   openDialog({
-    title: 'Нов потребител',
+    title: t('action.newUser'),
     body: el('div', { className: 'stack' }, [
-      field('Име', fullName),
-      field('Email', email),
-      field('Парола', password),
+      field(t('col.name'), fullName),
+      field(t('col.email'), email),
+      field(t('col.password'), password),
       el('div', { className: 'field' }, [
-        el('span', { text: 'Роли' }),
+        el('span', { text: t('col.roles') }),
         el('div', { className: 'checkbox-row' }, roleBoxes)
       ])
     ]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });
@@ -135,14 +136,14 @@ function openRolesDialog(user, onDone) {
     input.checked = (user.roles || []).includes(role);
     return el('label', {}, [input, document.createTextNode(role)]);
   });
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Запази роли' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
     const roles = roleBoxes.map((l) => l.querySelector('input')).filter((i) => i.checked).map((i) => i.value);
     submit.disabled = true;
     try {
       await api.put(`/api/admin/users/${user.id}/roles`, { roles });
       closeDialog();
-      toast('Ролите са обновени.', 'success');
+      toast(t('msg.updated'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -150,10 +151,10 @@ function openRolesDialog(user, onDone) {
     }
   });
   openDialog({
-    title: `Роли — ${user.email}`,
+    title: t('users.rolesTitle', { email: user.email }),
     body: el('div', { className: 'checkbox-row' }, roleBoxes),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });

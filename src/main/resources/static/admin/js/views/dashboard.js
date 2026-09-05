@@ -1,27 +1,35 @@
 import { setPageMeta, mount, el, panel, badge } from '../ui.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 export async function renderDashboard() {
-  setPageMeta('Dashboard', 'Административен панел върху съществуващите REST endpoints');
+  const account = window.__adminAccount;
+  const welcome = account?.name
+    ? t('dashboard.welcome', { name: account.name })
+    : t('dashboard.welcomeGuest');
+
+  setPageMeta(t('dashboard.title'), t('dashboard.subtitle'));
+
   const links = [
-    ['Потребители', 'users', 'Създаване, роли и статус'],
-    ['Меню', 'menu', 'Категории, ястия и наличност'],
-    ['Склад и рецепти', 'inventory', 'Съставки, запас и рецепти'],
-    ['Маси', 'tables', 'Капацитет, статус и активност'],
-    ['Резервации', 'reservations', 'График, създаване и статуси'],
-    ['Плащания', 'payments', 'Симулационни CASH/CARD записи'],
-    ['Отчети', 'reports', 'Оборот, ястия и методи на плащане']
+    [t('nav.users'), 'users', t('dashboard.usersDesc')],
+    [t('nav.menu'), 'menu', t('dashboard.menuDesc')],
+    [t('nav.inventory'), 'inventory', t('dashboard.inventoryDesc')],
+    [t('nav.tables'), 'tables', t('dashboard.tablesDesc')],
+    [t('nav.reservations'), 'reservations', t('dashboard.reservationsDesc')],
+    [t('nav.payments'), 'payments', t('dashboard.paymentsDesc')],
+    [t('nav.reports'), 'reports', t('dashboard.reportsDesc')]
   ];
 
   mount(el('div', { className: 'stack' }, [
-    panel('Добре дошли', [
-      el('p', { text: 'Това е административният интерфейс. Бизнес логиката остава в Spring Boot REST API.' }),
-      el('p', { className: 'muted', text: 'Няма нови business endpoints. Данните се зареждат само от съществуващите admin API.' }),
+    panel(welcome, [
+      el('p', { text: t('dashboard.intro') }),
+      el('p', { className: 'muted', text: t('dashboard.note') }),
       el('div', { className: 'row-actions', style: 'margin-top:1rem' }, [
-        badge('ADMIN only', 'info'),
-        badge('Session + CSRF', 'ok'),
-        badge('Vanilla JS', 'muted')
+        badge(t('dashboard.badgeAdmin'), 'info'),
+        badge(t('dashboard.badgeSession'), 'ok'),
+        badge(t('dashboard.badgeStack'), 'muted')
       ])
     ]),
+    el('h2', { className: 'panel-title', text: t('dashboard.quickLinks') }),
     el('div', { className: 'grid grid-3' }, links.map(([title, route, desc]) =>
       el('a', { className: 'card card-link', href: `#/${route}` }, [
         el('div', { className: 'card-label', text: title }),

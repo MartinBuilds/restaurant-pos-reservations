@@ -111,6 +111,24 @@ ADMIN operational aggregates (summary, by item, by payment method) over paid/clo
 | Kitchen | `/kitchen` | Shared `/operations/**` + STOMP |
 | Client | `/client` | REST only; no WebSocket |
 
+### UI shell preferences (PR 17+)
+
+All four role UIs share a local shell layer under `/shared/**`:
+
+- **Languages:** Bulgarian (`bg`, default) and English (`en`)
+- **Themes:** `system` (default), `light`, `dark` — CSS variables via `html[data-theme]`
+- **Account menu:** bottom/sidebar (or header) account area with initials avatar, theme, language, logout
+- **Current user:** `GET /api/account/me` (authenticated) returns `id`, `name`, `email`, `roles` — never password/hash
+- **Admin sidebar:** collapsible on desktop; icons remain visible when collapsed; mobile drawer stays usable
+- **localStorage keys (UI only):**
+  - `restaurant.ui.theme`
+  - `restaurant.ui.language`
+  - `restaurant.ui.sidebar.collapsed`
+
+Do **not** store passwords, session ids, CSRF tokens, or auth tokens in `localStorage`. Account profile is loaded from the API for the active session and is not persisted as credentials.
+
+Shared static assets (`/shared/**`) are permit-all for early theme bootstrap; role HTML/API routes remain role-protected.
+
 ## Local setup
 
 ### Requirements
@@ -192,10 +210,10 @@ Do not treat simulated CARD payments or receipts as real financial or fiscal doc
 
 ```text
 src/main/java/bg/martinandonov/restaurant/
-  common/ security/ user/ menu/ inventory/ diningtable/
+  common/ security/ user/ account/ menu/ inventory/ diningtable/
   order/ kitchen/ reservation/ payment/ report/ demo/ client/
 src/main/resources/static/
-  admin/ waiter/ kitchen/ client/ operations/
+  admin/ waiter/ kitchen/ client/ operations/ shared/
 docs/
   ARCHITECTURE.md DATABASE.md API.md TESTING.md DEMO.md PRESENTATION_QA.md
 ```

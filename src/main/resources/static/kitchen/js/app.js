@@ -1,7 +1,9 @@
-import { ensureCsrf, logout, setUnauthorizedHandler } from '/operations/js/api.js';
+import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/api.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { onRealtimeRefresh, startKitchenRealtime, stopRealtime } from './realtime.js';
 import { renderQueue } from './queue.js';
+import { mountShellChrome } from '/shared/js/account-shell.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 async function boot() {
   setUnauthorizedHandler(() => {
@@ -9,23 +11,40 @@ async function boot() {
     window.location.assign('/login');
   });
 
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    try {
-      stopRealtime();
-      await logout();
-    } catch { /* ignore */ }
-    window.location.assign('/login');
-  });
   document.getElementById('refresh-btn').addEventListener('click', () => {
     renderQueue().catch((err) => handleError(err));
   });
 
+  let csrfOk = false;
   try {
     await ensureCsrf();
-    setBanner('Сесията е активна.', 'success');
+    csrfOk = true;
   } catch (err) {
-    handleError(err, 'CSRF не можа да се зареди.');
-    return;
+    handleError(err, t('session.csrfError'));
+    setBanner(t('session.problem'), 'error');
+  }
+
+  try {
+    await mountShellChrome({
+      apiGet: (path) => api.get(path),
+      onLogout: async () => {
+        try {
+          stopRealtime();
+          await logout();
+        } catch { /* ignore */ }
+        window.location.assign('/login');
+      },
+      onLanguageApplied: () => {
+        renderQueue().catch((err) => handleError(err));
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    handleError(err, t('boot.kitchenError'));
+  }
+
+  if (csrfOk) {
+    setBanner(t('session.activeShort'), 'success');
   }
 
   onRealtimeRefresh(async () => {
@@ -34,14 +53,16 @@ async function boot() {
 
   await renderQueue();
 
-  try {
-    await startKitchenRealtime();
-  } catch (err) {
-    handleError(err, 'WebSocket връзката не стартира.');
+  if (csrfOk) {
+    try {
+      await startKitchenRealtime();
+    } catch (err) {
+      handleError(err, t('session.wsError'));
+    }
   }
 }
 
 boot().catch((err) => {
   console.error(err);
-  toast('Кухненският панел не можа да стартира.', 'error');
+  toast(t('boot.kitchenError'), 'error');
 });

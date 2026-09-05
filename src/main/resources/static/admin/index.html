@@ -5,37 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="/favicon.ico">
   <title>Администрация — Restaurant POS</title>
-  <link rel="stylesheet" href="/admin/css/admin.css">
+  <script src="/shared/js/theme-boot.js"></script>
+  <link rel="stylesheet" href="/shared/css/theme.css?v=pr17-4">
+  <link rel="stylesheet" href="/shared/css/shell.css?v=pr17-4">
+  <link rel="stylesheet" href="/admin/css/admin.css?v=pr17-4">
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar" id="sidebar" aria-label="Основна навигация">
-      <div class="brand">
-        <p class="brand-kicker">Restaurant POS</p>
-        <p class="brand-title">Администрация</p>
+    <aside class="sidebar" id="sidebar" aria-label="Основна навигация" data-i18n-aria="nav.main">
+      <div class="sidebar-top">
+        <div class="brand">
+          <p class="brand-kicker" data-i18n="app.brand">Restaurant POS</p>
+          <p class="brand-title" data-i18n="app.admin">Администрация</p>
+        </div>
+        <button type="button" class="sidebar-collapse-btn" id="sidebar-collapse-btn"
+                data-i18n-aria="sidebar.collapse" aria-label="Свий страничното меню"></button>
       </div>
       <nav class="nav" id="main-nav">
-        <a class="nav-link" href="#/dashboard" data-route="dashboard">Dashboard</a>
-        <a class="nav-link" href="#/users" data-route="users">Потребители</a>
-        <a class="nav-link" href="#/menu" data-route="menu">Меню</a>
-        <a class="nav-link" href="#/inventory" data-route="inventory">Склад и рецепти</a>
-        <a class="nav-link" href="#/tables" data-route="tables">Маси</a>
-        <a class="nav-link" href="#/reservations" data-route="reservations">Резервации</a>
-        <a class="nav-link" href="#/payments" data-route="payments">Плащания</a>
-        <a class="nav-link" href="#/reports" data-route="reports">Отчети</a>
+        <a class="nav-link" href="#/dashboard" data-route="dashboard" data-i18n="nav.dashboard" data-i18n-title="nav.dashboard">Основно табло</a>
+        <a class="nav-link" href="#/users" data-route="users" data-i18n="nav.users" data-i18n-title="nav.users">Потребители</a>
+        <a class="nav-link" href="#/menu" data-route="menu" data-i18n="nav.menu" data-i18n-title="nav.menu">Меню</a>
+        <a class="nav-link" href="#/inventory" data-route="inventory" data-i18n="nav.inventory" data-i18n-title="nav.inventory">Склад и рецепти</a>
+        <a class="nav-link" href="#/tables" data-route="tables" data-i18n="nav.tables" data-i18n-title="nav.tables">Маси</a>
+        <a class="nav-link" href="#/reservations" data-route="reservations" data-i18n="nav.reservations" data-i18n-title="nav.reservations">Резервации</a>
+        <a class="nav-link" href="#/payments" data-route="payments" data-i18n="nav.payments" data-i18n-title="nav.payments">Плащания</a>
+        <a class="nav-link" href="#/reports" data-route="reports" data-i18n="nav.reports" data-i18n-title="nav.reports">Отчети</a>
       </nav>
       <div class="sidebar-footer">
-        <button type="button" class="btn btn-ghost" id="logout-btn">Изход</button>
+        <div id="account-mount" class="account-mount" data-account-menu="closed"></div>
       </div>
     </aside>
 
     <div class="main-column">
       <header class="topbar">
-        <button type="button" class="btn btn-ghost nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="sidebar">
+        <button type="button" class="btn btn-ghost nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="sidebar" data-i18n="nav.menuToggle">
           Меню
         </button>
         <div class="topbar-text">
-          <h1 class="page-title" id="page-title">Dashboard</h1>
+          <h1 class="page-title" id="page-title">Основно табло</h1>
           <p class="page-subtitle" id="page-subtitle">Административен панел</p>
         </div>
       </header>
@@ -50,13 +57,13 @@
   <div class="overlay" id="overlay" hidden></div>
   <div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" hidden>
     <div class="dialog-header">
-      <h2 class="dialog-title" id="dialog-title">Диалог</h2>
-      <button type="button" class="btn btn-ghost" id="dialog-close" aria-label="Затвори">Затвори</button>
+      <h2 class="dialog-title" id="dialog-title" data-i18n="common.dialog">Диалог</h2>
+      <button type="button" class="btn btn-ghost" id="dialog-close" data-i18n-aria="common.close" aria-label="Затвори" data-i18n="common.close">Затвори</button>
     </div>
     <div class="dialog-body" id="dialog-body"></div>
     <div class="dialog-footer" id="dialog-footer"></div>
   </div>
 
-  <script type="module" src="/admin/js/app.js"></script>
+  <script type="module" src="/admin/js/app.js?v=pr17-4"></script>
 </body>
 </html>

@@ -9,6 +9,7 @@ Human-readable summary by role. Authentication is session-based form login. Muta
 | GET/POST | `/login` | Form login |
 | POST | `/logout` | CSRF required |
 | GET | `/api/csrf` | Authenticated CSRF token |
+| GET | `/api/account/me` | Current user `id`, `name`, `email`, `roles` (any authenticated role; no password) |
 | GET | `/api/public/menu` | Public available menu |
 
 ## ADMIN (`/api/admin/**`)

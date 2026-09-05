@@ -4,18 +4,20 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field, confirmDialog
 } from '../ui.js';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 const STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
 
 function statusBadge(status) {
   const map = { CONFIRMED: 'ok', CANCELLED: 'muted', COMPLETED: 'info', NO_SHOW: 'warn' };
-  return badge(status || '—', map[status] || 'muted');
+  if (!status) return badge('—', 'muted');
+  return badge(`${statusLabel(status)} (${status})`, map[status] || 'muted');
 }
 
 export async function renderReservations() {
-  setPageMeta('Резервации', 'Списък, график и статуси · LocalDateTime в часовата зона на ресторанта (Europe/Sofia)');
-  mount(loading());
+  setPageMeta(t('page.reservations.title'), t('page.reservations.subtitle'));
+  mount(loading(t('common.loading')));
   await reload();
 }
 
@@ -35,19 +37,19 @@ async function reload(filters = {}) {
     const fromInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
     const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
     const status = el('select', {}, [
-      el('option', { value: '', text: 'Всички статуси' }),
-      ...STATUSES.map((s) => el('option', { value: s, text: s, selected: filters.status === s ? 'true' : null }))
+      el('option', { value: '', text: t('filter.allStatuses') }),
+      ...STATUSES.map((s) => el('option', { value: s, text: `${statusLabel(s)} (${s})`, selected: filters.status === s ? 'true' : null }))
     ]);
     const tableId = el('select', {}, [
-      el('option', { value: '', text: 'Всички маси' }),
-      ...tables.map((t) => el('option', {
-        value: String(t.id),
-        text: `#${t.tableNumber} ${t.displayName || ''}`.trim(),
-        selected: String(filters.tableId || '') === String(t.id) ? 'true' : null
+      el('option', { value: '', text: t('filter.allTables') }),
+      ...tables.map((row) => el('option', {
+        value: String(row.id),
+        text: `#${row.tableNumber} ${row.displayName || ''}`.trim(),
+        selected: String(filters.tableId || '') === String(row.id) ? 'true' : null
       }))
     ]);
     const clientId = el('select', {}, [
-      el('option', { value: '', text: 'Всички клиенти' }),
+      el('option', { value: '', text: t('filter.allClients') }),
       ...users.filter((u) => (u.roles || []).includes('CLIENT')).map((u) => el('option', {
         value: String(u.id),
         text: `${u.fullName} (${u.email})`,
@@ -56,7 +58,7 @@ async function reload(filters = {}) {
     ]);
 
     const apply = el('button', {
-      type: 'button', className: 'btn', text: 'Филтрирай',
+      type: 'button', className: 'btn', text: t('common.search'),
       onClick: () => reload({
         from: fromDateTimeLocalValue(fromInput.value),
         to: fromDateTimeLocalValue(toInput.value),
@@ -77,11 +79,11 @@ async function reload(filters = {}) {
       r.notes || '—',
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Редакция',
+          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
           onClick: () => openEditDialog(r, tables, () => reload(filters))
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Статус',
+          type: 'button', className: 'btn btn-secondary', text: t('action.status'),
           onClick: () => openStatusDialog(r, () => reload(filters))
         })
       ])
@@ -98,34 +100,34 @@ async function reload(filters = {}) {
     ]);
 
     mount(el('div', { className: 'stack' }, [
-      panel('Филтри', [
-        el('p', { className: 'note-info note', text: 'Изпращайте LocalDateTime без Z/offset. Часова зона на ресторанта: Europe/Sofia.' }),
+      panel(t('panel.filters'), [
+        el('p', { className: 'note-info note', text: t('reservations.datetimeNote') }),
         el('div', { className: 'filters' }, [
-          field('От', fromInput),
-          field('До', toInput),
-          field('Статус', status),
-          field('Маса', tableId),
-          field('Клиент', clientId),
+          field(t('col.from'), fromInput),
+          field(t('col.to'), toInput),
+          field(t('col.status'), status),
+          field(t('col.table'), tableId),
+          field(t('col.client'), clientId),
           apply
         ])
       ], [
         el('button', {
-          type: 'button', className: 'btn', text: 'Нова резервация',
+          type: 'button', className: 'btn', text: t('action.createReservation'),
           onClick: () => openCreateDialog(tables, users, () => reload(filters))
         }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Презареди', onClick: () => reload(filters) })
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload(filters) })
       ]),
-      panel('Списък', [
+      panel(t('panel.list'), [
         reservations.length
-          ? table('Резервации', ['Номер', 'Маса', 'Клиент', 'Начало', 'Край', 'Гости', 'Статус', 'Бележки', 'Действия'], rows)
-          : emptyState('Няма резервации за избраните филтри.')
+          ? table(t('page.reservations.title'), [t('col.number'), t('col.table'), t('col.client'), t('col.start'), t('col.end'), t('msg.guests'), t('col.status'), t('col.notes'), t('common.actions')], rows)
+          : emptyState(t('msg.noResults'))
       ]),
-      panel('График', [
+      panel(t('panel.schedule'), [
         filters.from && filters.to
           ? (scheduleRows.length
-            ? table('График', ['Номер', 'Маса', 'Клиент', 'Начало', 'Край', 'Гости', 'Статус'], scheduleRows)
-            : emptyState('Няма записи в графика за периода.'))
-          : el('p', { className: 'muted', text: 'Задайте from/to филтри, за да заредите /schedule.' })
+            ? table(t('panel.schedule'), [t('col.number'), t('col.table'), t('col.client'), t('col.start'), t('col.end'), t('msg.guests'), t('col.status')], scheduleRows)
+            : emptyState(t('msg.noResults')))
+          : el('p', { className: 'muted', text: t('reservations.scheduleHint') })
       ])
     ]));
   } catch (err) {
@@ -136,21 +138,21 @@ async function reload(filters = {}) {
 function openCreateDialog(tables, users, onDone) {
   const clients = users.filter((u) => (u.roles || []).includes('CLIENT'));
   const clientId = el('select', {}, [
-    el('option', { value: '', text: 'Клиент' }),
+    el('option', { value: '', text: t('col.client') }),
     ...clients.map((u) => el('option', { value: String(u.id), text: `${u.fullName} (${u.email})` }))
   ]);
   const diningTableId = el('select', {}, [
-    el('option', { value: '', text: 'Маса' }),
-    ...tables.filter((t) => t.active).map((t) => el('option', {
-      value: String(t.id),
-      text: `#${t.tableNumber} ${t.displayName || ''}`.trim()
+    el('option', { value: '', text: t('col.table') }),
+    ...tables.filter((row) => row.active).map((row) => el('option', {
+      value: String(row.id),
+      text: `#${row.tableNumber} ${row.displayName || ''}`.trim()
     }))
   ]);
   const startTime = el('input', { type: 'datetime-local' });
   const endTime = el('input', { type: 'datetime-local' });
   const guestCount = el('input', { type: 'number', min: '1', value: '2' });
   const notes = el('textarea');
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Създай' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.create') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -163,7 +165,7 @@ function openCreateDialog(tables, users, onDone) {
         notes: notes.value.trim() || null
       });
       closeDialog();
-      toast('Резервацията е създадена.', 'success');
+      toast(t('msg.reservationCreated'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -171,33 +173,33 @@ function openCreateDialog(tables, users, onDone) {
     }
   });
   openDialog({
-    title: 'Нова резервация',
+    title: t('action.createReservation'),
     body: el('div', { className: 'stack' }, [
-      field('Клиент', clientId),
-      field('Маса', diningTableId),
-      field('Начало', startTime),
-      field('Край', endTime),
-      field('Гости', guestCount),
-      field('Бележки', notes)
+      field(t('col.client'), clientId),
+      field(t('col.table'), diningTableId),
+      field(t('col.start'), startTime),
+      field(t('col.end'), endTime),
+      field(t('msg.guests'), guestCount),
+      field(t('col.notes'), notes)
     ]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });
 }
 
 function openEditDialog(reservation, tables, onDone) {
-  const diningTableId = el('select', {}, tables.map((t) => el('option', {
-    value: String(t.id),
-    text: `#${t.tableNumber}`,
-    selected: reservation.diningTableId === t.id ? 'true' : null
+  const diningTableId = el('select', {}, tables.map((row) => el('option', {
+    value: String(row.id),
+    text: `#${row.tableNumber}`,
+    selected: reservation.diningTableId === row.id ? 'true' : null
   })));
   const startTime = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(reservation.startTime) });
   const endTime = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(reservation.endTime) });
   const guestCount = el('input', { type: 'number', min: '1', value: reservation.guestCount ?? 1 });
   const notes = el('textarea', {}, reservation.notes || '');
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Запази' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -209,7 +211,7 @@ function openEditDialog(reservation, tables, onDone) {
         notes: notes.value.trim() || null
       });
       closeDialog();
-      toast('Резервацията е обновена.', 'success');
+      toast(t('msg.reservationUpdated'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -217,16 +219,16 @@ function openEditDialog(reservation, tables, onDone) {
     }
   });
   openDialog({
-    title: `Редакция — ${reservation.reservationNumber}`,
+    title: t('reservations.editTitle', { number: reservation.reservationNumber }),
     body: el('div', { className: 'stack' }, [
-      field('Маса', diningTableId),
-      field('Начало', startTime),
-      field('Край', endTime),
-      field('Гости', guestCount),
-      field('Бележки', notes)
+      field(t('col.table'), diningTableId),
+      field(t('col.start'), startTime),
+      field(t('col.end'), endTime),
+      field(t('msg.guests'), guestCount),
+      field(t('col.notes'), notes)
     ]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });
@@ -234,15 +236,15 @@ function openEditDialog(reservation, tables, onDone) {
 
 function openStatusDialog(reservation, onDone) {
   const status = el('select', {}, STATUSES.map((s) => el('option', {
-    value: s, text: s, selected: reservation.status === s ? 'true' : null
+    value: s, text: `${statusLabel(s)} (${s})`, selected: reservation.status === s ? 'true' : null
   })));
-  const submit = el('button', { type: 'button', className: 'btn', text: 'Запази статус' });
+  const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
     if (TERMINAL.has(status.value)) {
       const ok = await confirmDialog({
-        title: 'Терминален статус',
-        message: `Потвърдете преминаване към ${status.value}.`,
-        confirmLabel: 'Потвърди',
+        title: t('reservations.terminalTitle'),
+        message: t('reservations.terminalMsg', { status: status.value }),
+        confirmLabel: t('common.confirm'),
         danger: true
       });
       if (!ok) return;
@@ -251,7 +253,7 @@ function openStatusDialog(reservation, onDone) {
     try {
       await api.patch(`/api/admin/reservations/${reservation.id}/status`, { status: status.value });
       closeDialog();
-      toast('Статусът е обновен.', 'success');
+      toast(t('msg.statusUpdated'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -259,10 +261,10 @@ function openStatusDialog(reservation, onDone) {
     }
   });
   openDialog({
-    title: `Статус — ${reservation.reservationNumber}`,
-    body: field('Статус', status),
+    title: t('reservations.statusTitle', { number: reservation.reservationNumber }),
+    body: field(t('col.status'), status),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });

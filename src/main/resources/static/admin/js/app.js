@@ -9,6 +9,8 @@ import { renderTables } from './views/tables.js';
 import { renderReservations } from './views/reservations.js';
 import { renderPayments } from './views/payments.js';
 import { renderReports } from './views/reports.js';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);
@@ -18,6 +20,8 @@ registerRoute('tables', renderTables);
 registerRoute('reservations', renderReservations);
 registerRoute('payments', renderPayments);
 registerRoute('reports', renderReports);
+
+let shellAccount = null;
 
 async function logout() {
   try {
@@ -48,24 +52,54 @@ function wireShell() {
     const open = sidebar.classList.toggle('open');
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
-  document.getElementById('main-nav').addEventListener('click', () => {
-    sidebar.classList.remove('open');
-    toggle.setAttribute('aria-expanded', 'false');
-  });
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    logout().catch((err) => handleError(err, 'Изходът неуспешен.'));
+  document.getElementById('main-nav').addEventListener('click', (event) => {
+    if (event.target.closest('a.nav-link')) {
+      sidebar.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
   });
 }
 
 async function boot() {
   wireShell();
+  decorateNavIcons({
+    dashboard: 'dashboard',
+    users: 'users',
+    menu: 'menu',
+    inventory: 'inventory',
+    tables: 'tables',
+    reservations: 'reservations',
+    payments: 'payments',
+    reports: 'reports'
+  });
+
+  let csrfOk = false;
   try {
     await loadCsrf();
-    setBanner('Сесията е активна. CSRF токенът е зареден.', 'success');
+    csrfOk = true;
   } catch (err) {
-    handleError(err, 'Неуспешно зареждане на CSRF токен.');
-    setBanner('Проблем със сесията или CSRF.', 'error');
-    return;
+    handleError(err, t('session.csrfError'));
+    setBanner(t('session.problem'), 'error');
+  }
+
+  try {
+    const shell = await mountShellChrome({
+      apiGet: (path) => api.get(path),
+      onLogout: logout,
+      collapsibleSidebar: true,
+      onLanguageApplied: () => {
+        window.dispatchEvent(new Event('hashchange'));
+      }
+    });
+    shellAccount = shell.account;
+    window.__adminAccount = shellAccount;
+  } catch (err) {
+    console.error(err);
+    handleError(err, t('boot.adminError'));
+  }
+
+  if (csrfOk) {
+    setBanner(t('session.active'), 'success');
   }
 
   await startRouter(async (name, handler) => {
@@ -74,12 +108,12 @@ async function boot() {
       await handler();
     } catch (err) {
       handleError(err);
-      setPageMeta('Грешка', 'Изгледът не можа да се зареди.');
+      setPageMeta(t('page.error'), t('view.loadError'));
     }
   });
 }
 
 boot().catch((err) => {
   console.error(err);
-  toast('Административният панел не можа да стартира.', 'error');
+  toast(t('boot.adminError'), 'error');
 });

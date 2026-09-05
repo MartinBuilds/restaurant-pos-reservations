@@ -1,13 +1,15 @@
 import { clear, el } from './dom.js';
 import { statusLabel } from './format.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 let opener = null;
 
 export function setPageMeta(title, subtitle) {
-  const t = document.getElementById('page-title');
+  const titleEl = document.getElementById('page-title');
   const s = document.getElementById('page-subtitle');
-  if (t) t.textContent = title;
+  if (titleEl) titleEl.textContent = title;
   if (s) s.textContent = subtitle;
+  document.title = `${title} — ${t('client.titleSuffix')}`;
 }
 
 export function toast(message, type = 'info') {
@@ -26,9 +28,9 @@ export function setBanner(message, type = 'info') {
   region.appendChild(el('div', { className: `banner banner-${type}` }, [String(message)]));
 }
 
-export function handleError(err, fallback = 'Възникна грешка.') {
+export function handleError(err, fallback) {
   if (err && err.name === 'AbortError') return;
-  const msg = (err && err.message) ? err.message : fallback;
+  const msg = (err && err.message) ? err.message : (fallback || t('common.error'));
   toast(msg, 'error');
   setBanner(msg, 'error');
 }
@@ -40,18 +42,23 @@ export function badge(status) {
   });
 }
 
-export function loadingBox(text = 'Зареждане…') {
-  return el('div', { className: 'loading', role: 'status', text });
+export function loadingBox(text) {
+  return el('div', { className: 'loading', role: 'status', text: text || t('common.loading') });
 }
 
 export function emptyBox(text) {
-  return el('div', { className: 'empty', text });
+  return el('div', { className: 'empty', text: text || t('common.empty') });
 }
 
 export function errorBox(message, onRetry) {
   return el('div', { className: 'error-box stack' }, [
     el('p', { text: message }),
-    onRetry ? el('button', { type: 'button', className: 'btn btn-primary', onClick: onRetry, text: 'Опитай отново' }) : null
+    onRetry ? el('button', {
+      type: 'button',
+      className: 'btn btn-primary',
+      onClick: onRetry,
+      text: t('common.retry')
+    }) : null
   ]);
 }
 
@@ -59,7 +66,7 @@ export function openDialog({ title, body, footer, openerEl }) {
   opener = openerEl || document.activeElement;
   const overlay = document.getElementById('overlay');
   const dialog = document.getElementById('dialog');
-  document.getElementById('dialog-title').textContent = title || 'Диалог';
+  document.getElementById('dialog-title').textContent = title || t('common.dialog');
   const bodyEl = document.getElementById('dialog-body');
   const footerEl = document.getElementById('dialog-footer');
   clear(bodyEl);

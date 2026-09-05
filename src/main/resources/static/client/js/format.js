@@ -1,3 +1,5 @@
+import { statusLabel as i18nStatus } from '/shared/js/i18n/i18n.js?v=pr17-4';
+
 export function text(value) {
   if (value === null || value === undefined || value === '') return '—';
   return String(value);
@@ -7,8 +9,8 @@ export function dateTime(value) {
   if (!value) return '—';
   const s = String(value);
   if (s.includes('T')) {
-    const [d, t] = s.split('T');
-    return `${d} ${(t || '').slice(0, 8)}`;
+    const [d, time] = s.split('T');
+    return `${d} ${(time || '').slice(0, 8)}`;
   }
   return s;
 }
@@ -22,11 +24,6 @@ export function toDateTimeLocalValue(value) {
 }
 
 export function statusLabel(status) {
-  const map = {
-    CONFIRMED: 'Потвърдена',
-    CANCELLED: 'Отказана',
-    COMPLETED: 'Завършена',
-    NO_SHOW: 'Неявяване'
-  };
-  return map[status] || String(status || '—');
+  if (!status) return '—';
+  return i18nStatus(status);
 }

@@ -1,13 +1,14 @@
 import { api } from '../api.js';
-import { money, boolLabel } from '../format.js';
+import { money } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, handleError, field
 } from '../ui.js';
+import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 export async function renderMenu() {
-  setPageMeta('Меню', 'Категории, ястия, активност и наличност');
-  mount(loading());
+  setPageMeta(t('page.menu.title'), t('page.menu.subtitle'));
+  mount(loading(t('common.loading')));
   await reload();
 }
 
@@ -22,18 +23,18 @@ async function reload() {
       String(c.id),
       c.name || '—',
       c.description || '—',
-      badge(c.active ? 'Активна' : 'Неактивна', c.active ? 'ok' : 'muted'),
+      badge(c.active ? t('common.active') : t('common.inactive'), c.active ? 'ok' : 'muted'),
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Редакция',
+          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
           onClick: () => openCategoryDialog(c, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: c.active ? 'Деактивирай' : 'Активирай',
+          type: 'button', className: 'btn btn-secondary', text: c.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/menu/categories/${c.id}/status`, { active: !c.active });
-              toast('Статусът на категорията е обновен.', 'success');
+              toast(t('msg.statusUpdated'), 'success');
               await reload();
             } catch (err) { handleError(err); }
           }
@@ -46,33 +47,33 @@ async function reload() {
       item.name || '—',
       item.categoryName || String(item.categoryId),
       money(item.price),
-      badge(item.active ? 'Активно' : 'Неактивно', item.active ? 'ok' : 'muted'),
-      badge(item.manualAvailable ? 'Ръчно: да' : 'Ръчно: не', item.manualAvailable ? 'info' : 'warn'),
-      badge(item.available ? 'Ефективно: да' : 'Ефективно: не', item.available ? 'ok' : 'danger'),
+      badge(item.active ? t('common.active') : t('common.inactive'), item.active ? 'ok' : 'muted'),
+      badge(item.manualAvailable ? t('menu.manualYes') : t('menu.manualNo'), item.manualAvailable ? 'info' : 'warn'),
+      badge(item.available ? t('menu.effectiveYes') : t('menu.effectiveNo'), item.available ? 'ok' : 'danger'),
       item.availabilityReason || '—',
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Редакция',
+          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
           onClick: () => openItemDialog(item, categories, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: item.active ? 'Деактивирай' : 'Активирай',
+          type: 'button', className: 'btn btn-secondary', text: item.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/menu/items/${item.id}/status`, { active: !item.active });
-              toast('Статусът на ястието е обновен.', 'success');
+              toast(t('msg.statusUpdated'), 'success');
               await reload();
             } catch (err) { handleError(err); }
           }
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Ръчна наличност',
+          type: 'button', className: 'btn btn-secondary', text: t('action.manualAvailability'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/menu/items/${item.id}/availability`, {
                 available: !item.manualAvailable
               });
-              toast('Ръчната наличност е обновена.', 'success');
+              toast(t('msg.saved'), 'success');
               await reload();
             } catch (err) { handleError(err); }
           }
@@ -81,30 +82,30 @@ async function reload() {
     ]);
 
     mount(el('div', { className: 'stack' }, [
-      panel('Категории', [
+      panel(t('menu.categories'), [
         categories.length
-          ? table('Категории', ['ID', 'Име', 'Описание', 'Статус', 'Действия'], catRows)
-          : emptyState('Няма категории.')
+          ? table(t('menu.categories'), [t('col.id'), t('col.name'), t('col.description'), t('col.status'), t('common.actions')], catRows)
+          : emptyState(t('common.empty'))
       ], [
-        el('button', { type: 'button', className: 'btn', text: 'Нова категория', onClick: () => openCategoryDialog(null, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: 'Презареди', onClick: () => reload() })
+        el('button', { type: 'button', className: 'btn', text: t('action.newCategory'), onClick: () => openCategoryDialog(null, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
       ]),
-      panel('Ястия', [
-        el('p', { className: 'muted', text: 'Ефективната наличност идва от backend (рецепта + склад + ръчен флаг).' }),
+      panel(t('menu.items'), [
+        el('p', { className: 'muted', text: t('menu.availabilityNote') }),
         items.length
-          ? table('Ястия', ['ID', 'Име', 'Категория', 'Цена', 'Активно', 'Ръчно', 'Ефективно', 'Причина', 'Действия'], itemRows)
-          : emptyState('Няма ястия.')
+          ? table(t('menu.items'), [t('col.id'), t('col.name'), t('col.category'), t('col.price'), t('col.active'), t('col.manual'), t('col.effective'), t('col.reason'), t('common.actions')], itemRows)
+          : emptyState(t('common.empty'))
       ], [
         el('button', {
-          type: 'button', className: 'btn', text: 'Ново ястие',
+          type: 'button', className: 'btn', text: t('action.newItem'),
           onClick: () => openItemDialog(null, categories, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: 'Преизчисли наличност',
+          type: 'button', className: 'btn btn-secondary', text: t('action.recalcAvailability'),
           onClick: async () => {
             try {
               await api.post('/api/admin/menu/availability/recalculate', {});
-              toast('Наличността е преизчислена.', 'success');
+              toast(t('msg.saved'), 'success');
               await reload();
             } catch (err) { handleError(err); }
           }
@@ -119,7 +120,7 @@ async function reload() {
 function openCategoryDialog(existing, onDone) {
   const name = el('input', { type: 'text', value: existing?.name || '', required: 'true' });
   const description = el('textarea', {}, existing?.description || '');
-  const submit = el('button', { type: 'button', className: 'btn', text: existing ? 'Запази' : 'Създай' });
+  const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -127,7 +128,7 @@ function openCategoryDialog(existing, onDone) {
       if (existing) await api.put(`/api/admin/menu/categories/${existing.id}`, body);
       else await api.post('/api/admin/menu/categories', body);
       closeDialog();
-      toast('Категорията е записана.', 'success');
+      toast(existing ? t('msg.saved') : t('msg.created'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -135,10 +136,10 @@ function openCategoryDialog(existing, onDone) {
     }
   });
   openDialog({
-    title: existing ? 'Редакция на категория' : 'Нова категория',
-    body: el('div', { className: 'stack' }, [field('Име', name), field('Описание', description)]),
+    title: existing ? t('menu.editCategory') : t('menu.newCategory'),
+    body: el('div', { className: 'stack' }, [field(t('col.name'), name), field(t('col.description'), description)]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });
@@ -149,7 +150,7 @@ function openItemDialog(existing, categories, onDone) {
   const description = el('textarea', {}, existing?.description || '');
   const price = el('input', { type: 'number', step: '0.01', min: '0', value: existing?.price ?? '' });
   const categoryId = el('select', {}, [
-    el('option', { value: '', text: 'Изберете категория' }),
+    el('option', { value: '', text: t('menu.selectCategory') }),
     ...categories.map((c) => el('option', {
       value: String(c.id),
       text: c.name,
@@ -159,7 +160,7 @@ function openItemDialog(existing, categories, onDone) {
   const available = el('input', { type: 'checkbox' });
   available.checked = existing ? existing.manualAvailable !== false : true;
 
-  const submit = el('button', { type: 'button', className: 'btn', text: existing ? 'Запази' : 'Създай' });
+  const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
     submit.disabled = true;
     try {
@@ -173,7 +174,7 @@ function openItemDialog(existing, categories, onDone) {
       if (existing) await api.put(`/api/admin/menu/items/${existing.id}`, body);
       else await api.post('/api/admin/menu/items', body);
       closeDialog();
-      toast('Ястието е записано.', 'success');
+      toast(existing ? t('msg.saved') : t('msg.created'), 'success');
       await onDone();
     } catch (err) {
       handleError(err);
@@ -182,16 +183,16 @@ function openItemDialog(existing, categories, onDone) {
   });
 
   openDialog({
-    title: existing ? 'Редакция на ястие' : 'Ново ястие',
+    title: existing ? t('menu.editItem') : t('menu.newItem'),
     body: el('div', { className: 'stack' }, [
-      field('Име', name),
-      field('Описание', description),
-      field('Цена', price),
-      field('Категория', categoryId),
-      el('label', { className: 'checkbox-row' }, [available, document.createTextNode('Ръчно налично (manualAvailable)')])
+      field(t('col.name'), name),
+      field(t('col.description'), description),
+      field(t('col.price'), price),
+      field(t('col.category'), categoryId),
+      el('label', { className: 'checkbox-row' }, [available, document.createTextNode(t('menu.manualAvailableFlag'))])
     ]),
     footerButtons: [
-      el('button', { type: 'button', className: 'btn btn-secondary', text: 'Отказ', onClick: () => closeDialog() }),
+      el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.cancel'), onClick: () => closeDialog() }),
       submit
     ]
   });

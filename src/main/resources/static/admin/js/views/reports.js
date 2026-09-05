@@ -1,12 +1,13 @@
 import { api, queryString } from '../api.js';
 import { money, percent, quantity, toDateTimeLocalValue, fromDateTimeLocalValue, dateTime } from '../format.js';
 import {
-  setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
+  setPageMeta, mount, el, panel, table, loading, errorBox, emptyState,
   handleError, field, toast
 } from '../ui.js';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
 
 export async function renderReports() {
-  setPageMeta('Отчети', 'Оборот само от paid + closed + SERVED · период [from, to)');
+  setPageMeta(t('page.reports.title'), t('page.reports.subtitle'));
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0);
@@ -16,7 +17,7 @@ export async function renderReports() {
 }
 
 async function loadReports(filters) {
-  mount(loading('Зареждане на отчети...'));
+  mount(loading(t('common.loading')));
   const fromInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
   const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
 
@@ -44,62 +45,62 @@ async function loadReports(filters) {
       ]);
       bar.firstChild.style.width = `${width}%`;
       return el('div', { className: 'card' }, [
-        el('div', { className: 'card-label', text: m.method }),
+        el('div', { className: 'card-label', text: m.method ? `${statusLabel(m.method)} (${m.method})` : '—' }),
         el('div', { className: 'card-value', text: money(m.amount) }),
-        el('p', { className: 'muted', text: `${m.paymentCount} плащания · ${percent(m.percentageOfRevenue)}` }),
+        el('p', { className: 'muted', text: `${m.paymentCount} · ${percent(m.percentageOfRevenue)}` }),
         bar
       ]);
     });
 
     mount(el('div', { className: 'stack' }, [
       el('div', { className: 'note-info note' }, [
-        document.createTextNode(`Периодът е [from, to). Часова зона: ${tz}. Включват се само платени, затворени и SERVED поръчки. Данните са от симулационни CASH/CARD payments. Това не е счетоводен или данъчен отчет.`)
+        document.createTextNode(t('payment.simulationWarning'))
       ]),
-      panel('Период', [
+      panel(t('msg.period'), [
         el('div', { className: 'filters' }, [
-          field('От', fromInput),
-          field('До', toInput),
+          field(t('col.from'), fromInput),
+          field(t('col.to'), toInput),
           el('button', {
-            type: 'button', className: 'btn', text: 'Генерирай',
+            type: 'button', className: 'btn', text: t('common.search'),
             onClick: () => {
               const from = fromDateTimeLocalValue(fromInput.value);
               const to = fromDateTimeLocalValue(toInput.value);
               if (!from || !to) {
-                toast('from и to са задължителни.', 'error');
+                toast(t('msg.requiredFields'), 'error');
                 return;
               }
               loadReports({ from, to });
             }
           })
         ]),
-        el('p', { className: 'muted', text: `Избран период: ${dateTime(summary.period?.from)} → ${dateTime(summary.period?.to)} (${tz})` })
+        el('p', { className: 'muted', text: `${t('msg.period')}: ${dateTime(summary.period?.from)} → ${dateTime(summary.period?.to)} (${tz})` })
       ]),
       el('div', { className: 'grid grid-4' }, [
-        metric('Приходи', money(summary.totalRevenue)),
-        metric('Платени поръчки', String(summary.paidOrdersCount)),
-        metric('Продадени позиции', String(summary.soldItemsCount)),
-        metric('Средна стойност', money(summary.averageOrderValue))
+        metric(t('reports.revenue'), money(summary.totalRevenue)),
+        metric(t('reports.paidOrders'), String(summary.paidOrdersCount)),
+        metric(t('reports.soldItems'), String(summary.soldItemsCount)),
+        metric(t('reports.avgOrder'), money(summary.averageOrderValue))
       ]),
-      panel('По метод на плащане', [
-        el('p', { className: 'muted', text: `Общо: ${money(byMethod.totalRevenue)}` }),
+      panel(t('reports.byMethod'), [
+        el('p', { className: 'muted', text: t('reports.total', { amount: money(byMethod.totalRevenue) }) }),
         el('div', { className: 'grid grid-2' }, methodCards.length ? methodCards : [
-          emptyState('Няма методи.')
+          emptyState(t('common.empty'))
         ])
       ]),
-      panel('По ястие (исторически snapshot)', [
+      panel(t('reports.byItem'), [
         itemRows.length
-          ? table('Продажби по ястие', ['ID', 'Snapshot име', 'К-во', 'Приход', 'Поръчки'], itemRows)
-          : emptyState('Няма продажби за периода.')
+          ? table(t('reports.salesByItem'), [t('col.id'), t('col.snapshotName'), t('col.qtyShort'), t('col.revenue'), t('col.orders')], itemRows)
+          : emptyState(t('msg.noResults'))
       ])
     ]));
   } catch (err) {
     mount(el('div', { className: 'stack' }, [
-      panel('Период', [
+      panel(t('msg.period'), [
         el('div', { className: 'filters' }, [
-          field('От', fromInput),
-          field('До', toInput),
+          field(t('col.from'), fromInput),
+          field(t('col.to'), toInput),
           el('button', {
-            type: 'button', className: 'btn', text: 'Генерирай',
+            type: 'button', className: 'btn', text: t('common.search'),
             onClick: () => loadReports({
               from: fromDateTimeLocalValue(fromInput.value),
               to: fromDateTimeLocalValue(toInput.value)
