@@ -2,8 +2,8 @@ import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { onRealtimeRefresh, startKitchenRealtime, stopRealtime } from './realtime.js';
 import { renderQueue } from './queue.js';
-import { mountShellChrome } from '/shared/js/account-shell.js?v=pr17-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { mountShellChrome } from '/shared/js/account-shell.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 async function boot() {
   setUnauthorizedHandler(() => {

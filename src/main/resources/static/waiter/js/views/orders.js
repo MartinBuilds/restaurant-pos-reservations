@@ -5,7 +5,7 @@ import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { openAddItemsDialog } from './order-form.js';
 import { openPaymentDialog, showReceipt } from './payment.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let abort = null;
 
@@ -112,7 +112,7 @@ export async function renderOrders() {
         ]),
         el('p', { text: t('orders.totalClosed', {
           total: money(order.totalAmount),
-          closed: order.closed
+          closed: order.closed ? t('common.yes') : t('common.no')
         }) }),
         actions
       ]));

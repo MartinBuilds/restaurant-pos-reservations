@@ -3,7 +3,7 @@ import { clear, el } from '/operations/js/dom.js';
 import { dateTime, text, toLocalDateTimeInputValue } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let abort = null;
 
@@ -31,7 +31,7 @@ export async function renderReservations() {
     el('option', { value: '', text: t('filter.allStatuses') }),
     ...['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].map((s) => el('option', {
       value: s,
-      text: `${statusLabel(s)} (${s})`
+      text: statusLabel(s)
     }))
   ]);
   const resultHost = el('div', { id: 'res-results' });

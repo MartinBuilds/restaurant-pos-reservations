@@ -4,7 +4,7 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 const UNITS = ['GRAM', 'MILLILITER', 'PIECE'];
 

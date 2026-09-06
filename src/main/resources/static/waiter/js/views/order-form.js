@@ -3,7 +3,7 @@ import { el, clear } from '/operations/js/dom.js';
 import { money, text } from '/operations/js/format.js';
 import { handleError, toast } from '/operations/js/notifications.js';
 import { closeDialog, openDialog } from './ui-shared.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 async function loadMenu() {
   const items = await api.get('/api/public/menu');

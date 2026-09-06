@@ -1,4 +1,4 @@
-import { statusLabel as i18nStatus } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { statusLabel as i18nStatus } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 export function text(value) {
   if (value === null || value === undefined || value === '') return '—';

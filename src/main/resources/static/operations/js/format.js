@@ -1,6 +1,6 @@
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
-export { statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+export { statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 export function money(value) {
   if (value === null || value === undefined || value === '') return '—';

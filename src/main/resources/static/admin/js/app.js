@@ -9,8 +9,8 @@ import { renderTables } from './views/tables.js';
 import { renderReservations } from './views/reservations.js';
 import { renderPayments } from './views/payments.js';
 import { renderReports } from './views/reports.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr17-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);

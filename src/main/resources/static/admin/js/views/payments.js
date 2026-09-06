@@ -4,7 +4,7 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, handleError, field
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 export async function renderPayments() {
   setPageMeta(t('page.payments.title'), t('page.payments.subtitle'));
@@ -17,8 +17,8 @@ async function reload(filters) {
     const payments = await api.get(`/api/admin/payments${queryString(filters)}`);
     const method = el('select', {}, [
       el('option', { value: '', text: t('filter.allMethods') }),
-      el('option', { value: 'CASH', text: `${statusLabel('CASH')} (CASH)`, selected: filters.method === 'CASH' ? 'true' : null }),
-      el('option', { value: 'CARD', text: `${statusLabel('CARD')} (CARD)`, selected: filters.method === 'CARD' ? 'true' : null })
+      el('option', { value: 'CASH', text: statusLabel('CASH'), selected: filters.method === 'CASH' ? 'true' : null }),
+      el('option', { value: 'CARD', text: statusLabel('CARD'), selected: filters.method === 'CARD' ? 'true' : null })
     ]);
     const from = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
     const to = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
@@ -27,7 +27,7 @@ async function reload(filters) {
     const rows = payments.map((p) => [
       p.receiptNumber || '—',
       p.orderNumber || String(p.orderId),
-      badge(p.method ? `${statusLabel(p.method)} (${p.method})` : '—', p.method === 'CASH' ? 'ok' : 'info'),
+      badge(p.method ? statusLabel(p.method) : '—', p.method === 'CASH' ? 'ok' : 'info'),
       money(p.amount),
       p.processedByName || String(p.processedById),
       dateTime(p.paidAt),
@@ -88,9 +88,12 @@ async function openReceipt(id) {
           value: p.simulated ? t('common.yes') : t('common.no')
         }) }),
         el('p', { text: t('payments.orderTableLine', { order: p.orderNumber, table: p.tableNumber }) }),
-        el('p', { text: t('payments.methodAmountLine', { method: p.method ? `${statusLabel(p.method)} (${p.method})` : '—', amount: money(p.amount) }) }),
+        el('p', { text: t('payments.methodAmountLine', { method: p.method ? statusLabel(p.method) : '—', amount: money(p.amount) }) }),
         el('p', { text: t('payments.operatorPaidLine', { name: p.processedByName, paidAt: dateTime(p.paidAt) }) }),
-        el('p', { text: t('payments.orderStatusLine', { status: p.orderStatus ? `${statusLabel(p.orderStatus)} (${p.orderStatus})` : '—', closed: String(p.orderClosed) }) }),
+        el('p', { text: t('payments.orderStatusLine', {
+          status: p.orderStatus ? statusLabel(p.orderStatus) : '—',
+          closed: p.orderClosed ? t('common.yes') : t('common.no')
+        }) }),
         itemRows.length
           ? table(t('payments.itemsSnapshot'), [t('col.item'), t('col.unitPrice'), t('col.qtyShort'), t('col.lineTotal')], itemRows)
           : emptyState(t('common.empty'))

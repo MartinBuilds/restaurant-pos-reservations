@@ -3,7 +3,7 @@ import { el } from '/operations/js/dom.js';
 import { dateTime, money, text } from '/operations/js/format.js';
 import { handleError, toast } from '/operations/js/notifications.js';
 import { closeDialog, openDialog } from './ui-shared.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 function receiptView(payment) {
   const items = payment.items || [];
@@ -15,7 +15,7 @@ function receiptView(payment) {
     el('p', { text: t('payment.order', { number: text(payment.orderNumber) }) }),
     el('p', { text: t('payment.table', { number: text(payment.tableNumber) }) }),
     el('p', { text: t('payment.method', {
-      method: payment.method ? `${statusLabel(payment.method)} (${payment.method})` : '—'
+      method: payment.method ? statusLabel(payment.method) : '—'
     }) }),
     el('p', { text: t('payment.amount', { amount: money(payment.amount) }) }),
     el('p', { text: t('payment.processedBy', { name: text(payment.processedByName) }) }),
@@ -62,8 +62,8 @@ export async function openPaymentDialog(order, { onDone, openerEl }) {
       number: order.orderNumber,
       amount: money(order.totalAmount)
     }) }),
-    el('label', { className: 'row' }, [methodCash, el('span', { text: `${statusLabel('CASH')} (CASH)` })]),
-    el('label', { className: 'row' }, [methodCard, el('span', { text: `${statusLabel('CARD')} (CARD)` })])
+    el('label', { className: 'row' }, [methodCash, el('span', { text: statusLabel('CASH') })]),
+    el('label', { className: 'row' }, [methodCard, el('span', { text: statusLabel('CARD') })])
   ]);
 
   const submitBtn = el('button', { type: 'button', className: 'btn btn-primary', text: t('common.confirm') });

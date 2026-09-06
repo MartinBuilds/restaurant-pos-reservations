@@ -1,4 +1,4 @@
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let csrfHeaderName = 'X-CSRF-TOKEN';
 let csrfToken = null;

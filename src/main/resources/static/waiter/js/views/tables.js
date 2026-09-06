@@ -4,7 +4,7 @@ import { text } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { openCreateOrderDialog } from './order-form.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let abort = null;
 
