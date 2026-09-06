@@ -1,5 +1,5 @@
 import { icon, initialsFrom } from './icons.js';
-import { applyDomI18n, onLanguageChange, t } from './i18n/i18n.js?v=pr17-4';
+import { applyDomI18n, onLanguageChange, t } from './i18n/i18n.js?v=pr19-1';
 import {
   getLanguage,
   getSidebarCollapsed,

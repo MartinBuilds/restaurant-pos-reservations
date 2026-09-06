@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -63,8 +62,13 @@ public class SecurityConfig {
 						.requestMatchers("/api/**").authenticated()
 						.requestMatchers("/ws", "/ws/**").authenticated()
 						.anyRequest().authenticated())
-				.formLogin(form -> form.successHandler(successHandler))
-				.logout(Customizer.withDefaults())
+				.formLogin(form -> form
+						.loginPage("/login")
+						.failureUrl("/login?error")
+						.successHandler(successHandler))
+				.logout(logout -> logout
+						.logoutSuccessUrl("/login?logout")
+						.permitAll())
 				.exceptionHandling(ex -> ex
 						.defaultAuthenticationEntryPointFor(
 								new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),

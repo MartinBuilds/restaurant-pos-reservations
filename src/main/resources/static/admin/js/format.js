@@ -1,4 +1,4 @@
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 const moneyFmt = new Intl.NumberFormat('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const numberFmt = new Intl.NumberFormat('bg-BG', { maximumFractionDigits: 3 });

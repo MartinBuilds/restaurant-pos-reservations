@@ -4,7 +4,7 @@ import {
   setPageMeta, mount, el, panel, table, loading, errorBox, emptyState,
   handleError, field, toast
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 export async function renderReports() {
   setPageMeta(t('page.reports.title'), t('page.reports.subtitle'));
@@ -45,7 +45,7 @@ async function loadReports(filters) {
       ]);
       bar.firstChild.style.width = `${width}%`;
       return el('div', { className: 'card' }, [
-        el('div', { className: 'card-label', text: m.method ? `${statusLabel(m.method)} (${m.method})` : '—' }),
+        el('div', { className: 'card-label', text: m.method ? statusLabel(m.method) : '—' }),
         el('div', { className: 'card-value', text: money(m.amount) }),
         el('p', { className: 'muted', text: `${m.paymentCount} · ${percent(m.percentageOfRevenue)}` }),
         bar

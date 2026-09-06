@@ -1,0 +1,91 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent 42%),
+    linear-gradient(160deg, var(--color-bg), color-mix(in srgb, var(--color-surface) 80%, var(--color-bg)));
+}
+
+.login-card {
+  width: min(100%, 26rem);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 1.75rem;
+  box-shadow: 0 18px 40px color-mix(in srgb, #000 12%, transparent);
+}
+
+.login-brand {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.login-card h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.login-card .login-subtitle {
+  margin: 0 0 1.25rem;
+  color: var(--color-muted);
+}
+
+.login-card .field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.login-card label {
+  font-size: 0.9rem;
+}
+
+.login-card input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.login-card button[type="submit"] {
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.login-alert {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-danger, #b42318) 12%, var(--color-surface));
+}
+
+.login-alert-ok {
+  background: color-mix(in srgb, var(--color-success, #067647) 12%, var(--color-surface));
+}
+
+.login-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.login-toolbar button {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}

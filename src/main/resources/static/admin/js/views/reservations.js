@@ -4,7 +4,7 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field, confirmDialog
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 const STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
@@ -12,7 +12,7 @@ const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
 function statusBadge(status) {
   const map = { CONFIRMED: 'ok', CANCELLED: 'muted', COMPLETED: 'info', NO_SHOW: 'warn' };
   if (!status) return badge('—', 'muted');
-  return badge(`${statusLabel(status)} (${status})`, map[status] || 'muted');
+  return badge(statusLabel(status) || '—', map[status] || 'muted');
 }
 
 export async function renderReservations() {
@@ -38,7 +38,7 @@ async function reload(filters = {}) {
     const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
     const status = el('select', {}, [
       el('option', { value: '', text: t('filter.allStatuses') }),
-      ...STATUSES.map((s) => el('option', { value: s, text: `${statusLabel(s)} (${s})`, selected: filters.status === s ? 'true' : null }))
+      ...STATUSES.map((s) => el('option', { value: s, text: statusLabel(s), selected: filters.status === s ? 'true' : null }))
     ]);
     const tableId = el('select', {}, [
       el('option', { value: '', text: t('filter.allTables') }),
@@ -236,14 +236,14 @@ function openEditDialog(reservation, tables, onDone) {
 
 function openStatusDialog(reservation, onDone) {
   const status = el('select', {}, STATUSES.map((s) => el('option', {
-    value: s, text: `${statusLabel(s)} (${s})`, selected: reservation.status === s ? 'true' : null
+    value: s, text: statusLabel(s), selected: reservation.status === s ? 'true' : null
   })));
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
     if (TERMINAL.has(status.value)) {
       const ok = await confirmDialog({
         title: t('reservations.terminalTitle'),
-        message: t('reservations.terminalMsg', { status: status.value }),
+        message: t('reservations.terminalMsg', { status: statusLabel(status.value) }),
         confirmLabel: t('common.confirm'),
         danger: true
       });

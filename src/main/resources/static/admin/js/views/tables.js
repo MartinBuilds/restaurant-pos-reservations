@@ -3,7 +3,7 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, handleError, field, confirmDialog
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 const STATUSES = ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'OUT_OF_SERVICE'];
 
@@ -15,7 +15,7 @@ function statusBadge(status) {
     OUT_OF_SERVICE: 'danger'
   };
   if (!status) return badge('—', 'muted');
-  return badge(`${statusLabel(status)} (${status})`, map[status] || 'muted');
+  return badge(statusLabel(status) || '—', map[status] || 'muted');
 }
 
 export async function renderTables() {
@@ -111,7 +111,7 @@ function openTableDialog(existing, onDone) {
 
 function openStatusDialog(tableRow, onDone) {
   const status = el('select', {}, STATUSES.map((s) => el('option', {
-    value: s, text: `${statusLabel(s)} (${s})`, selected: tableRow.status === s ? 'true' : null
+    value: s, text: statusLabel(s), selected: tableRow.status === s ? 'true' : null
   })));
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {

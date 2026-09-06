@@ -1,6 +1,6 @@
 import { clear, el } from './dom.js';
 import { statusLabel } from './format.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let opener = null;
 
@@ -38,7 +38,7 @@ export function handleError(err, fallback) {
 export function badge(status) {
   return el('span', {
     className: `badge badge-${status || 'info'}`,
-    text: `${statusLabel(status)} (${status || '—'})`
+    text: statusLabel(status) || '—'
   });
 }
 

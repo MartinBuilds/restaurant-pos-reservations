@@ -1,5 +1,5 @@
 import { clearCsrf, getCsrfHeaders, getCsrfParameterName, getCsrfToken, isCsrfLoaded, loadCsrf } from './csrf.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 export class ApiClientError extends Error {
   constructor(status, message, body) {

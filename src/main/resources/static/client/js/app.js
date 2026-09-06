@@ -6,8 +6,8 @@ import { abortAvailability, renderAvailability } from './views/availability.js';
 import { renderCreateForm, renderEditForm } from './views/reservation-form.js';
 import { abortReservationDetails, renderReservationDetails } from './views/reservation-details.js';
 import { abortReservations, renderReservations } from './views/reservations.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr17-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 const root = document.getElementById('view-root');
 

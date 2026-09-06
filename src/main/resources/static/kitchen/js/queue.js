@@ -2,7 +2,7 @@ import { api, ApiClientError } from '/operations/js/api.js';
 import { clear, el } from '/operations/js/dom.js';
 import { dateTime, text } from '/operations/js/format.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr17-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let abort = null;
 let busyIds = new Set();
@@ -28,7 +28,7 @@ async function patchStatus(order, status, btn) {
     await api.patch(`/api/kitchen/orders/${order.id}/status`, { status });
     toast(t('kitchen.orderMoved', {
       number: order.orderNumber,
-      status: `${statusLabel(status)} (${status})`
+      status: statusLabel(status)
     }), 'success');
     await renderQueue();
   } catch (err) {
@@ -71,7 +71,7 @@ function orderCard(order) {
       time: dateTime(order.createdAt)
     }) }),
     el('p', { className: 'meta', text: t('kitchen.statusMeta', {
-      status: `${statusLabel(order.status)} (${order.status})`
+      status: statusLabel(order.status)
     }) }),
     el('ul', {}, items.map((it) => el('li', {
       text: `${text(it.menuItemName)} × ${text(it.quantity)}`
@@ -102,9 +102,9 @@ export async function renderQueue() {
       content.appendChild(el('div', { className: 'empty', text: t('kitchen.emptyActive') }));
       return;
     }
-    content.appendChild(column(`${t('kitchen.col.accepted')} (ACCEPTED)`, accepted, orderCard));
-    content.appendChild(column(`${t('kitchen.col.cooking')} (COOKING)`, cooking, orderCard));
-    content.appendChild(column(`${t('kitchen.col.ready')} (READY)`, ready, orderCard));
+    content.appendChild(column(t('kitchen.col.accepted'), accepted, orderCard));
+    content.appendChild(column(t('kitchen.col.cooking'), cooking, orderCard));
+    content.appendChild(column(t('kitchen.col.ready'), ready, orderCard));
   } catch (err) {
     if (err && err.name === 'AbortError') return;
     clear(content);
