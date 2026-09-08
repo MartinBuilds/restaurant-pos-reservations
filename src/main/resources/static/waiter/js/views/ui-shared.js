@@ -1,6 +1,7 @@
 import { clear, el } from '/operations/js/dom.js';
 import { statusLabel } from '/operations/js/format.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=pr20-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 let opener = null;
 
@@ -25,11 +26,11 @@ export function emptyBox(text) {
 }
 
 export function errorBox(message, onRetry) {
-  return el('div', { className: 'error-box stack' }, [
-    el('p', { text: message }),
+  return el('div', { className: 'error-box' }, [
+    el('p', { text: message || t('common.error') }),
     onRetry ? el('button', {
       type: 'button',
-      className: 'btn btn-primary',
+      className: 'btn',
       onClick: onRetry,
       text: t('common.retry')
     }) : null
@@ -48,18 +49,22 @@ export function openDialog({ title, body, footer, openerEl }) {
   clear(footerEl);
   if (body) bodyEl.appendChild(body);
   if (footer) footerEl.appendChild(footer);
-  overlay.hidden = false;
-  dialog.hidden = false;
+  openOverlayDialog(dialog, overlay);
+  document.body.classList.add('dialog-open');
   dialog.querySelector('button, input, select, textarea')?.focus();
 }
 
 export function closeDialog() {
-  document.getElementById('overlay').hidden = true;
-  document.getElementById('dialog').hidden = true;
-  clear(document.getElementById('dialog-body'));
-  clear(document.getElementById('dialog-footer'));
-  if (opener && typeof opener.focus === 'function') opener.focus();
+  const overlay = document.getElementById('overlay');
+  const dialog = document.getElementById('dialog');
+  document.body.classList.remove('dialog-open');
+  const focus = opener;
   opener = null;
+  closeOverlayDialog(dialog, overlay).then(() => {
+    clear(document.getElementById('dialog-body'));
+    clear(document.getElementById('dialog-footer'));
+    if (focus && typeof focus.focus === 'function') focus.focus();
+  });
 }
 
 export function wireDialogChrome() {

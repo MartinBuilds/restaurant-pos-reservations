@@ -1,5 +1,5 @@
 import { api, ApiClientError } from '/operations/js/api.js';
-import { clear, el } from '/operations/js/dom.js';
+import { clear, el, responsiveDataTable } from '/operations/js/dom.js';
 import { dateTime, money, text } from '/operations/js/format.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { openAddItemsDialog } from './order-form.js';
@@ -96,20 +96,15 @@ export async function renderOrders() {
           ]),
           badge(order.status)
         ]),
-        el('div', { className: 'table-wrap' }, [
-          el('table', { className: 'data' }, [
-            el('thead', {}, [el('tr', {}, [
-              el('th', { text: t('col.item') }), el('th', { text: t('col.qtyShort') }),
-              el('th', { text: t('col.unitPrice') }), el('th', { text: t('col.lineTotal') })
-            ])]),
-            el('tbody', {}, items.map((it) => el('tr', {}, [
-              el('td', { text: text(it.menuItemName) }),
-              el('td', { text: text(it.quantity) }),
-              el('td', { text: money(it.unitPrice) }),
-              el('td', { text: money(it.lineTotal) })
-            ])))
+        responsiveDataTable(
+          [t('col.item'), t('col.qtyShort'), t('col.unitPrice'), t('col.lineTotal')],
+          items.map((it) => [
+            text(it.menuItemName),
+            text(it.quantity),
+            money(it.unitPrice),
+            money(it.lineTotal)
           ])
-        ]),
+        ),
         el('p', { text: t('orders.totalClosed', {
           total: money(order.totalAmount),
           closed: order.closed ? t('common.yes') : t('common.no')

@@ -94,7 +94,7 @@ export const bg = {
   'dashboard.welcomeGuest': 'Добре дошли',
   'dashboard.intro': 'Управлявайте персонала, менюто, склада, масите, резервациите, плащанията и отчетите от едно място.',
   'dashboard.note': 'Изберете раздел от менюто или използвайте бързите връзки по-долу.',
-  'dashboard.usersDesc': 'Създаване, роли и статус',
+  'dashboard.usersDesc': 'Управление на потребителите и ролите',
   'dashboard.menuDesc': 'Категории, ястия и наличност',
   'dashboard.inventoryDesc': 'Съставки, запас и рецепти',
   'dashboard.tablesDesc': 'Капацитет, статус и активност',

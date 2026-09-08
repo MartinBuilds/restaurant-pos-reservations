@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="bg">
 <head>
   <meta charset="UTF-8">
@@ -6,9 +6,10 @@
   <link rel="icon" href="/favicon.ico">
   <title>Резервации — Restaurant POS</title>
   <script src="/shared/js/theme-boot.js"></script>
-  <link rel="stylesheet" href="/shared/css/theme.css">
-  <link rel="stylesheet" href="/shared/css/shell.css">
-  <link rel="stylesheet" href="/client/css/client.css">
+  <link rel="stylesheet" href="/shared/css/theme.css?v=pr20-4">
+  <link rel="stylesheet" href="/shared/css/shell.css?v=pr20-4">
+  <link rel="stylesheet" href="/client/css/client.css?v=pr20-4">
+  <link rel="stylesheet" href="/shared/css/responsive-records.css?v=pr20-4">
 </head>
 <body>
   <div class="app-shell">
@@ -17,7 +18,7 @@
         <p class="brand-kicker" data-i18n="app.brand">Restaurant POS</p>
         <h1 class="brand-title" data-i18n="client.brand">Онлайн резервации</h1>
       </div>
-      <button type="button" class="btn btn-ghost nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="main-nav" data-i18n="nav.menuToggle">Меню</button>
+      <button type="button" class="btn btn-ghost nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="main-nav" data-i18n-aria="nav.menuToggle" aria-label="Меню"></button>
       <nav class="nav" id="main-nav" aria-label="Клиентска навигация" data-i18n-aria="nav.client">
         <a class="nav-link" href="#/availability" data-route="availability" data-i18n="nav.availability">Нова резервация</a>
         <a class="nav-link" href="#/reservations" data-route="reservations" data-i18n="nav.myReservations">Моите резервации</a>
@@ -41,12 +42,12 @@
   <div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" hidden>
     <div class="dialog-header">
       <h2 class="dialog-title" id="dialog-title" data-i18n="common.dialog">Диалог</h2>
-      <button type="button" class="btn btn-ghost" id="dialog-close" data-i18n-aria="common.close" aria-label="Затвори" data-i18n="common.close">Затвори</button>
+      <button type="button" class="btn btn-ghost dialog-close-btn" id="dialog-close" data-i18n-aria="common.close" aria-label="Затвори" title="Затвори">×</button>
     </div>
     <div class="dialog-body" id="dialog-body"></div>
     <div class="dialog-footer" id="dialog-footer"></div>
   </div>
 
-  <script type="module" src="/client/js/app.js"></script>
+  <script type="module" src="/client/js/app.js?v=pr20-4"></script>
 </body>
 </html>

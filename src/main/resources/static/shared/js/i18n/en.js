@@ -94,7 +94,7 @@ export const en = {
   'dashboard.welcomeGuest': 'Welcome',
   'dashboard.intro': 'Manage staff, menu, inventory, tables, reservations, payments, and reports from one place.',
   'dashboard.note': 'Choose a section from the menu or use the quick links below.',
-  'dashboard.usersDesc': 'Create users, roles, and status',
+  'dashboard.usersDesc': 'Manage users and roles',
   'dashboard.menuDesc': 'Categories, dishes, and availability',
   'dashboard.inventoryDesc': 'Ingredients, stock, and recipes',
   'dashboard.tablesDesc': 'Capacity, status, and activity',

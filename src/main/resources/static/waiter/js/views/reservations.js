@@ -1,5 +1,5 @@
 import { api, queryString } from '/operations/js/api.js';
-import { clear, el } from '/operations/js/dom.js';
+import { clear, el, responsiveDataTable } from '/operations/js/dom.js';
 import { dateTime, text, toLocalDateTimeInputValue } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
@@ -56,23 +56,19 @@ export async function renderReservations() {
         resultHost.appendChild(emptyBox(t('msg.noResults')));
         return;
       }
-      resultHost.appendChild(el('div', { className: 'table-wrap' }, [
-        el('table', { className: 'data' }, [
-          el('thead', {}, [el('tr', {}, [
-            el('th', { text: t('col.number') }), el('th', { text: t('col.table') }), el('th', { text: t('col.client') }),
-            el('th', { text: t('col.start') }), el('th', { text: t('col.end') }), el('th', { text: t('msg.guests') }), el('th', { text: t('col.status') })
-          ])]),
-          el('tbody', {}, rows.map((r) => el('tr', {}, [
-            el('td', { text: text(r.reservationNumber) }),
-            el('td', { text: text(r.tableNumber) }),
-            el('td', { text: text(r.clientName) }),
-            el('td', { text: dateTime(r.startTime) }),
-            el('td', { text: dateTime(r.endTime) }),
-            el('td', { text: text(r.guestCount) }),
-            el('td', {}, [badge(r.status)])
-          ])))
-        ])
-      ]));
+      const headers = [
+        t('col.number'), t('col.table'), t('col.client'),
+        t('col.start'), t('col.end'), t('msg.guests'), t('col.status')
+      ];
+      resultHost.appendChild(responsiveDataTable(headers, rows.map((r) => [
+        text(r.reservationNumber),
+        text(r.tableNumber),
+        text(r.clientName),
+        dateTime(r.startTime),
+        dateTime(r.endTime),
+        text(r.guestCount),
+        badge(r.status)
+      ])));
     } catch (err) {
       if (err && err.name === 'AbortError') return;
       clear(resultHost);
