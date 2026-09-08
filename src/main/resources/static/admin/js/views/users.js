@@ -3,10 +3,39 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-roles-1';
 
 const ROLES = ['ADMIN', 'WAITER', 'COOK', 'CLIENT'];
 let abortController = null;
+
+function roleLabel(role) {
+  const key = `role.${role}`;
+  const translated = t(key);
+  return translated === key ? role : translated;
+}
+
+/** Prefer highest operational role when legacy multi-role data exists. */
+function primaryRole(roles) {
+  for (const role of ROLES) {
+    if ((roles || []).includes(role)) return role;
+  }
+  return 'CLIENT';
+}
+
+function roleRadioOptions(selectedRole, groupName) {
+  return ROLES.map((role) => {
+    const input = el('input', { type: 'radio', name: groupName, value: role });
+    if (role === selectedRole) input.checked = true;
+    return el('label', {}, [input, document.createTextNode(roleLabel(role))]);
+  });
+}
+
+function selectedRole(roleBoxes) {
+  const checked = roleBoxes
+    .map((label) => label.querySelector('input'))
+    .find((input) => input && input.checked);
+  return checked ? checked.value : null;
+}
 
 export async function renderUsers() {
   setPageMeta(t('page.users.title'), t('page.users.subtitle'));
@@ -37,7 +66,9 @@ async function reload() {
       String(u.id),
       u.fullName || '—',
       u.email || '—',
-      el('div', { className: 'row-actions' }, (u.roles || []).map((r) => badge(r, 'info'))),
+      el('div', { className: 'row-actions' }, [
+        badge(roleLabel(primaryRole(u.roles)), 'info')
+      ]),
       badge(u.enabled ? t('common.active') : t('common.inactive'), u.enabled ? 'ok' : 'danger'),
       el('div', { className: 'row-actions' }, [
         el('button', {
@@ -80,18 +111,15 @@ function openCreateDialog(onDone) {
   const email = el('input', { type: 'email', autocomplete: 'off', required: 'true' });
   const fullName = el('input', { type: 'text', autocomplete: 'name', required: 'true' });
   const password = el('input', { type: 'password', autocomplete: 'new-password', required: 'true' });
-  const roleBoxes = ROLES.map((role) => {
-    const input = el('input', { type: 'checkbox', value: role });
-    if (role === 'CLIENT') input.checked = true;
-    return el('label', {}, [input, document.createTextNode(role)]);
-  });
+  const roleBoxes = roleRadioOptions('CLIENT', 'create-user-role');
 
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.create') });
   submit.addEventListener('click', async () => {
-    const roles = roleBoxes
-      .map((label) => label.querySelector('input'))
-      .filter((i) => i.checked)
-      .map((i) => i.value);
+    const role = selectedRole(roleBoxes);
+    if (!role) {
+      toast(t('users.roleRequired'), 'error');
+      return;
+    }
     submit.disabled = true;
     submit.textContent = t('common.loading');
     try {
@@ -99,7 +127,7 @@ function openCreateDialog(onDone) {
         email: email.value.trim(),
         fullName: fullName.value.trim(),
         password: password.value,
-        roles
+        roles: [role]
       });
       password.value = '';
       closeDialog();
@@ -131,20 +159,21 @@ function openCreateDialog(onDone) {
 }
 
 function openRolesDialog(user, onDone) {
-  const roleBoxes = ROLES.map((role) => {
-    const input = el('input', { type: 'checkbox', value: role });
-    input.checked = (user.roles || []).includes(role);
-    return el('label', {}, [input, document.createTextNode(role)]);
-  });
+  const current = primaryRole(user.roles);
+  const roleBoxes = roleRadioOptions(current, `user-role-${user.id}`);
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
-    const roles = roleBoxes.map((l) => l.querySelector('input')).filter((i) => i.checked).map((i) => i.value);
-    const baseline = [...(user.roles || [])].sort();
-    const next = [...roles].sort();
+    const role = selectedRole(roleBoxes);
+    if (!role) {
+      toast(t('users.roleRequired'), 'error');
+      return;
+    }
+    const baseline = [current];
+    const next = [role];
     if (toastIfUnchanged(baseline, next, t('msg.noChanges'))) return;
     submit.disabled = true;
     try {
-      await api.put(`/api/admin/users/${user.id}/roles`, { roles });
+      await api.put(`/api/admin/users/${user.id}/roles`, { roles: [role] });
       closeDialog();
       toast(t('msg.updated'), 'success');
       await onDone();

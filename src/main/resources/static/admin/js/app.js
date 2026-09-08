@@ -12,7 +12,7 @@ import { renderReports } from './views/reports.js';
 import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-2';
 import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=fix-toasts-2';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-3';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-roles-1';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);

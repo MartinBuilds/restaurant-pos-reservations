@@ -1,5 +1,5 @@
-import { bg } from './bg.js?v=pr19-1';
-import { en } from './en.js?v=pr19-1';
+import { bg } from './bg.js?v=fix-roles-1';
+import { en } from './en.js?v=fix-roles-1';
 import { getLanguage, LANGUAGE_CHANGE, setLanguage as persistLanguage } from '../ui-preferences.js';
 
 const dictionaries = { bg, en };
