@@ -1,4 +1,4 @@
-import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/api.js';
+﻿import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/api.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { onRealtimeRefresh, startWaiterRealtime, stopRealtime } from './realtime.js';
 import { registerRoute, setActiveNav, startRouter } from './router.js';
@@ -6,26 +6,16 @@ import { renderOrders } from './views/orders.js';
 import { renderReservations } from './views/reservations.js';
 import { renderTables } from './views/tables.js';
 import { wireDialogChrome } from './views/ui-shared.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr19-1';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr20-4';
+import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=pr20-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 registerRoute('tables', renderTables);
 registerRoute('orders', renderOrders);
 registerRoute('reservations', renderReservations);
 
 function wireShell() {
-  const sidebar = document.getElementById('sidebar');
-  const toggle = document.getElementById('nav-toggle');
-  toggle.addEventListener('click', () => {
-    const open = sidebar.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  document.getElementById('main-nav').addEventListener('click', (event) => {
-    if (event.target.closest('a.nav-link')) {
-      sidebar.classList.remove('open');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
-  });
+  wireMobileSidebarDrawer();
   wireDialogChrome();
 }
 

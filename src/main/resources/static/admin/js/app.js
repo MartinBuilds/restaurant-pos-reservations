@@ -1,4 +1,4 @@
-import { loadCsrf, api } from './api.js';
+﻿import { loadCsrf, api } from './api.js';
 import { registerRoute, startRouter, setActiveNav } from './router.js';
 import { setBanner, toast, handleError, setPageMeta } from './ui.js';
 import { renderDashboard } from './views/dashboard.js';
@@ -9,8 +9,9 @@ import { renderTables } from './views/tables.js';
 import { renderReservations } from './views/reservations.js';
 import { renderPayments } from './views/payments.js';
 import { renderReports } from './views/reports.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr19-1';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr20-4';
+import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=pr20-4';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);
@@ -46,18 +47,7 @@ async function logout() {
 }
 
 function wireShell() {
-  const sidebar = document.getElementById('sidebar');
-  const toggle = document.getElementById('nav-toggle');
-  toggle.addEventListener('click', () => {
-    const open = sidebar.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  document.getElementById('main-nav').addEventListener('click', (event) => {
-    if (event.target.closest('a.nav-link')) {
-      sidebar.classList.remove('open');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
-  });
+  wireMobileSidebarDrawer();
 }
 
 async function boot() {

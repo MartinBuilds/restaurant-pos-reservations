@@ -1,5 +1,6 @@
 import { setPageMeta, mount, el, panel, badge } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-1';
+import { icon } from '/shared/js/icons.js';
 
 export async function renderDashboard() {
   const account = window.__adminAccount;
@@ -10,13 +11,13 @@ export async function renderDashboard() {
   setPageMeta(t('dashboard.title'), t('dashboard.subtitle'));
 
   const links = [
-    [t('nav.users'), 'users', t('dashboard.usersDesc')],
-    [t('nav.menu'), 'menu', t('dashboard.menuDesc')],
-    [t('nav.inventory'), 'inventory', t('dashboard.inventoryDesc')],
-    [t('nav.tables'), 'tables', t('dashboard.tablesDesc')],
-    [t('nav.reservations'), 'reservations', t('dashboard.reservationsDesc')],
-    [t('nav.payments'), 'payments', t('dashboard.paymentsDesc')],
-    [t('nav.reports'), 'reports', t('dashboard.reportsDesc')]
+    [t('nav.users'), 'users', t('dashboard.usersDesc'), 'users'],
+    [t('nav.menu'), 'menu', t('dashboard.menuDesc'), 'menu'],
+    [t('nav.inventory'), 'inventory', t('dashboard.inventoryDesc'), 'inventory'],
+    [t('nav.tables'), 'tables', t('dashboard.tablesDesc'), 'tables'],
+    [t('nav.reservations'), 'reservations', t('dashboard.reservationsDesc'), 'reservations'],
+    [t('nav.payments'), 'payments', t('dashboard.paymentsDesc'), 'payments'],
+    [t('nav.reports'), 'reports', t('dashboard.reportsDesc'), 'reports']
   ];
 
   mount(el('div', { className: 'stack' }, [
@@ -30,11 +31,15 @@ export async function renderDashboard() {
       ])
     ]),
     el('h2', { className: 'panel-title', text: t('dashboard.quickLinks') }),
-    el('div', { className: 'grid grid-3' }, links.map(([title, route, desc]) =>
-      el('a', { className: 'card card-link', href: `#/${route}` }, [
+    el('div', { className: 'grid grid-3' }, links.map(([title, route, desc, iconName]) =>
+      el('a', {
+        className: 'card card-link',
+        href: `#/${route}`,
+        'aria-label': title
+      }, [
+        el('div', { className: 'card-link-icon' }, [icon(iconName)]),
         el('div', { className: 'card-label', text: title }),
-        el('p', { text: desc }),
-        el('p', { className: 'muted', text: `#/${route}` })
+        el('p', { className: 'muted', text: desc })
       ])
     ))
   ]));

@@ -111,6 +111,7 @@ h1, h2, h3, p { margin: 0; }
 .grid-cards { grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); }
 .table-wrap { overflow-x: auto; }
 table.data { width: 100%; border-collapse: collapse; min-width: 36rem; }
+table.data.responsive-data-table { min-width: 0; }
 table.data th, table.data td { text-align: left; padding: 0.7rem 0.55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.data th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
 
@@ -185,6 +186,9 @@ table.data th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
   color: var(--ink);
 }
 .order-card {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: var(--space-4);
   margin-bottom: var(--space-3); box-shadow: var(--shadow); color: var(--ink);
 }

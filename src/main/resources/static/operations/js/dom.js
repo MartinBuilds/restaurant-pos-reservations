@@ -36,6 +36,31 @@ export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
+/** Build a data table that becomes labeled cards under 640px (see responsive-records.css). */
+export function responsiveDataTable(headers, rows, { caption } = {}) {
+  const labels = (headers || []).map((h) => String(h || ''));
+  const tableEl = el('table', { className: 'data responsive-data-table' });
+  if (caption) tableEl.appendChild(el('caption', { text: caption }));
+  tableEl.appendChild(el('thead', {}, [
+    el('tr', {}, labels.map((h) => el('th', { text: h || ' ' })))
+  ]));
+  tableEl.appendChild(el('tbody', {}, (rows || []).map((cells) =>
+    el('tr', {}, (cells || []).map((cell, index) => {
+      const label = labels[index] || '';
+      const isActions = !label || /actions|действия/i.test(label);
+      const td = el('td', {
+        className: isActions ? 'is-actions' : undefined,
+        'data-label': label
+      });
+      if (cell == null) td.textContent = '—';
+      else if (typeof cell === 'string' || typeof cell === 'number') td.textContent = String(cell);
+      else td.appendChild(cell);
+      return td;
+    }))
+  )));
+  return el('div', { className: 'table-wrap' }, [tableEl]);
+}
+
 export function fragment(children) {
   const frag = document.createDocumentFragment();
   (Array.isArray(children) ? children : [children]).forEach((child) => {

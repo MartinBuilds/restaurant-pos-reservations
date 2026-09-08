@@ -1,5 +1,6 @@
 import { ApiClientError } from './api.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=pr20-4';
 
 const content = () => document.getElementById('content');
 const toastRegion = () => document.getElementById('toast-region');
@@ -128,8 +129,8 @@ export function openDialog({ title, body, footerButtons = [], onClose }) {
   dialogBody().appendChild(body);
   clear(dialogFooter());
   footerButtons.forEach((btn) => dialogFooter().appendChild(btn));
-  dialog().hidden = false;
-  overlay().hidden = false;
+  openOverlayDialog(dialog(), overlay());
+  document.body.classList.add('dialog-open');
 
   if (escapeHandler) {
     document.removeEventListener('keydown', escapeHandler);
@@ -151,17 +152,18 @@ export function openDialog({ title, body, footerButtons = [], onClose }) {
 }
 
 export function closeDialog() {
-  dialog().hidden = true;
-  overlay().hidden = true;
-  clear(dialogBody());
-  clear(dialogFooter());
   if (escapeHandler) {
     document.removeEventListener('keydown', escapeHandler);
     escapeHandler = null;
   }
-  if (lastFocus && typeof lastFocus.focus === 'function') {
-    lastFocus.focus();
-  }
+  document.body.classList.remove('dialog-open');
+  const focus = lastFocus;
+  lastFocus = null;
+  closeOverlayDialog(dialog(), overlay()).then(() => {
+    clear(dialogBody());
+    clear(dialogFooter());
+    if (focus && typeof focus.focus === 'function') focus.focus();
+  });
 }
 
 export function confirmDialog({ title, message, confirmLabel, danger = false }) {
@@ -185,8 +187,8 @@ export function confirmDialog({ title, message, confirmLabel, danger = false }) 
         snapshot.body.forEach((node) => dialogBody().appendChild(node));
         clear(dialogFooter());
         snapshot.footer.forEach((node) => dialogFooter().appendChild(node));
-        dialog().hidden = false;
-        overlay().hidden = false;
+        openOverlayDialog(dialog(), overlay());
+        document.body.classList.add('dialog-open');
         if (escapeHandler) {
           document.removeEventListener('keydown', escapeHandler);
           escapeHandler = null;
@@ -234,15 +236,21 @@ export function handleError(err, fallback) {
 }
 
 export function table(captionText, headers, rows) {
-  const tableEl = el('table');
+  const tableEl = el('table', { className: 'responsive-data-table' });
   tableEl.appendChild(el('caption', { text: captionText }));
   const thead = el('thead', {}, [
     el('tr', {}, headers.map((h) => el('th', { scope: 'col', text: h })))
   ]);
   const tbody = el('tbody');
+  const labels = headers.map((h) => String(h || ''));
   rows.forEach((cells) => {
-    tbody.appendChild(el('tr', {}, cells.map((cell) => {
-      const td = el('td');
+    tbody.appendChild(el('tr', {}, cells.map((cell, index) => {
+      const label = labels[index] || '';
+      const isActions = !label || /actions|действия/i.test(label);
+      const td = el('td', {
+        className: isActions ? 'is-actions' : null,
+        'data-label': label
+      });
       if (cell == null) td.textContent = '—';
       else if (typeof cell === 'string' || typeof cell === 'number') td.textContent = String(cell);
       else td.appendChild(cell);
