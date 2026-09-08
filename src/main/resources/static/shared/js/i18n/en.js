@@ -67,8 +67,8 @@ export const en = {
   'conn.reconnecting': 'Restoring connection…',
   'conn.denied': 'Your session is no longer active. Please sign in again.',
 
-  'session.active': 'You are signed in.',
-  'session.activeShort': 'Signed in.',
+  'session.active': 'You signed in successfully.',
+  'session.activeShort': 'You signed in successfully.',
   'session.csrfError': 'Unable to load your session. Please try again.',
   'session.problem': 'Your session could not be loaded. Refresh the page and try again.',
   'session.logoutError': 'Sign-out failed. Please try again.',
@@ -193,6 +193,7 @@ export const en = {
   'msg.tablesEmpty': 'No tables.',
   'msg.noResults': 'No results.',
   'msg.saved': 'Saved successfully.',
+  'msg.noChanges': 'No changes to save.',
   'msg.created': 'Created successfully.',
   'msg.updated': 'Updated successfully.',
   'msg.statusUpdated': 'Status updated.',

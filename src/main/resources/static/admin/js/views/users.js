@@ -1,9 +1,9 @@
 import { api } from '../api.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 const ROLES = ['ADMIN', 'WAITER', 'COOK', 'CLIENT'];
 let abortController = null;
@@ -139,6 +139,9 @@ function openRolesDialog(user, onDone) {
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
     const roles = roleBoxes.map((l) => l.querySelector('input')).filter((i) => i.checked).map((i) => i.value);
+    const baseline = [...(user.roles || [])].sort();
+    const next = [...roles].sort();
+    if (toastIfUnchanged(baseline, next, t('msg.noChanges'))) return;
     submit.disabled = true;
     try {
       await api.put(`/api/admin/users/${user.id}/roles`, { roles });

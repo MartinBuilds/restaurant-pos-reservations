@@ -79,13 +79,24 @@ public class LoginPageController {
 				    </section>
 				  </main>
 				  <script type="module">
-				    import { applyDomI18n, setLanguage, onLanguageChange, t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+				    import { applyDomI18n, setLanguage, onLanguageChange, t } from '/shared/js/i18n/i18n.js?v=fix-toasts-2';
 				    import { getLanguage } from '/shared/js/ui-preferences.js';
+				    import { clearJustSignedIn, markJustSignedIn } from '/shared/js/session-flash.js?v=fix-toasts-3';
 
 				    function refresh() {
 				      applyDomI18n(document);
 				      document.title = t('login.title') + ' — Restaurant POS';
 				      document.documentElement.lang = getLanguage() === 'en' ? 'en' : 'bg';
+				    }
+
+				    const params = new URLSearchParams(window.location.search);
+				    if (params.has('error') || params.has('logout')) {
+				      clearJustSignedIn();
+				    }
+
+				    const form = document.querySelector('.login-form');
+				    if (form) {
+				      form.addEventListener('submit', () => markJustSignedIn());
 				    }
 
 				    document.getElementById('login-lang-bg').addEventListener('click', () => setLanguage('bg'));

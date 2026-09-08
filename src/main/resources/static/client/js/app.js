@@ -6,9 +6,10 @@ import { abortAvailability, renderAvailability } from './views/availability.js';
 import { renderCreateForm, renderEditForm } from './views/reservation-form.js';
 import { abortReservationDetails, renderReservationDetails } from './views/reservation-details.js';
 import { abortReservations, renderReservations } from './views/reservations.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr20-4';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-3';
 import { icon } from '/shared/js/icons.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-3';
 
 const root = document.getElementById('view-root');
 
@@ -121,6 +122,10 @@ async function boot() {
       window.dispatchEvent(new Event('hashchange'));
     }
   });
+
+  if (consumeSignedInWelcome()) {
+    toast(t('session.active'), 'success');
+  }
 
   await startRouter(onRoute);
 }

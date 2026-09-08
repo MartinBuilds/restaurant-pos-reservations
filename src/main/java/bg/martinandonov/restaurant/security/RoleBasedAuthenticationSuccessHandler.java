@@ -26,7 +26,7 @@ public class RoleBasedAuthenticationSuccessHandler extends SimpleUrlAuthenticati
 			HttpServletRequest request,
 			HttpServletResponse response,
 			Authentication authentication) throws IOException, ServletException {
-		setDefaultTargetUrl(resolveTarget(authentication));
+		setDefaultTargetUrl(resolveTarget(authentication) + "?signedIn=1");
 		super.onAuthenticationSuccess(request, response, authentication);
 	}
 

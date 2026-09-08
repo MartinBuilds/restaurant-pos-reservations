@@ -67,8 +67,8 @@ export const bg = {
   'conn.reconnecting': 'Възстановяване на връзката…',
   'conn.denied': 'Сесията ви вече не е активна. Влезте отново.',
 
-  'session.active': 'Влезли сте успешно.',
-  'session.activeShort': 'Влезли сте.',
+  'session.active': 'Влязохте успешно.',
+  'session.activeShort': 'Влязохте успешно.',
   'session.csrfError': 'Неуспешно зареждане на сесията. Опитайте отново.',
   'session.problem': 'Сесията не можа да бъде заредена. Обновете страницата и опитайте отново.',
   'session.logoutError': 'Изходът не бе успешен. Опитайте отново.',
@@ -193,6 +193,7 @@ export const bg = {
   'msg.tablesEmpty': 'Няма маси.',
   'msg.noResults': 'Няма резултати.',
   'msg.saved': 'Записано успешно.',
+  'msg.noChanges': 'Няма промени за запис.',
   'msg.created': 'Създадено успешно.',
   'msg.updated': 'Обновено успешно.',
   'msg.statusUpdated': 'Статусът е обновен.',

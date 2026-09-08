@@ -1,10 +1,16 @@
 import { ApiClientError } from './api.js';
 import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=pr20-4';
+import {
+  clearBanner,
+  setBanner,
+  toast,
+  toastIfUnchanged
+} from '/shared/js/toasts.js?v=fix-toasts-2';
+
+export { toast, setBanner, clearBanner, toastIfUnchanged };
 
 const content = () => document.getElementById('content');
-const toastRegion = () => document.getElementById('toast-region');
-const statusRegion = () => document.getElementById('status-region');
 const dialog = () => document.getElementById('dialog');
 const dialogBody = () => document.getElementById('dialog-body');
 const dialogFooter = () => document.getElementById('dialog-footer');
@@ -82,20 +88,6 @@ export function errorBox(message, onRetry) {
     }));
   }
   return box;
-}
-
-export function toast(message, type = 'info') {
-  const region = toastRegion();
-  const item = el('div', { className: `toast toast-${type}`, role: 'status' }, message);
-  region.appendChild(item);
-  setTimeout(() => item.remove(), 4500);
-}
-
-export function setBanner(message, type = 'info') {
-  const region = statusRegion();
-  clear(region);
-  if (!message) return;
-  region.appendChild(el('div', { className: `banner banner-${type}`, role: 'status' }, message));
 }
 
 export function badge(text, kind = 'muted') {

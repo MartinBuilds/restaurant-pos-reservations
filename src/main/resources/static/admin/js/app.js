@@ -9,9 +9,10 @@ import { renderTables } from './views/tables.js';
 import { renderReservations } from './views/reservations.js';
 import { renderPayments } from './views/payments.js';
 import { renderReports } from './views/reports.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr20-4';
-import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=pr20-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-2';
+import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=fix-toasts-2';
+import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-3';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);
@@ -88,8 +89,8 @@ async function boot() {
     handleError(err, t('boot.adminError'));
   }
 
-  if (csrfOk) {
-    setBanner(t('session.active'), 'success');
+  if (csrfOk && consumeSignedInWelcome()) {
+    toast(t('session.active'), 'success');
   }
 
   await startRouter(async (name, handler) => {

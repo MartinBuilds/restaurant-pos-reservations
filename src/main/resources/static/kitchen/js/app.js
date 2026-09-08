@@ -2,8 +2,9 @@ import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { onRealtimeRefresh, startKitchenRealtime, stopRealtime } from './realtime.js';
 import { renderQueue } from './queue.js';
-import { mountShellChrome } from '/shared/js/account-shell.js?v=pr19-1';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-2';
+import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-3';
 
 async function boot() {
   setUnauthorizedHandler(() => {
@@ -43,8 +44,8 @@ async function boot() {
     handleError(err, t('boot.kitchenError'));
   }
 
-  if (csrfOk) {
-    setBanner(t('session.activeShort'), 'success');
+  if (csrfOk && consumeSignedInWelcome()) {
+    toast(t('session.activeShort'), 'success');
   }
 
   onRealtimeRefresh(async () => {

@@ -1,9 +1,9 @@
 import { api } from '../api.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 const STATUSES = ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'OUT_OF_SERVICE'];
 
@@ -78,13 +78,21 @@ function openTableDialog(existing, onDone) {
   const capacity = el('input', { type: 'number', min: '1', value: existing?.capacity ?? '' });
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    const body = {
+      tableNumber: Number(tableNumber.value),
+      displayName: displayName.value.trim() || null,
+      capacity: Number(capacity.value)
+    };
+    if (existing) {
+      const baseline = {
+        tableNumber: Number(existing.tableNumber),
+        displayName: existing.displayName || null,
+        capacity: Number(existing.capacity)
+      };
+      if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
-      const body = {
-        tableNumber: Number(tableNumber.value),
-        displayName: displayName.value.trim() || null,
-        capacity: Number(capacity.value)
-      };
       if (existing) await api.put(`/api/admin/tables/${existing.id}`, body);
       else await api.post('/api/admin/tables', body);
       closeDialog();
@@ -115,6 +123,10 @@ function openStatusDialog(tableRow, onDone) {
   })));
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
+    if (status.value === tableRow.status) {
+      toast(t('msg.noChanges'), 'info');
+      return;
+    }
     if (status.value === 'OUT_OF_SERVICE') {
       const ok = await confirmDialog({
         title: statusLabel('OUT_OF_SERVICE'),

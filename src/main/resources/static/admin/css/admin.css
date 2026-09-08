@@ -196,20 +196,7 @@ caption { text-align: left; padding: 0.75rem 0.85rem; font-weight: 650; }
   color: var(--info);
 }
 
-.status-region, .toast-region {
-  padding: 0 var(--space-5);
-  display: grid;
-  gap: var(--space-2);
-}
-.toast, .banner {
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--color-toast-bg);
-}
-.toast-success, .banner-success { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); background: color-mix(in srgb, var(--ok) 12%, var(--surface)); color: var(--ok); }
-.toast-error, .banner-error { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
-.toast-info, .banner-info { border-color: color-mix(in srgb, var(--info) 40%, var(--line)); background: color-mix(in srgb, var(--info) 12%, var(--surface)); color: var(--info); }
+/* Toast styles live in /shared/css/toasts.css (top green/red/blue). */
 
 .overlay {
   position: fixed; inset: 0;

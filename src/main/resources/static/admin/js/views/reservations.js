@@ -2,9 +2,9 @@ import { api, queryString } from '../api.js';
 import { dateTime, toDateTimeLocalValue, fromDateTimeLocalValue } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 const STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
@@ -201,15 +201,24 @@ function openEditDialog(reservation, tables, onDone) {
   const notes = el('textarea', {}, reservation.notes || '');
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
+    const body = {
+      diningTableId: Number(diningTableId.value),
+      startTime: fromDateTimeLocalValue(startTime.value),
+      endTime: fromDateTimeLocalValue(endTime.value),
+      guestCount: Number(guestCount.value),
+      notes: notes.value.trim() || null
+    };
+    const baseline = {
+      diningTableId: Number(reservation.diningTableId),
+      startTime: fromDateTimeLocalValue(toDateTimeLocalValue(reservation.startTime)),
+      endTime: fromDateTimeLocalValue(toDateTimeLocalValue(reservation.endTime)),
+      guestCount: Number(reservation.guestCount ?? 1),
+      notes: reservation.notes || null
+    };
+    if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
     submit.disabled = true;
     try {
-      await api.put(`/api/admin/reservations/${reservation.id}`, {
-        diningTableId: Number(diningTableId.value),
-        startTime: fromDateTimeLocalValue(startTime.value),
-        endTime: fromDateTimeLocalValue(endTime.value),
-        guestCount: Number(guestCount.value),
-        notes: notes.value.trim() || null
-      });
+      await api.put(`/api/admin/reservations/${reservation.id}`, body);
       closeDialog();
       toast(t('msg.reservationUpdated'), 'success');
       await onDone();
@@ -240,6 +249,10 @@ function openStatusDialog(reservation, onDone) {
   })));
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
+    if (status.value === reservation.status) {
+      toast(t('msg.noChanges'), 'info');
+      return;
+    }
     if (TERMINAL.has(status.value)) {
       const ok = await confirmDialog({
         title: t('reservations.terminalTitle'),

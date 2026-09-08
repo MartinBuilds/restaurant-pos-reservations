@@ -70,3 +70,13 @@ html[data-theme="dark"] {
   --info: var(--color-info);
   --shadow: var(--color-shadow);
 }
+
+/*
+ * SPA view roots use tabindex="-1" and are focused after route mounts.
+ * Suppress the browser focus ring for that programmatic focus (it reads as a
+ * thin white line across the main column). Keyboard users still get rings via
+ * :focus-visible on interactive controls.
+ */
+#content:focus {
+  outline: none;
+}

@@ -1,7 +1,15 @@
 import { clear, el } from './dom.js';
 import { statusLabel } from './format.js';
 import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=pr20-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import {
+  clearBanner,
+  setBanner,
+  toast,
+  toastIfUnchanged
+} from '/shared/js/toasts.js?v=fix-toasts-2';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-1';
+
+export { toast, setBanner, clearBanner, toastIfUnchanged };
 
 let opener = null;
 
@@ -13,27 +21,12 @@ export function setPageMeta(title, subtitle) {
   document.title = `${title} — ${t('client.titleSuffix')}`;
 }
 
-export function toast(message, type = 'info') {
-  const region = document.getElementById('toast-region');
-  if (!region) return;
-  const item = el('div', { className: `toast toast-${type}`, role: 'status' }, [String(message)]);
-  region.appendChild(item);
-  setTimeout(() => item.remove(), 4500);
-}
-
-export function setBanner(message, type = 'info') {
-  const region = document.getElementById('status-region');
-  if (!region) return;
-  clear(region);
-  if (!message) return;
-  region.appendChild(el('div', { className: `banner banner-${type}` }, [String(message)]));
-}
-
 export function handleError(err, fallback) {
   if (err && err.name === 'AbortError') return;
   const msg = (err && err.message) ? err.message : (fallback || t('common.error'));
+  clearBanner();
   toast(msg, 'error');
-  setBanner(msg, 'error');
+  return msg;
 }
 
 export function badge(status) {

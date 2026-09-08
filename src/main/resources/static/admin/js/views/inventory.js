@@ -2,9 +2,9 @@ import { api } from '../api.js';
 import { quantity } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 const UNITS = ['GRAM', 'MILLILITER', 'PIECE'];
 
@@ -177,6 +177,19 @@ function openIngredientDialog(existing, onDone) {
   const minimumStockLevel = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.minimumStockLevel ?? '0' });
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    if (existing) {
+      const baseline = {
+        name: existing.name || '',
+        unit: existing.unit,
+        minimumStockLevel: String(existing.minimumStockLevel ?? '0')
+      };
+      const next = {
+        name: name.value.trim(),
+        unit: unit.value,
+        minimumStockLevel: String(minimumStockLevel.value)
+      };
+      if (toastIfUnchanged(baseline, next, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
       if (existing) {

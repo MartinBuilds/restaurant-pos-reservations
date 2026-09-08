@@ -2,9 +2,9 @@ import { api } from '../api.js';
 import { money } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
 
 export async function renderMenu() {
   setPageMeta(t('page.menu.title'), t('page.menu.subtitle'));
@@ -122,9 +122,13 @@ function openCategoryDialog(existing, onDone) {
   const description = el('textarea', {}, existing?.description || '');
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    const body = { name: name.value.trim(), description: description.value.trim() || null };
+    if (existing) {
+      const baseline = { name: existing.name || '', description: existing.description || null };
+      if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
-      const body = { name: name.value.trim(), description: description.value.trim() || null };
       if (existing) await api.put(`/api/admin/menu/categories/${existing.id}`, body);
       else await api.post('/api/admin/menu/categories', body);
       closeDialog();
@@ -162,15 +166,25 @@ function openItemDialog(existing, categories, onDone) {
 
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    const body = {
+      name: name.value.trim(),
+      description: description.value.trim() || null,
+      price: price.value,
+      categoryId: Number(categoryId.value),
+      available: available.checked
+    };
+    if (existing) {
+      const baseline = {
+        name: existing.name || '',
+        description: existing.description || null,
+        price: String(existing.price ?? ''),
+        categoryId: Number(existing.categoryId),
+        available: existing.manualAvailable !== false
+      };
+      if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
-      const body = {
-        name: name.value.trim(),
-        description: description.value.trim() || null,
-        price: price.value,
-        categoryId: Number(categoryId.value),
-        available: available.checked
-      };
       if (existing) await api.put(`/api/admin/menu/items/${existing.id}`, body);
       else await api.post('/api/admin/menu/items', body);
       closeDialog();
