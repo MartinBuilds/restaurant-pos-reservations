@@ -2,9 +2,11 @@ import { api, queryString } from '../api.js';
 import { money, percent, quantity, toDateTimeLocalValue, fromDateTimeLocalValue, dateTime } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, loading, errorBox, emptyState,
-  handleError, field, toast
+  handleError, field, toast, reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+
+let lastFilters = null;
 
 export async function renderReports() {
   setPageMeta(t('page.reports.title'), t('page.reports.subtitle'));
@@ -16,8 +18,9 @@ export async function renderReports() {
   await loadReports({ from: `${toLocal(start)}:00`, to: `${toLocal(end)}:00` });
 }
 
-async function loadReports(filters) {
-  mount(loading(t('common.loading')));
+async function loadReports(filters, { soft = false } = {}) {
+  lastFilters = filters;
+  if (!soft) mount(loading(t('common.loading')));
   const fromInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
   const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
 
@@ -52,6 +55,8 @@ async function loadReports(filters) {
       ]);
     });
 
+    const refresh = () => loadReports(lastFilters || filters, { soft: true });
+
     mount(el('div', { className: 'stack' }, [
       el('div', { className: 'note-info note' }, [
         document.createTextNode(t('payment.simulationWarning'))
@@ -74,7 +79,7 @@ async function loadReports(filters) {
           })
         ]),
         el('p', { className: 'muted', text: `${t('msg.period')}: ${dateTime(summary.period?.from)} → ${dateTime(summary.period?.to)} (${tz})` })
-      ]),
+      ], [reloadButton(refresh)]),
       el('div', { className: 'grid grid-4' }, [
         metric(t('reports.revenue'), money(summary.totalRevenue)),
         metric(t('reports.paidOrders'), String(summary.paidOrdersCount)),
@@ -93,6 +98,7 @@ async function loadReports(filters) {
           : emptyState(t('msg.noResults'))
       ])
     ]));
+    setPageRefresh(refresh);
   } catch (err) {
     mount(el('div', { className: 'stack' }, [
       panel(t('msg.period'), [
@@ -107,9 +113,10 @@ async function loadReports(filters) {
             })
           })
         ])
-      ]),
+      ], [reloadButton(() => loadReports(filters, { soft: true }))]),
       errorBox(handleError(err), () => loadReports(filters))
     ]));
+    setPageRefresh(() => loadReports(filters, { soft: true }));
   }
 }
 

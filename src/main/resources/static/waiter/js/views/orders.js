@@ -5,7 +5,8 @@ import { handleError, setBanner, toast } from '/operations/js/notifications.js';
 import { openAddItemsDialog } from './order-form.js';
 import { openPaymentDialog, showReceipt } from './payment.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
 
 let abort = null;
 
@@ -27,11 +28,14 @@ async function markServed(order, btn, reload) {
   }
 }
 
-export async function renderOrders() {
+export async function renderOrders({ soft = false } = {}) {
+  setPageRefresh(() => renderOrders({ soft: true }));
   setPageMeta(t('page.orders.title'), t('page.orders.subtitle'));
   const content = document.getElementById('content');
-  clear(content);
-  content.appendChild(loadingBox());
+  if (!soft) {
+    clear(content);
+    content.appendChild(loadingBox());
+  }
 
   if (abort) abort.abort();
   abort = new AbortController();

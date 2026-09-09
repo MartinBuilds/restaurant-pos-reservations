@@ -2,9 +2,10 @@ import { api } from '../api.js';
 import { quantity } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 
 const UNITS = ['GRAM', 'MILLILITER', 'PIECE'];
 
@@ -30,10 +31,10 @@ async function reload() {
       badge(ing.active ? t('common.active') : t('common.inactive'), ing.active ? 'ok' : 'muted'),
       badge(ing.lowStock ? t('inventory.lowStock') : t('inventory.stockOk'), ing.lowStock ? 'warn' : 'ok'),
       el('div', { className: 'row-actions' }, [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.edit'), onClick: () => openIngredientDialog(ing, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.stock'), onClick: () => openStockDialog(ing, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-info', text: t('common.edit'), onClick: () => openIngredientDialog(ing, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-warn', text: t('action.stock'), onClick: () => openStockDialog(ing, () => reload()) }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: ing.active ? t('action.disable') : t('action.enable'),
+          type: 'button', className: `btn ${ing.active ? 'btn-danger' : 'btn-ok'}`, text: ing.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/inventory/ingredients/${ing.id}/status`, { active: !ing.active });
@@ -52,13 +53,14 @@ async function reload() {
           : emptyState(t('common.empty'))
       ], [
         el('button', { type: 'button', className: 'btn', text: t('action.newIngredient'), onClick: () => openIngredientDialog(null, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
+        reloadButton(reload)
       ]),
       panel(t('inventory.recipes'), [
         el('p', { className: 'muted', text: t('inventory.recipeNote') }),
         recipePicker(items, ingredients)
       ])
     ]));
+    setPageRefresh(reload);
   } catch (err) {
     mount(errorBox(handleError(err), () => reload()));
   }
@@ -117,7 +119,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
         field(t('col.ingredient'), ingSelect),
         field(t('col.quantity'), qty),
         el('button', {
-          type: 'button', className: 'btn btn-ghost', text: t('common.delete'),
+          type: 'button', className: 'btn btn-danger', text: t('common.delete'),
           onClick: () => { rowsState.splice(idx, 1); redraw(); }
         })
       ]));

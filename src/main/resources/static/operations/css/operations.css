@@ -72,13 +72,34 @@ h1, h2, h3, p { margin: 0; }
 .btn {
   border: 1px solid transparent; border-radius: 10px; padding: 0.65rem 1rem;
   background: var(--surface); cursor: pointer; min-height: 2.6rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-primary { background: var(--brand); color: #fff; }
 .btn-primary:hover:not(:disabled) { background: var(--brand-2); }
 .btn-accent { background: var(--accent); color: #fff; }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-ghost { background: transparent; border-color: rgba(255,255,255,0.25); color: inherit; }
+.btn-info {
+  background: color-mix(in srgb, var(--info) 16%, var(--surface));
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 42%, var(--line));
+}
+.btn-ok {
+  background: color-mix(in srgb, var(--ok) 16%, var(--surface));
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--line));
+}
+.btn-warn {
+  background: color-mix(in srgb, var(--warn) 16%, var(--surface));
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 42%, var(--line));
+}
+.btn-danger {
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--line));
+}
+.btn-ghost { background: transparent; border-color: rgba(255,255,255,0.25); color: inherit; font-weight: 550; }
 .main-column .btn-ghost { border-color: var(--line); color: var(--ink); }
 .btn-lg { min-height: var(--action-min); font-size: 1.05rem; padding: 0.9rem 1.2rem; }
 
@@ -101,11 +122,43 @@ h1, h2, h3, p { margin: 0; }
 .panel-header { display: flex; justify-content: space-between; gap: var(--space-3); align-items: center; margin-bottom: var(--space-3); flex-wrap: wrap; }
 .grid { display: grid; gap: var(--space-3); }
 .grid-cards { grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); }
-.table-wrap { overflow-x: auto; }
-table.data { width: 100%; border-collapse: collapse; min-width: 36rem; }
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 36rem;
+  background: transparent;
+}
 table.data.responsive-data-table { min-width: 0; }
-table.data th, table.data td { text-align: left; padding: 0.7rem 0.55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-table.data th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+table.data th, table.data td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  vertical-align: middle;
+}
+table.data th {
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+table.data tbody tr {
+  transition: background-color 0.14s ease;
+}
+table.data tbody tr:hover {
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface));
+}
+table.data tbody tr:last-child td {
+  border-bottom: none;
+}
 
 /* Badge styles live in /shared/css/badges.css */
 

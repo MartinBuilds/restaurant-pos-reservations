@@ -1,8 +1,9 @@
-import { setPageMeta, mount, el, panel, badge } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-1';
+import { setPageMeta, mount, el, panel, badge, setPageRefresh } from '../ui.js';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 import { icon } from '/shared/js/icons.js';
 
 export async function renderDashboard() {
+  setPageRefresh(() => renderDashboard());
   const account = window.__adminAccount;
   const welcome = account?.name
     ? t('dashboard.welcome', { name: account.name })

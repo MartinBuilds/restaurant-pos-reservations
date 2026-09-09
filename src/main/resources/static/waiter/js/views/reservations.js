@@ -3,7 +3,8 @@ import { clear, el, responsiveDataTable } from '/operations/js/dom.js';
 import { dateTime, text, toLocalDateTimeInputValue } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { refreshPage, setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
 
 let abort = null;
 
@@ -35,11 +36,17 @@ export async function renderReservations() {
     }))
   ]);
   const resultHost = el('div', { id: 'res-results' });
-  const loadBtn = el('button', { type: 'button', className: 'btn btn-primary', text: t('action.reload') });
+  const loadBtn = el('button', {
+    type: 'button',
+    className: 'btn btn-primary btn-reload',
+    text: t('action.reload')
+  });
 
-  const load = async () => {
-    clear(resultHost);
-    resultHost.appendChild(loadingBox());
+  const load = async ({ soft = false } = {}) => {
+    if (!soft) {
+      clear(resultHost);
+      resultHost.appendChild(loadingBox());
+    }
     if (abort) abort.abort();
     abort = new AbortController();
     try {
@@ -73,11 +80,12 @@ export async function renderReservations() {
       if (err && err.name === 'AbortError') return;
       clear(resultHost);
       handleError(err, t('reservations.scheduleLoadError'));
-      resultHost.appendChild(errorBox(err.message || t('common.error'), load));
+      resultHost.appendChild(errorBox(err.message || t('common.error'), () => load()));
     }
   };
 
-  loadBtn.addEventListener('click', () => { load(); });
+  setPageRefresh(() => load({ soft: true }));
+  loadBtn.addEventListener('click', () => { refreshPage({ source: 'button' }); });
 
   content.appendChild(el('div', { className: 'panel stack' }, [
     el('p', { className: 'muted', text: t('reservations.waiterReadonlyNote') }),

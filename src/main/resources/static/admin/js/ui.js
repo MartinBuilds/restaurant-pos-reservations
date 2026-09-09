@@ -1,5 +1,5 @@
 import { ApiClientError } from './api.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=pr20-4';
 import {
   clearBanner,
@@ -7,8 +7,13 @@ import {
   toast,
   toastIfUnchanged
 } from '/shared/js/toasts.js?v=fix-toasts-2';
+import {
+  clearPageRefresh,
+  refreshPage,
+  setPageRefresh
+} from '/shared/js/page-refresh.js?v=fix-refresh-2';
 
-export { toast, setBanner, clearBanner, toastIfUnchanged };
+export { toast, setBanner, clearBanner, toastIfUnchanged, setPageRefresh, refreshPage, clearPageRefresh };
 
 const content = () => document.getElementById('content');
 const dialog = () => document.getElementById('dialog');
@@ -67,6 +72,16 @@ export function mount(viewRoot) {
 
 export function loading(message) {
   return el('div', { className: 'loading', role: 'status' }, message || t('common.loading'));
+}
+
+export function reloadButton(onReload) {
+  if (typeof onReload === 'function') setPageRefresh(onReload);
+  return el('button', {
+    type: 'button',
+    className: 'btn btn-secondary btn-reload',
+    text: t('action.reload'),
+    onClick: () => { refreshPage({ source: 'button' }); }
+  });
 }
 
 export function emptyState(message, action) {

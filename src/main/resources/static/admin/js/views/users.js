@@ -1,9 +1,10 @@
 import { api } from '../api.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-roles-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 
 const ROLES = ['ADMIN', 'WAITER', 'COOK', 'CLIENT'];
 let abortController = null;
@@ -52,13 +53,11 @@ async function reload() {
       type: 'button', className: 'btn', text: t('action.newUser'),
       onClick: () => openCreateDialog(() => reload())
     });
-    const reloadBtn = el('button', {
-      type: 'button', className: 'btn btn-secondary', text: t('action.reload'),
-      onClick: () => reload()
-    });
+    const reloadBtn = reloadButton(reload);
 
     if (!users.length) {
       mount(panel(t('page.users.title'), [emptyState(t('msg.usersEmpty'))], [createBtn, reloadBtn]));
+      setPageRefresh(reload);
       return;
     }
 
@@ -72,17 +71,18 @@ async function reload() {
       badge(u.enabled ? t('common.active') : t('common.inactive'), u.enabled ? 'ok' : 'danger'),
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('action.roles'),
+          type: 'button', className: 'btn btn-info', text: t('action.roles'),
           onClick: () => openRolesDialog(u, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary',
+          type: 'button', className: `btn ${u.enabled ? 'btn-danger' : 'btn-ok'}`,
           text: u.enabled ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             const ok = await confirmDialog({
               title: u.enabled ? t('users.confirmDisableTitle') : t('users.confirmEnableTitle'),
               message: t('users.confirmStatusMsg', { email: u.email }),
-              confirmLabel: t('common.confirm')
+              confirmLabel: t('common.confirm'),
+              danger: !!u.enabled
             });
             if (!ok) return;
             try {
@@ -101,6 +101,7 @@ async function reload() {
       el('p', { className: 'muted', text: t('users.passwordNote') }),
       table(t('users.listTitle'), [t('col.id'), t('col.name'), t('col.email'), t('col.roles'), t('col.status'), t('common.actions')], rows)
     ], [createBtn, reloadBtn]));
+    setPageRefresh(reload);
   } catch (err) {
     if (err.name === 'AbortError') return;
     mount(errorBox(handleError(err, t('users.loadError')), () => reload()));

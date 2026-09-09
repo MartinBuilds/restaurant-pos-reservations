@@ -4,15 +4,19 @@ import { text } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { openCreateOrderDialog } from './order-form.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
 
 let abort = null;
 
-export async function renderTables() {
+export async function renderTables({ soft = false } = {}) {
+  setPageRefresh(() => renderTables({ soft: true }));
   setPageMeta(t('page.tables.title'), t('page.tables.waiterSubtitle'));
   const content = document.getElementById('content');
-  clear(content);
-  content.appendChild(loadingBox());
+  if (!soft) {
+    clear(content);
+    content.appendChild(loadingBox());
+  }
 
   if (abort) abort.abort();
   abort = new AbortController();

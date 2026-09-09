@@ -2,9 +2,10 @@ import { api, queryString } from '../api.js';
 import { dateTime, toDateTimeLocalValue, fromDateTimeLocalValue } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 
 const STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
@@ -79,11 +80,11 @@ async function reload(filters = {}) {
       r.notes || '—',
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
+          type: 'button', className: 'btn btn-info', text: t('common.edit'),
           onClick: () => openEditDialog(r, tables, () => reload(filters))
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('action.status'),
+          type: 'button', className: 'btn btn-warn', text: t('action.status'),
           onClick: () => openStatusDialog(r, () => reload(filters))
         })
       ])
@@ -115,7 +116,7 @@ async function reload(filters = {}) {
           type: 'button', className: 'btn', text: t('action.createReservation'),
           onClick: () => openCreateDialog(tables, users, () => reload(filters))
         }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload(filters) })
+        reloadButton(() => reload(filters))
       ]),
       panel(t('panel.list'), [
         reservations.length
@@ -130,6 +131,7 @@ async function reload(filters = {}) {
           : el('p', { className: 'muted', text: t('reservations.scheduleHint') })
       ])
     ]));
+    setPageRefresh(() => reload(filters));
   } catch (err) {
     mount(errorBox(handleError(err), () => reload(filters)));
   }

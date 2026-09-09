@@ -1,5 +1,5 @@
-import { bg } from './bg.js?v=fix-bottom-nav-2';
-import { en } from './en.js?v=fix-bottom-nav-2';
+import { bg } from './bg.js?v=fix-refresh-1';
+import { en } from './en.js?v=fix-refresh-1';
 import { getLanguage, LANGUAGE_CHANGE, setLanguage as persistLanguage } from '../ui-preferences.js';
 
 const dictionaries = { bg, en };

@@ -9,7 +9,8 @@ import { wireDialogChrome } from './views/ui-shared.js';
 import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-account-sheet-1';
 import { polishBottomAccount, wireBottomNav } from '/shared/js/bottom-nav.js?v=fix-account-sheet-1';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-bottom-nav-3';
+import { clearPageRefresh, wirePageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 
 registerRoute('tables', renderTables);
 registerRoute('orders', renderOrders);
@@ -27,6 +28,7 @@ async function boot() {
     reservations: 'reservations'
   });
   wireShell();
+  wirePageRefresh();
 
   setUnauthorizedHandler(() => {
     stopRealtime();
@@ -77,6 +79,7 @@ async function boot() {
   });
 
   await startRouter(async (name, handler) => {
+    clearPageRefresh();
     setActiveNav(name);
     try {
       await handler();

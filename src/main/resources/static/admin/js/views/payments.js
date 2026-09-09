@@ -2,9 +2,9 @@ import { api, queryString } from '../api.js';
 import { money, dateTime, toDateTimeLocalValue, fromDateTimeLocalValue } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, handleError, field
+  openDialog, closeDialog, handleError, field, reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 
 export async function renderPayments() {
   setPageMeta(t('page.payments.title'), t('page.payments.subtitle'));
@@ -32,7 +32,7 @@ async function reload(filters) {
       p.processedByName || String(p.processedById),
       dateTime(p.paidAt),
       el('button', {
-        type: 'button', className: 'btn btn-secondary', text: t('action.details'),
+        type: 'button', className: 'btn btn-info', text: t('action.details'),
         onClick: () => openReceipt(p.id)
       })
     ]);
@@ -63,9 +63,10 @@ async function reload(filters) {
           ? table(t('page.payments.title'), [t('col.receipt'), t('col.order'), t('col.method'), t('col.amount'), t('col.operator'), t('col.paidAt'), t('common.actions')], rows)
           : emptyState(t('msg.noResults'))
       ], [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload(filters) })
+        reloadButton(() => reload(filters))
       ])
     ]));
+    setPageRefresh(() => reload(filters));
   } catch (err) {
     mount(errorBox(handleError(err), () => reload(filters)));
   }
