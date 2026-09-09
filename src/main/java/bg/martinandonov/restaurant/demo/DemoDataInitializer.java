@@ -43,7 +43,7 @@ import bg.martinandonov.restaurant.user.repository.RoleRepository;
 
 /**
  * Optional demo dataset for local presentation. Active only with {@code demo} profile.
- * Does not delete or reset existing data. Creates DEMO-prefixed records only when missing.
+ * Does not delete existing data. Creates realistic sample records only when missing.
  */
 @Component
 @Profile("demo")
@@ -54,11 +54,25 @@ public class DemoDataInitializer implements ApplicationRunner {
 	static final String DEMO_WAITER_EMAIL = "demo.waiter@example.com";
 	static final String DEMO_COOK_EMAIL = "demo.cook@example.com";
 	static final String DEMO_CLIENT_EMAIL = "demo.client@example.com";
-	static final String DEMO_RESERVATION_NUMBER = "DEMO-RESERVATION-SEED-001";
-	static final String DEMO_PREFIX = "DEMO ";
+	static final String DEMO_RESERVATION_NUMBER = "RES-20260809-1001";
+
+	static final String CAT_STARTERS = "Предястия";
+	static final String CAT_MAINS = "Основни ястия";
+	static final String CAT_DESSERTS = "Десерти";
+	static final String CAT_DRINKS = "Напитки";
+
+	static final String ITEM_SALAD = "Шопска салата";
+	static final String ITEM_SOUP = "Пилешка супа";
+	static final String ITEM_PASTA = "Паста с пиле";
+	static final String ITEM_BURGER = "Телешки бургер";
+	static final String ITEM_CHICKEN = "Печено пиле";
+	static final String ITEM_CAKE = "Домашна торта";
+	static final String ITEM_WATER = "Минерална вода";
+	static final String ITEM_LEMONADE = "Домашна лимонада";
 
 	private static final Logger log = LoggerFactory.getLogger(DemoDataInitializer.class);
 	private static final int MIN_PASSWORD_LENGTH = 8;
+	private static final int SEED_TABLE_FOR_RESERVATION = 3;
 
 	private final Environment environment;
 	private final PasswordEncoder passwordEncoder;
@@ -133,10 +147,10 @@ public class DemoDataInitializer implements ApplicationRunner {
 		}
 
 		String encoded = passwordEncoder.encode(rawPassword);
-		ensureUser(DEMO_ADMIN_EMAIL, "Demo Admin", EnumSet.of(RoleName.ADMIN), encoded);
-		ensureUser(DEMO_WAITER_EMAIL, "Demo Waiter", EnumSet.of(RoleName.WAITER), encoded);
-		ensureUser(DEMO_COOK_EMAIL, "Demo Cook", EnumSet.of(RoleName.COOK), encoded);
-		ensureUser(DEMO_CLIENT_EMAIL, "Demo Client", EnumSet.of(RoleName.CLIENT), encoded);
+		ensureUser(DEMO_ADMIN_EMAIL, "Мария Админова", EnumSet.of(RoleName.ADMIN), encoded);
+		ensureUser(DEMO_WAITER_EMAIL, "Георги Стоянов", EnumSet.of(RoleName.WAITER), encoded);
+		ensureUser(DEMO_COOK_EMAIL, "Иван Петков", EnumSet.of(RoleName.COOK), encoded);
+		ensureUser(DEMO_CLIENT_EMAIL, "Елена Димитрова", EnumSet.of(RoleName.CLIENT), encoded);
 		log.info("Demo users ensured for presentation emails");
 	}
 
@@ -155,30 +169,29 @@ public class DemoDataInitializer implements ApplicationRunner {
 	}
 
 	private void seedDiningTables() {
-		int[][] tables = {
-				{ 901, 2 },
-				{ 902, 2 },
-				{ 903, 4 },
-				{ 904, 4 },
-				{ 905, 6 },
-				{ 906, 8 }
-		};
-		for (int[] row : tables) {
-			int number = row[0];
-			int capacity = row[1];
-			if (diningTableRepository.existsByTableNumber(number)) {
+		record TableDef(int number, String name, int capacity) {
+		}
+		List<TableDef> tables = List.of(
+				new TableDef(1, "Прозорец 1", 2),
+				new TableDef(2, "Прозорец 2", 2),
+				new TableDef(3, "Салон 3", 4),
+				new TableDef(4, "Салон 4", 4),
+				new TableDef(5, "Тераса 5", 6),
+				new TableDef(6, "VIP 6", 8));
+		for (TableDef def : tables) {
+			if (diningTableRepository.existsByTableNumber(def.number())) {
 				continue;
 			}
-			diningTableRepository.save(new DiningTable(number, DEMO_PREFIX + "Table " + number, capacity));
+			diningTableRepository.save(new DiningTable(def.number(), def.name(), def.capacity()));
 		}
 	}
 
 	private Map<String, MenuCategory> seedCategories() {
 		Map<String, String> defs = new LinkedHashMap<>();
-		defs.put(DEMO_PREFIX + "Starters", "Demo starters");
-		defs.put(DEMO_PREFIX + "Mains", "Demo mains");
-		defs.put(DEMO_PREFIX + "Desserts", "Demo desserts");
-		defs.put(DEMO_PREFIX + "Drinks", "Demo drinks");
+		defs.put(CAT_STARTERS, "Салати и леки предястия");
+		defs.put(CAT_MAINS, "Основни топли ястия");
+		defs.put(CAT_DESSERTS, "Сладкиши");
+		defs.put(CAT_DRINKS, "Безалкохолни напитки");
 
 		Map<String, MenuCategory> result = new LinkedHashMap<>();
 		for (Map.Entry<String, String> entry : defs.entrySet()) {
@@ -193,17 +206,17 @@ public class DemoDataInitializer implements ApplicationRunner {
 		record Ing(String name, IngredientUnit unit, String stock, String min) {
 		}
 		List<Ing> defs = List.of(
-				new Ing(DEMO_PREFIX + "Lettuce", IngredientUnit.GRAM, "5000", "200"),
-				new Ing(DEMO_PREFIX + "Tomato", IngredientUnit.GRAM, "4000", "200"),
-				new Ing(DEMO_PREFIX + "Chicken", IngredientUnit.GRAM, "8000", "500"),
-				new Ing(DEMO_PREFIX + "Pasta", IngredientUnit.GRAM, "6000", "300"),
-				new Ing(DEMO_PREFIX + "Beef Patty", IngredientUnit.GRAM, "5000", "300"),
-				new Ing(DEMO_PREFIX + "Burger Bun", IngredientUnit.PIECE, "200", "20"),
-				new Ing(DEMO_PREFIX + "Flour", IngredientUnit.GRAM, "10000", "500"),
-				new Ing(DEMO_PREFIX + "Sugar", IngredientUnit.GRAM, "5000", "200"),
-				new Ing(DEMO_PREFIX + "Water Bottle", IngredientUnit.PIECE, "300", "20"),
-				new Ing(DEMO_PREFIX + "Lemon", IngredientUnit.PIECE, "150", "10"),
-				new Ing(DEMO_PREFIX + "Vegetable Broth", IngredientUnit.MILLILITER, "10000", "500"));
+				new Ing("Маруля", IngredientUnit.GRAM, "5000", "200"),
+				new Ing("Домати", IngredientUnit.GRAM, "4000", "200"),
+				new Ing("Пилешко месо", IngredientUnit.GRAM, "8000", "500"),
+				new Ing("Паста", IngredientUnit.GRAM, "6000", "300"),
+				new Ing("Телешка кюфтета", IngredientUnit.GRAM, "5000", "300"),
+				new Ing("Питка за бургер", IngredientUnit.PIECE, "200", "20"),
+				new Ing("Брашно", IngredientUnit.GRAM, "10000", "500"),
+				new Ing("Захар", IngredientUnit.GRAM, "5000", "200"),
+				new Ing("Минерална вода (бутилка)", IngredientUnit.PIECE, "300", "20"),
+				new Ing("Лимон", IngredientUnit.PIECE, "150", "10"),
+				new Ing("Зеленчуков бульон", IngredientUnit.MILLILITER, "10000", "500"));
 
 		Map<String, Ingredient> result = new LinkedHashMap<>();
 		for (Ing def : defs) {
@@ -223,14 +236,14 @@ public class DemoDataInitializer implements ApplicationRunner {
 		record Item(String category, String name, String description, String price) {
 		}
 		List<Item> defs = List.of(
-				new Item(DEMO_PREFIX + "Starters", DEMO_PREFIX + "Salad", "Fresh green salad", "8.50"),
-				new Item(DEMO_PREFIX + "Starters", DEMO_PREFIX + "Soup", "Vegetable soup", "6.90"),
-				new Item(DEMO_PREFIX + "Mains", DEMO_PREFIX + "Pasta", "Pasta with chicken", "14.50"),
-				new Item(DEMO_PREFIX + "Mains", DEMO_PREFIX + "Burger", "Beef burger", "15.90"),
-				new Item(DEMO_PREFIX + "Mains", DEMO_PREFIX + "Chicken", "Roasted chicken", "13.50"),
-				new Item(DEMO_PREFIX + "Desserts", DEMO_PREFIX + "Cake", "House cake", "7.50"),
-				new Item(DEMO_PREFIX + "Drinks", DEMO_PREFIX + "Water", "Bottled water", "2.50"),
-				new Item(DEMO_PREFIX + "Drinks", DEMO_PREFIX + "Lemonade", "Fresh lemonade", "4.20"));
+				new Item(CAT_STARTERS, ITEM_SALAD, "Домати, краставици, сирене и лук", "8.50"),
+				new Item(CAT_STARTERS, ITEM_SOUP, "Домашна супа с пиле и зеленчуци", "6.90"),
+				new Item(CAT_MAINS, ITEM_PASTA, "Пене с пилешко и сметанен сос", "14.50"),
+				new Item(CAT_MAINS, ITEM_BURGER, "Телешки бургер с пържени картофи", "15.90"),
+				new Item(CAT_MAINS, ITEM_CHICKEN, "Печено пиле с гарнитура", "13.50"),
+				new Item(CAT_DESSERTS, ITEM_CAKE, "Домашна торта на деня", "7.50"),
+				new Item(CAT_DRINKS, ITEM_WATER, "Газирана минерална вода 0.5 л", "2.50"),
+				new Item(CAT_DRINKS, ITEM_LEMONADE, "Прясно изцедена лимонада", "4.20"));
 
 		Map<String, MenuItem> result = new LinkedHashMap<>();
 		for (Item def : defs) {
@@ -249,28 +262,28 @@ public class DemoDataInitializer implements ApplicationRunner {
 	}
 
 	private void seedRecipes(Map<String, MenuItem> items, Map<String, Ingredient> ingredients) {
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Salad"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Lettuce", "120"),
-				entry(ingredients, DEMO_PREFIX + "Tomato", "80")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Soup"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Vegetable Broth", "300"),
-				entry(ingredients, DEMO_PREFIX + "Tomato", "50")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Pasta"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Pasta", "180"),
-				entry(ingredients, DEMO_PREFIX + "Chicken", "100")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Burger"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Beef Patty", "150"),
-				entry(ingredients, DEMO_PREFIX + "Burger Bun", "1")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Chicken"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Chicken", "220")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Cake"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Flour", "80"),
-				entry(ingredients, DEMO_PREFIX + "Sugar", "40")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Water"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Water Bottle", "1")));
-		seedRecipeIfEmpty(items.get(DEMO_PREFIX + "Lemonade"), List.of(
-				entry(ingredients, DEMO_PREFIX + "Lemon", "1"),
-				entry(ingredients, DEMO_PREFIX + "Sugar", "20")));
+		seedRecipeIfEmpty(items.get(ITEM_SALAD), List.of(
+				entry(ingredients, "Маруля", "120"),
+				entry(ingredients, "Домати", "80")));
+		seedRecipeIfEmpty(items.get(ITEM_SOUP), List.of(
+				entry(ingredients, "Зеленчуков бульон", "300"),
+				entry(ingredients, "Домати", "50")));
+		seedRecipeIfEmpty(items.get(ITEM_PASTA), List.of(
+				entry(ingredients, "Паста", "180"),
+				entry(ingredients, "Пилешко месо", "100")));
+		seedRecipeIfEmpty(items.get(ITEM_BURGER), List.of(
+				entry(ingredients, "Телешка кюфтета", "150"),
+				entry(ingredients, "Питка за бургер", "1")));
+		seedRecipeIfEmpty(items.get(ITEM_CHICKEN), List.of(
+				entry(ingredients, "Пилешко месо", "220")));
+		seedRecipeIfEmpty(items.get(ITEM_CAKE), List.of(
+				entry(ingredients, "Брашно", "80"),
+				entry(ingredients, "Захар", "40")));
+		seedRecipeIfEmpty(items.get(ITEM_WATER), List.of(
+				entry(ingredients, "Минерална вода (бутилка)", "1")));
+		seedRecipeIfEmpty(items.get(ITEM_LEMONADE), List.of(
+				entry(ingredients, "Лимон", "1"),
+				entry(ingredients, "Захар", "20")));
 	}
 
 	private static Map.Entry<Ingredient, String> entry(Map<String, Ingredient> ingredients, String name, String qty) {
@@ -292,12 +305,13 @@ public class DemoDataInitializer implements ApplicationRunner {
 			recipeIngredientRepository.save(new RecipeIngredient(item, component.getKey(), new BigDecimal(component.getValue())));
 		}
 	}
+
 	private void seedDemoReservationIfPossible() {
 		if (reservationRepository.findByReservationNumber(DEMO_RESERVATION_NUMBER).isPresent()) {
 			return;
 		}
 		AppUser client = appUserRepository.findByEmail(EmailNormalizer.normalize(DEMO_CLIENT_EMAIL)).orElse(null);
-		DiningTable table = diningTableRepository.findByTableNumber(903).orElse(null);
+		DiningTable table = diningTableRepository.findByTableNumber(SEED_TABLE_FOR_RESERVATION).orElse(null);
 		if (client == null || table == null) {
 			log.info("Demo reservation skipped: demo client or table is not available");
 			return;
@@ -316,7 +330,7 @@ public class DemoDataInitializer implements ApplicationRunner {
 				start,
 				end,
 				4,
-				"DEMO_SEED_RESERVATION",
+				"Вечерна резервация за четирима",
 				now));
 		log.info("Demo reservation ensured");
 	}

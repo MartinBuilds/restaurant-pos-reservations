@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import bg.martinandonov.restaurant.common.DocumentCodes;
 import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
@@ -199,7 +199,10 @@ public class PaymentService {
 	}
 
 	private String generateReceiptNumber() {
-		return "SIM-" + UUID.randomUUID();
+		return DocumentCodes.unique(
+				"RCP",
+				clock,
+				number -> paymentRepository.findByReceiptNumber(number).isPresent());
 	}
 
 	private PaymentResponse toResponse(Payment payment, List<OrderItem> items) {

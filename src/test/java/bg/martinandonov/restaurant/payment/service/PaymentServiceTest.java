@@ -96,6 +96,7 @@ class PaymentServiceTest {
 				diningTableRepository,
 				appUserRepository,
 				clock);
+		lenient().when(paymentRepository.findByReceiptNumber(any())).thenReturn(Optional.empty());
 
 		waiter = new AppUser(WAITER_EMAIL, "hash", "Waiter One", true);
 		ReflectionTestUtils.setField(waiter, "id", 5L);
@@ -152,7 +153,7 @@ class PaymentServiceTest {
 		assertThat(captor.getValue().getAmount()).isEqualByComparingTo("25.50");
 		assertThat(captor.getValue().getProcessedBy().getId()).isEqualTo(5L);
 		assertThat(captor.getValue().getPaidAt()).isEqualTo(NOW);
-		assertThat(captor.getValue().getReceiptNumber()).startsWith("SIM-");
+		assertThat(captor.getValue().getReceiptNumber()).matches("RCP-\\d{8}-\\d{4}");
 		assertThat(order.isClosed()).isTrue();
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.SERVED);
 		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.AVAILABLE);

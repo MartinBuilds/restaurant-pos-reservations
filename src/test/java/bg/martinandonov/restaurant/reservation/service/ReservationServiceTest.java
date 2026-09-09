@@ -94,6 +94,8 @@ class ReservationServiceTest {
 		SecurityContextHolder.setContext(context);
 		org.mockito.Mockito.lenient().when(appUserRepository.findByEmail("client@example.com"))
 				.thenReturn(Optional.of(client));
+		org.mockito.Mockito.lenient().when(reservationRepository.findByReservationNumber(any()))
+				.thenReturn(Optional.empty());
 	}
 
 	@AfterEach
@@ -118,7 +120,7 @@ class ReservationServiceTest {
 		ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
 		verify(reservationRepository).save(captor.capture());
 		assertThat(captor.getValue().getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
-		assertThat(captor.getValue().getReservationNumber()).isNotBlank().hasSize(36);
+		assertThat(captor.getValue().getReservationNumber()).matches("RES-\\d{8}-\\d{4}");
 		assertThat(captor.getValue().getNotes()).isEqualTo("window");
 		assertThat(captor.getValue().getClient().getId()).isEqualTo(10L);
 		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.AVAILABLE);

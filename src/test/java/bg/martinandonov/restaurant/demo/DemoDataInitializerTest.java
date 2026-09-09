@@ -118,7 +118,7 @@ class DemoDataInitializerTest {
 		stubCatalogAlreadyPresent();
 		when(appUserRepository.findByEmail(DemoDataInitializer.DEMO_CLIENT_EMAIL))
 				.thenReturn(Optional.of(demoClient()));
-		when(diningTableRepository.findByTableNumber(903)).thenReturn(Optional.of(demoTable()));
+		when(diningTableRepository.findByTableNumber(3)).thenReturn(Optional.of(demoTable()));
 		when(reservationRepository.findByReservationNumber(DemoDataInitializer.DEMO_RESERVATION_NUMBER))
 				.thenReturn(Optional.empty());
 		when(reservationRepository.existsConfirmedConflict(any(), any(), any())).thenReturn(false);
@@ -134,6 +134,12 @@ class DemoDataInitializerTest {
 						DemoDataInitializer.DEMO_WAITER_EMAIL,
 						DemoDataInitializer.DEMO_COOK_EMAIL,
 						DemoDataInitializer.DEMO_CLIENT_EMAIL);
+		assertThat(userCaptor.getAllValues()).extracting(AppUser::getFullName)
+				.containsExactlyInAnyOrder(
+						"Мария Админова",
+						"Георги Стоянов",
+						"Иван Петков",
+						"Елена Димитрова");
 		assertThat(userCaptor.getAllValues()).allSatisfy(user -> {
 			assertThat(user.getPassword()).startsWith("$2a$");
 			assertThat(user.getPassword()).isNotEqualTo("demo-pass-123");
@@ -144,6 +150,12 @@ class DemoDataInitializerTest {
 				.findFirst().orElseThrow().getRoles())
 				.extracting(Role::getName)
 				.containsExactly(RoleName.ADMIN);
+
+		ArgumentCaptor<Reservation> reservationCaptor = ArgumentCaptor.forClass(Reservation.class);
+		verify(reservationRepository).save(reservationCaptor.capture());
+		assertThat(reservationCaptor.getValue().getReservationNumber())
+				.isEqualTo(DemoDataInitializer.DEMO_RESERVATION_NUMBER);
+		assertThat(reservationCaptor.getValue().getNotes()).contains("Вечерна");
 	}
 
 	@Test
@@ -205,9 +217,18 @@ class DemoDataInitializerTest {
 
 		initializer.run(new DefaultApplicationArguments());
 
-		verify(diningTableRepository, atLeastOnce()).save(any(DiningTable.class));
+		ArgumentCaptor<DiningTable> tableCaptor = ArgumentCaptor.forClass(DiningTable.class);
+		verify(diningTableRepository, atLeastOnce()).save(tableCaptor.capture());
+		assertThat(tableCaptor.getAllValues()).extracting(DiningTable::getDisplayName)
+				.contains("Салон 3", "Тераса 5", "VIP 6");
+		assertThat(tableCaptor.getAllValues()).noneMatch(t -> t.getDisplayName().startsWith("DEMO"));
+
+		ArgumentCaptor<MenuItem> itemCaptor = ArgumentCaptor.forClass(MenuItem.class);
+		verify(menuItemRepository, atLeastOnce()).save(itemCaptor.capture());
+		assertThat(itemCaptor.getAllValues()).extracting(MenuItem::getName)
+				.contains(DemoDataInitializer.ITEM_SALAD, DemoDataInitializer.ITEM_BURGER);
+
 		verify(menuCategoryRepository, atLeastOnce()).save(any(MenuCategory.class));
-		verify(menuItemRepository, atLeastOnce()).save(any(MenuItem.class));
 		verify(ingredientRepository, atLeastOnce()).save(any(Ingredient.class));
 		verify(recipeIngredientRepository, atLeastOnce()).save(any());
 		verify(menuAvailabilityService).recalculateAllMenuItems();
@@ -230,7 +251,7 @@ class DemoDataInitializerTest {
 
 	private void stubCatalogAlreadyPresent() {
 		when(diningTableRepository.existsByTableNumber(any())).thenReturn(true);
-		MenuCategory category = new MenuCategory(DemoDataInitializer.DEMO_PREFIX + "Starters", "d", true);
+		MenuCategory category = new MenuCategory(DemoDataInitializer.CAT_STARTERS, "d", true);
 		ReflectionTestUtils.setField(category, "id", 1L);
 		when(menuCategoryRepository.findByNameIgnoreCase(anyString())).thenAnswer(inv -> {
 			String name = inv.getArgument(0);
@@ -257,13 +278,13 @@ class DemoDataInitializerTest {
 	}
 
 	private AppUser demoClient() {
-		AppUser user = new AppUser(DemoDataInitializer.DEMO_CLIENT_EMAIL, "hash", "Demo Client", true);
+		AppUser user = new AppUser(DemoDataInitializer.DEMO_CLIENT_EMAIL, "hash", "Елена Димитрова", true);
 		ReflectionTestUtils.setField(user, "id", 4L);
 		return user;
 	}
 
 	private DiningTable demoTable() {
-		DiningTable table = new DiningTable(903, "DEMO Table 903", 4);
+		DiningTable table = new DiningTable(3, "Салон 3", 4);
 		ReflectionTestUtils.setField(table, "id", 3L);
 		return table;
 	}
