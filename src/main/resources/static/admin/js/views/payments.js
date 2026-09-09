@@ -4,7 +4,8 @@ import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
   openDialog, closeDialog, handleError, field, reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-datetime-2';
+import { createDatetimePicker } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
 
 export async function renderPayments() {
   setPageMeta(t('page.payments.title'), t('page.payments.subtitle'));
@@ -20,8 +21,8 @@ async function reload(filters) {
       el('option', { value: 'CASH', text: statusLabel('CASH'), selected: filters.method === 'CASH' ? 'true' : null }),
       el('option', { value: 'CARD', text: statusLabel('CARD'), selected: filters.method === 'CARD' ? 'true' : null })
     ]);
-    const from = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
-    const to = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
+    const from = createDatetimePicker({ value: toDateTimeLocalValue(filters.from) });
+    const to = createDatetimePicker({ value: toDateTimeLocalValue(filters.to) });
     const processedById = el('input', { type: 'number', min: '1', value: filters.processedById || '' });
 
     const rows = payments.map((p) => [

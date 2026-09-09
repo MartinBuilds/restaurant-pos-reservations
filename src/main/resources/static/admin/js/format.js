@@ -1,4 +1,5 @@
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-datetime-1';
+import { formatDisplayDateTime, parseLocalDateTime } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
 
 const moneyFmt = new Intl.NumberFormat('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const numberFmt = new Intl.NumberFormat('bg-BG', { maximumFractionDigits: 3 });
@@ -6,7 +7,7 @@ const percentFmt = new Intl.NumberFormat('bg-BG', { minimumFractionDigits: 2, ma
 
 export function money(value) {
   if (value == null || value === '') return '—';
-  return moneyFmt.format(Number(value));
+  return `${moneyFmt.format(Number(value))}${t('fmt.currencySuffix')}`;
 }
 
 export function quantity(value) {
@@ -21,7 +22,9 @@ export function percent(value) {
 
 export function dateTime(value) {
   if (!value) return '—';
-  return String(value).replace('T', ' ').slice(0, 19);
+  const parts = parseLocalDateTime(value);
+  if (!parts) return String(value).replace('T', ' ').slice(0, 19);
+  return formatDisplayDateTime(parts);
 }
 
 export function toDateTimeLocalValue(value) {

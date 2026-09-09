@@ -5,7 +5,7 @@ import {
   openDialog, closeDialog, toast, toastIfUnchanged, handleError, field,
   reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { t, unitLabel } from '/shared/js/i18n/i18n.js?v=fix-units-1';
 
 const UNITS = ['GRAM', 'MILLILITER', 'PIECE'];
 
@@ -25,7 +25,7 @@ async function reload() {
     const rows = ingredients.map((ing) => [
       String(ing.id),
       ing.name || '—',
-      ing.unit || '—',
+      unitLabel(ing.unit) || '—',
       quantity(ing.stockQuantity),
       quantity(ing.minimumStockLevel),
       badge(ing.active ? t('common.active') : t('common.inactive'), ing.active ? 'ok' : 'muted'),
@@ -108,7 +108,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
         el('option', { value: '', text: t('col.ingredient') }),
         ...ingredients.map((ing) => el('option', {
           value: String(ing.id),
-          text: `${ing.name} (${ing.unit})`,
+          text: `${ing.name} (${unitLabel(ing.unit)})`,
           selected: String(ing.id) === String(row.ingredientId) ? 'true' : null
         }))
       ]);
@@ -173,7 +173,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
 function openIngredientDialog(existing, onDone) {
   const name = el('input', { type: 'text', value: existing?.name || '' });
   const unit = el('select', {}, UNITS.map((u) => el('option', {
-    value: u, text: u, selected: existing?.unit === u ? 'true' : null
+    value: u, text: unitLabel(u), selected: existing?.unit === u ? 'true' : null
   })));
   const stockQuantity = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.stockQuantity ?? '0' });
   const minimumStockLevel = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.minimumStockLevel ?? '0' });
@@ -253,7 +253,7 @@ function openStockDialog(ing, onDone) {
   openDialog({
     title: t('inventory.adjustTitle', { name: ing.name }),
     body: el('div', { className: 'stack' }, [
-      el('p', { className: 'muted', text: t('inventory.currentStock', { qty: quantity(ing.stockQuantity), unit: ing.unit }) }),
+      el('p', { className: 'muted', text: t('inventory.currentStock', { qty: quantity(ing.stockQuantity), unit: unitLabel(ing.unit) }) }),
       field(t('inventory.qtyChange'), quantityChange),
       field(t('col.note'), note)
     ]),

@@ -1,4 +1,4 @@
-﻿import { loadCsrf, api } from './api.js';
+import { loadCsrf, api } from './api.js';
 import { registerRoute, startRouter, setActiveNav } from './router.js';
 import { setBanner, toast, handleError, setPageMeta } from './ui.js';
 import { renderDashboard } from './views/dashboard.js';
@@ -13,7 +13,8 @@ import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?
 import { polishBottomAccount, wireBottomNav } from '/shared/js/bottom-nav.js?v=fix-account-sheet-1';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
 import { clearPageRefresh, wirePageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { wireDatetimePickers } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-datetime-1';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);
@@ -65,6 +66,7 @@ async function boot() {
   });
   wireShell();
   wirePageRefresh();
+  wireDatetimePickers();
 
   let csrfOk = false;
   try {

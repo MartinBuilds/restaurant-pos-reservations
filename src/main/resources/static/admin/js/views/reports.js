@@ -4,9 +4,15 @@ import {
   setPageMeta, mount, el, panel, table, loading, errorBox, emptyState,
   handleError, field, toast, reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-reports-3';
+import { createDatetimePicker } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
 
 let lastFilters = null;
+
+function paymentsCountLabel(count) {
+  const n = Number(count) || 0;
+  return n === 1 ? t('reports.paymentsOne') : t('reports.paymentsMany', { count: n });
+}
 
 export async function renderReports() {
   setPageMeta(t('page.reports.title'), t('page.reports.subtitle'));
@@ -21,8 +27,8 @@ export async function renderReports() {
 async function loadReports(filters, { soft = false } = {}) {
   lastFilters = filters;
   if (!soft) mount(loading(t('common.loading')));
-  const fromInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
-  const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
+  const fromInput = createDatetimePicker({ value: toDateTimeLocalValue(filters.from) });
+  const toInput = createDatetimePicker({ value: toDateTimeLocalValue(filters.to) });
 
   try {
     const q = queryString(filters);
@@ -32,7 +38,6 @@ async function loadReports(filters, { soft = false } = {}) {
       api.get(`/api/admin/reports/sales/by-payment-method${q}`)
     ]);
 
-    const tz = summary?.period?.timeZone || byItem?.period?.timeZone || 'Europe/Sofia';
     const itemRows = (byItem.items || []).map((row) => [
       String(row.menuItemId),
       row.menuItemName || '—',
@@ -43,22 +48,26 @@ async function loadReports(filters, { soft = false } = {}) {
 
     const methodCards = (byMethod.methods || []).map((m) => {
       const width = Math.max(0, Math.min(100, Number(m.percentageOfRevenue) || 0));
+      const kind = String(m.method || '').toLowerCase() === 'card' ? 'card' : 'cash';
       const bar = el('div', { className: 'bar-track' }, [
-        el('div', { className: 'bar-fill' })
+        el('div', { className: `bar-fill bar-fill-${kind}` })
       ]);
       bar.firstChild.style.width = `${width}%`;
-      return el('div', { className: 'card' }, [
-        el('div', { className: 'card-label', text: m.method ? statusLabel(m.method) : '—' }),
+      return el('div', { className: `card report-method report-method-${kind}` }, [
+        el('div', { className: 'report-method-top' }, [
+          el('div', { className: 'card-label', text: m.method ? statusLabel(m.method) : '—' }),
+          el('span', { className: `report-pill report-pill-${kind}`, text: percent(m.percentageOfRevenue) })
+        ]),
         el('div', { className: 'card-value', text: money(m.amount) }),
-        el('p', { className: 'muted', text: `${m.paymentCount} · ${percent(m.percentageOfRevenue)}` }),
+        el('p', { className: 'muted report-method-meta', text: paymentsCountLabel(m.paymentCount) }),
         bar
       ]);
     });
 
     const refresh = () => loadReports(lastFilters || filters, { soft: true });
 
-    mount(el('div', { className: 'stack' }, [
-      el('div', { className: 'note-info note' }, [
+    mount(el('div', { className: 'stack reports-page' }, [
+      el('div', { className: 'note report-sim-note' }, [
         document.createTextNode(t('payment.simulationWarning'))
       ]),
       panel(t('msg.period'), [
@@ -78,17 +87,17 @@ async function loadReports(filters, { soft = false } = {}) {
             }
           })
         ]),
-        el('p', { className: 'muted', text: `${t('msg.period')}: ${dateTime(summary.period?.from)} → ${dateTime(summary.period?.to)} (${tz})` })
+        el('p', { className: 'muted report-period-line', text: `${t('msg.period')}: ${dateTime(summary.period?.from)} → ${dateTime(summary.period?.to)}` })
       ], [reloadButton(refresh)]),
-      el('div', { className: 'grid grid-4' }, [
-        metric(t('reports.revenue'), money(summary.totalRevenue)),
-        metric(t('reports.paidOrders'), String(summary.paidOrdersCount)),
-        metric(t('reports.soldItems'), String(summary.soldItemsCount)),
-        metric(t('reports.avgOrder'), money(summary.averageOrderValue))
+      el('div', { className: 'report-metrics' }, [
+        metric(t('reports.revenue'), money(summary.totalRevenue), 'revenue'),
+        metric(t('reports.paidOrders'), String(summary.paidOrdersCount), 'orders'),
+        metric(t('reports.soldItems'), String(summary.soldItemsCount), 'items'),
+        metric(t('reports.avgOrder'), money(summary.averageOrderValue), 'avg')
       ]),
       panel(t('reports.byMethod'), [
         el('p', { className: 'muted', text: t('reports.total', { amount: money(byMethod.totalRevenue) }) }),
-        el('div', { className: 'grid grid-2' }, methodCards.length ? methodCards : [
+        el('div', { className: 'grid grid-2 report-methods' }, methodCards.length ? methodCards : [
           emptyState(t('common.empty'))
         ])
       ]),
@@ -100,7 +109,7 @@ async function loadReports(filters, { soft = false } = {}) {
     ]));
     setPageRefresh(refresh);
   } catch (err) {
-    mount(el('div', { className: 'stack' }, [
+    mount(el('div', { className: 'stack reports-page' }, [
       panel(t('msg.period'), [
         el('div', { className: 'filters' }, [
           field(t('col.from'), fromInput),
@@ -120,9 +129,9 @@ async function loadReports(filters, { soft = false } = {}) {
   }
 }
 
-function metric(label, value) {
-  return el('div', { className: 'card' }, [
-    el('div', { className: 'card-label', text: label }),
-    el('div', { className: 'card-value', text: value })
+function metric(label, value, tone = 'revenue') {
+  return el('div', { className: `report-metric report-metric-${tone}` }, [
+    el('p', { className: 'report-metric-label', text: label }),
+    el('p', { className: 'report-metric-value', text: value })
   ]);
 }

@@ -5,7 +5,8 @@ import {
   openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog,
   reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-datetime-1';
+import { createDatetimePicker } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
 
 const STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
@@ -14,6 +15,10 @@ function statusBadge(status) {
   const map = { CONFIRMED: 'ok', CANCELLED: 'muted', COMPLETED: 'info', NO_SHOW: 'warn' };
   if (!status) return badge('—', 'muted');
   return badge(statusLabel(status) || '—', map[status] || 'muted');
+}
+
+function dtPicker(value = '') {
+  return createDatetimePicker({ value: toDateTimeLocalValue(value) });
 }
 
 export async function renderReservations() {
@@ -35,8 +40,8 @@ async function reload(filters = {}) {
         : Promise.resolve([])
     ]);
 
-    const fromInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
-    const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
+    const fromInput = dtPicker(filters.from);
+    const toInput = dtPicker(filters.to);
     const status = el('select', {}, [
       el('option', { value: '', text: t('filter.allStatuses') }),
       ...STATUSES.map((s) => el('option', { value: s, text: statusLabel(s), selected: filters.status === s ? 'true' : null }))
@@ -102,7 +107,6 @@ async function reload(filters = {}) {
 
     mount(el('div', { className: 'stack' }, [
       panel(t('panel.filters'), [
-        el('p', { className: 'note-info note', text: t('reservations.datetimeNote') }),
         el('div', { className: 'filters' }, [
           field(t('col.from'), fromInput),
           field(t('col.to'), toInput),
@@ -150,8 +154,8 @@ function openCreateDialog(tables, users, onDone) {
       text: `#${row.tableNumber} ${row.displayName || ''}`.trim()
     }))
   ]);
-  const startTime = el('input', { type: 'datetime-local' });
-  const endTime = el('input', { type: 'datetime-local' });
+  const startTime = dtPicker();
+  const endTime = dtPicker();
   const guestCount = el('input', { type: 'number', min: '1', value: '2' });
   const notes = el('textarea');
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.create') });
@@ -197,8 +201,8 @@ function openEditDialog(reservation, tables, onDone) {
     text: `#${row.tableNumber}`,
     selected: reservation.diningTableId === row.id ? 'true' : null
   })));
-  const startTime = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(reservation.startTime) });
-  const endTime = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(reservation.endTime) });
+  const startTime = dtPicker(reservation.startTime);
+  const endTime = dtPicker(reservation.endTime);
   const guestCount = el('input', { type: 'number', min: '1', value: reservation.guestCount ?? 1 });
   const notes = el('textarea', {}, reservation.notes || '');
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });

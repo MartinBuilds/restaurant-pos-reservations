@@ -318,22 +318,185 @@ caption {
 .dialog-footer { justify-content: flex-end; }
 
 .bar-track {
-  height: 0.65rem;
-  background: var(--surface-2);
-  border-radius: 999px;
+  height: 0.55rem;
+  background: color-mix(in srgb, var(--line) 70%, var(--surface-2));
+  border-radius: 2px;
   overflow: hidden;
-  margin-top: var(--space-2);
+  margin-top: 0.85rem;
 }
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  background: var(--brand);
   border-radius: inherit;
   max-width: 100%;
+  transform-origin: left center;
+  animation: report-bar-in 0.55s ease-out both;
+}
+
+/* Reports — single KPI strip, no soft “AI card” look */
+.reports-page .report-sim-note {
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--ink);
+}
+
+.reports-page .report-period-line {
+  margin-top: 0.35rem;
+}
+
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.report-metric {
+  position: relative;
+  padding: 1.15rem 1.2rem 1.25rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.report-metric + .report-metric {
+  border-left: 1px solid var(--line);
+}
+
+.report-metric::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--brand);
+}
+
+.report-metric-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.report-metric-value {
+  margin: 0.55rem 0 0;
+  color: var(--ink);
+  font-size: clamp(1.55rem, 2.2vw, 1.95rem);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-metric-revenue::before { background: #2f6b52; }
+.report-metric-orders::before { background: #3b82c4; }
+.report-metric-items::before { background: #c27803; }
+.report-metric-avg::before { background: #3f8f6d; }
+
+html[data-theme="dark"] .report-metric-revenue::before { background: #54a882; }
+html[data-theme="dark"] .report-metric-orders::before { background: #7eb6e8; }
+html[data-theme="dark"] .report-metric-items::before { background: #e0a23a; }
+html[data-theme="dark"] .report-metric-avg::before { background: #6fbf8f; }
+
+.report-method {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-4);
+}
+
+.report-method-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.report-method .card-label {
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.report-method .card-value {
+  margin-top: 0.45rem;
+  font-size: 1.45rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-method-cash {
+  border-left: 3px solid #3f8f6d;
+}
+.report-pill-cash { color: #3f8f6d; }
+.bar-fill-cash { background: #3f8f6d; }
+
+.report-method-card {
+  border-left: 3px solid #3b82c4;
+}
+.report-pill-card { color: #3b82c4; }
+.bar-fill-card { background: #3b82c4; }
+
+html[data-theme="dark"] .report-method-cash { border-left-color: #6fbf8f; }
+html[data-theme="dark"] .report-pill-cash { color: #6fbf8f; }
+html[data-theme="dark"] .bar-fill-cash { background: #6fbf8f; }
+html[data-theme="dark"] .report-method-card { border-left-color: #7eb6e8; }
+html[data-theme="dark"] .report-pill-card { color: #7eb6e8; }
+html[data-theme="dark"] .bar-fill-card { background: #7eb6e8; }
+
+.report-method-meta {
+  margin-top: 0.25rem;
+}
+
+@keyframes report-bar-in {
+  from { transform: scaleX(0.15); opacity: 0.35; }
+  to { transform: scaleX(1); opacity: 1; }
 }
 
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .report-metric + .report-metric {
+    border-left: 1px solid var(--line);
+  }
+  .report-metric:nth-child(2n + 1) {
+    border-left: 0;
+  }
+  .report-metric:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 640px) {
+  .report-metrics {
+    grid-template-columns: 1fr;
+  }
+  .report-metric + .report-metric {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
 }
 
 @media (max-width: 768px) {

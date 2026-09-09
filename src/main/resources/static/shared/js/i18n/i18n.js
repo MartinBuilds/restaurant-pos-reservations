@@ -1,5 +1,5 @@
-import { bg } from './bg.js?v=fix-refresh-1';
-import { en } from './en.js?v=fix-refresh-1';
+import { bg } from './bg.js?v=fix-qty-1';
+import { en } from './en.js?v=fix-qty-1';
 import { getLanguage, LANGUAGE_CHANGE, setLanguage as persistLanguage } from '../ui-preferences.js';
 
 const dictionaries = { bg, en };
@@ -17,6 +17,13 @@ export function t(key, params = {}) {
 export function statusLabel(code) {
   if (code == null || code === '') return '';
   const key = `status.${code}`;
+  const translated = t(key);
+  return translated === key ? String(code) : translated;
+}
+
+export function unitLabel(code) {
+  if (code == null || code === '') return '';
+  const key = `unit.${code}`;
   const translated = t(key);
   return translated === key ? String(code) : translated;
 }
