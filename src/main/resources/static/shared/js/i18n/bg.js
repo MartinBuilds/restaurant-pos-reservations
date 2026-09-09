@@ -6,6 +6,7 @@ export const bg = {
   'app.client': 'Онлайн резервации',
 
   'nav.dashboard': 'Основно табло',
+  'nav.account': 'Акаунт',
   'nav.users': 'Потребители',
   'nav.menu': 'Меню',
   'nav.inventory': 'Склад и рецепти',

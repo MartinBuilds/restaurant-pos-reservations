@@ -1,0 +1,191 @@
+/* Bottom navigation — phone only, equal-width tabs, no horizontal scroll. */
+
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  body.has-bottom-nav .bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0;
+    min-height: 3.55rem;
+    padding: 0.2rem 0.1rem calc(0.2rem + env(safe-area-inset-bottom, 0px));
+    background: var(--color-surface, var(--surface));
+    border-top: 1px solid var(--color-border, var(--line));
+    color: var(--color-text-muted, var(--muted));
+  }
+
+  body.has-bottom-nav .sidebar,
+  body.has-bottom-nav .sidebar-scrim,
+  body.has-bottom-nav .nav-toggle,
+  body.has-bottom-nav .sidebar-drawer-close {
+    display: none !important;
+  }
+
+  body.has-bottom-nav .app-shell {
+    display: block;
+  }
+
+  body.has-bottom-nav .main-column {
+    min-height: 100vh;
+  }
+
+  body.has-bottom-nav .content,
+  body.has-bottom-nav .board {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.has-bottom-nav .topbar {
+    padding-left: var(--space-4);
+  }
+
+  .bottom-nav > .bottom-nav-item.nav-link,
+  .bottom-nav > .bottom-nav-account {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .bottom-nav-item.nav-link,
+  .bottom-nav .bottom-nav-account-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.12rem;
+    width: 100%;
+    height: 100%;
+    padding: 0.28rem 0.05rem;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    text-decoration: none;
+    color: var(--color-text-muted, var(--muted));
+    background: transparent;
+    opacity: 1;
+    font-size: 0.56rem;
+    font-weight: 600;
+    line-height: 1.05;
+    text-align: center;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .bottom-nav-item.nav-link .icon,
+  .bottom-nav .bottom-nav-account-btn .icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 auto;
+  }
+
+  .bottom-nav-item.nav-link .nav-label,
+  .bottom-nav .bottom-nav-account-btn .nav-label {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bottom-nav-item.nav-link.active,
+  .bottom-nav-item.nav-link[aria-current="page"],
+  .bottom-nav .account-mount[data-account-menu="open"] .bottom-nav-account-btn {
+    color: var(--brand, var(--color-primary));
+    background: transparent;
+  }
+
+  .bottom-nav-account {
+    display: flex;
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .bottom-nav .account-mount {
+    margin-top: 0;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .bottom-nav .account-trigger {
+    width: 100%;
+  }
+
+  .bottom-nav .account-meta,
+  .bottom-nav .account-avatar {
+    display: none !important;
+  }
+
+  /* Account opens as a bottom sheet above the tab bar */
+  body.has-bottom-nav .bottom-nav .account-menu,
+  body.has-bottom-nav .account-menu.account-menu-sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-height: min(85dvh, 34rem);
+    margin: 0;
+    border-radius: 1rem 1rem 0 0 !important;
+    border: 1px solid var(--color-border, var(--line));
+    border-bottom: 0 !important;
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.28);
+    z-index: 80;
+    padding: 0.25rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: translate3d(0, 110%, 0);
+    transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+  }
+
+  body.has-bottom-nav .account-mount[data-account-menu="open"] > .account-menu.account-menu-sheet.is-open {
+    transform: translate3d(0, 0, 0);
+  }
+
+  body.has-bottom-nav .account-menu.account-menu-sheet::before {
+    content: "";
+    display: block;
+    width: 2.75rem;
+    height: 0.28rem;
+    border-radius: 999px;
+    background: var(--color-border, var(--line));
+    margin: 0.45rem auto 0.75rem;
+  }
+
+  .account-sheet-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  body.account-sheet-open {
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .topbar .conn.conn-topbar {
+    margin-left: auto;
+    max-width: 11rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none !important;
+  }
+}

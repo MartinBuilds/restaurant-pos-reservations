@@ -6,6 +6,7 @@ export const en = {
   'app.client': 'Online reservations',
 
   'nav.dashboard': 'Dashboard',
+  'nav.account': 'Account',
   'nav.users': 'Users',
   'nav.menu': 'Menu',
   'nav.inventory': 'Inventory & recipes',

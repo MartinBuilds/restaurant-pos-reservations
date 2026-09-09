@@ -9,10 +9,10 @@ import { renderTables } from './views/tables.js';
 import { renderReservations } from './views/reservations.js';
 import { renderPayments } from './views/payments.js';
 import { renderReports } from './views/reports.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-2';
-import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=fix-toasts-2';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-account-sheet-1';
+import { polishBottomAccount, wireBottomNav } from '/shared/js/bottom-nav.js?v=fix-account-sheet-1';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-roles-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-bottom-nav-3';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);
@@ -48,11 +48,10 @@ async function logout() {
 }
 
 function wireShell() {
-  wireMobileSidebarDrawer();
+  wireBottomNav();
 }
 
 async function boot() {
-  wireShell();
   decorateNavIcons({
     dashboard: 'dashboard',
     users: 'users',
@@ -63,6 +62,7 @@ async function boot() {
     payments: 'payments',
     reports: 'reports'
   });
+  wireShell();
 
   let csrfOk = false;
   try {
@@ -79,11 +79,13 @@ async function boot() {
       onLogout: logout,
       collapsibleSidebar: true,
       onLanguageApplied: () => {
+        polishBottomAccount();
         window.dispatchEvent(new Event('hashchange'));
       }
     });
     shellAccount = shell.account;
     window.__adminAccount = shellAccount;
+    polishBottomAccount();
   } catch (err) {
     console.error(err);
     handleError(err, t('boot.adminError'));

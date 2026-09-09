@@ -6,27 +6,27 @@ import { renderOrders } from './views/orders.js';
 import { renderReservations } from './views/reservations.js';
 import { renderTables } from './views/tables.js';
 import { wireDialogChrome } from './views/ui-shared.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-2';
-import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=fix-toasts-2';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-account-sheet-1';
+import { polishBottomAccount, wireBottomNav } from '/shared/js/bottom-nav.js?v=fix-account-sheet-1';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-3';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-bottom-nav-3';
 
 registerRoute('tables', renderTables);
 registerRoute('orders', renderOrders);
 registerRoute('reservations', renderReservations);
 
 function wireShell() {
-  wireMobileSidebarDrawer();
+  wireBottomNav();
   wireDialogChrome();
 }
 
 async function boot() {
-  wireShell();
   decorateNavIcons({
     tables: 'tables',
     orders: 'orders',
     reservations: 'reservations'
   });
+  wireShell();
 
   setUnauthorizedHandler(() => {
     stopRealtime();
@@ -56,9 +56,11 @@ async function boot() {
         window.location.assign('/login');
       },
       onLanguageApplied: () => {
+        polishBottomAccount();
         window.dispatchEvent(new Event('hashchange'));
       }
     });
+    polishBottomAccount();
   } catch (err) {
     console.error(err);
     handleError(err, t('boot.waiterError'));
