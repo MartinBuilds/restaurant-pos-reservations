@@ -25,6 +25,7 @@ import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.user.dto.CreateUserRequest;
+import bg.martinandonov.restaurant.user.dto.UpdateUserRolesRequest;
 import bg.martinandonov.restaurant.user.dto.UpdateUserStatusRequest;
 import bg.martinandonov.restaurant.user.dto.UserResponse;
 import bg.martinandonov.restaurant.user.entity.AppUser;
@@ -145,6 +146,39 @@ class UserServiceTest {
 		assertThatThrownBy(() -> userService.updateUserStatus(1L, request))
 				.isInstanceOf(BusinessRuleException.class)
 				.hasMessageContaining("last enabled ADMIN");
+	}
+
+	@Test
+	void updateUserRolesPreventsRemovingLastAdmin() {
+		AppUser admin = new AppUser("admin@example.com", "bcrypt-hash", "Admin", true);
+		ReflectionTestUtils.setField(admin, "id", 1L);
+		admin.setRoles(Set.of(adminRole));
+
+		when(appUserRepository.findById(1L)).thenReturn(Optional.of(admin));
+		when(appUserRepository.countByEnabledTrueAndRoles_Name(RoleName.ADMIN)).thenReturn(1L);
+
+		UpdateUserRolesRequest request = new UpdateUserRolesRequest();
+		request.setRoles(Set.of("COOK"));
+
+		assertThatThrownBy(() -> userService.updateUserRoles(1L, request))
+				.isInstanceOf(BusinessRuleException.class)
+				.hasMessageContaining("last enabled ADMIN");
+	}
+
+	@Test
+	void updateUserRolesRejectsMultipleRoles() {
+		AppUser user = new AppUser("waiter@example.com", "bcrypt-hash", "Waiter", true);
+		ReflectionTestUtils.setField(user, "id", 2L);
+		user.setRoles(Set.of(waiterRole));
+
+		when(appUserRepository.findById(2L)).thenReturn(Optional.of(user));
+
+		UpdateUserRolesRequest request = new UpdateUserRolesRequest();
+		request.setRoles(Set.of("WAITER", "COOK"));
+
+		assertThatThrownBy(() -> userService.updateUserRoles(2L, request))
+				.isInstanceOf(InvalidRequestException.class)
+				.hasMessageContaining("Exactly one role");
 	}
 
 	@Test

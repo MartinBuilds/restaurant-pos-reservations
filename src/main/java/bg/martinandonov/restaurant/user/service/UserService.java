@@ -52,6 +52,9 @@ public class UserService {
 		String fullName = requireFullName(request.getFullName());
 		String rawPassword = requirePassword(request.getPassword());
 		Set<RoleName> roleNames = resolveRoleNames(request.getRoles());
+		if (roleNames.size() != 1) {
+			throw new InvalidRequestException("Exactly one role must be assigned");
+		}
 
 		if (appUserRepository.existsByEmail(email)) {
 			throw new BusinessRuleException("A user with this email already exists");
@@ -81,6 +84,12 @@ public class UserService {
 		Objects.requireNonNull(request, "request must not be null");
 		AppUser user = findUser(id);
 		Set<RoleName> roleNames = resolveRoleNames(request.getRoles());
+		if (roleNames.size() != 1) {
+			throw new InvalidRequestException("Exactly one role must be assigned");
+		}
+		if (isLastEnabledAdmin(user) && !roleNames.contains(RoleName.ADMIN)) {
+			throw new BusinessRuleException("Cannot remove ADMIN from the last enabled ADMIN user");
+		}
 		user.setRoles(loadRoles(roleNames));
 		return toResponse(user);
 	}
