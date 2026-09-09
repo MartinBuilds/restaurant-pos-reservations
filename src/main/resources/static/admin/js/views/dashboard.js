@@ -20,16 +20,19 @@ export async function renderDashboard() {
     [t('nav.reports'), 'reports', t('dashboard.reportsDesc'), 'reports']
   ];
 
+  const welcomePanel = panel(welcome, [
+    el('p', { text: t('dashboard.intro') }),
+    el('p', { className: 'muted', text: t('dashboard.note') }),
+    el('div', { className: 'welcome-badges' }, [
+      badge(t('dashboard.badgeAdmin'), 'info'),
+      badge(t('dashboard.badgeSession'), 'ok'),
+      badge(t('dashboard.badgeStack'), 'muted')
+    ])
+  ]);
+  welcomePanel.classList.add('welcome-panel');
+
   mount(el('div', { className: 'stack' }, [
-    panel(welcome, [
-      el('p', { text: t('dashboard.intro') }),
-      el('p', { className: 'muted', text: t('dashboard.note') }),
-      el('div', { className: 'row-actions', style: 'margin-top:1rem' }, [
-        badge(t('dashboard.badgeAdmin'), 'info'),
-        badge(t('dashboard.badgeSession'), 'ok'),
-        badge(t('dashboard.badgeStack'), 'muted')
-      ])
-    ]),
+    welcomePanel,
     el('h2', { className: 'panel-title', text: t('dashboard.quickLinks') }),
     el('div', { className: 'grid grid-3 quick-links' }, links.map(([title, route, desc, iconName]) =>
       el('a', {
