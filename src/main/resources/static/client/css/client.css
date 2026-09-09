@@ -81,16 +81,7 @@ h1, h2, h3, p { margin: 0; }
 }
 .card h3 { font-size: 1.05rem; word-break: break-word; }
 
-.badge {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  border-radius: 999px; padding: 0.2rem 0.65rem; font-size: 0.82rem;
-  border: 1px solid var(--line); background: #f5f7f4;
-}
-.badge::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
-.badge-CONFIRMED { color: var(--ok); }
-.badge-CANCELLED { color: var(--danger); }
-.badge-COMPLETED { color: var(--info); }
-.badge-NO_SHOW { color: var(--accent); }
+/* Badge styles live in /shared/css/badges.css */
 
 .table-wrap { overflow-x: auto; }
 table.data { width: 100%; border-collapse: collapse; min-width: 40rem; }

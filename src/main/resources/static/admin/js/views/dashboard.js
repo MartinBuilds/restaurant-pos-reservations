@@ -31,15 +31,16 @@ export async function renderDashboard() {
       ])
     ]),
     el('h2', { className: 'panel-title', text: t('dashboard.quickLinks') }),
-    el('div', { className: 'grid grid-3' }, links.map(([title, route, desc, iconName]) =>
+    el('div', { className: 'grid grid-3 quick-links' }, links.map(([title, route, desc, iconName]) =>
       el('a', {
         className: 'card card-link',
         href: `#/${route}`,
         'aria-label': title
       }, [
+        el('span', { className: 'card-link-arrow', 'aria-hidden': 'true' }),
         el('div', { className: 'card-link-icon' }, [icon(iconName)]),
-        el('div', { className: 'card-label', text: title }),
-        el('p', { className: 'muted', text: desc })
+        el('div', { className: 'card-link-title', text: title }),
+        el('p', { className: 'card-link-desc', text: desc })
       ])
     ))
   ]));

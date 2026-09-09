@@ -107,17 +107,7 @@ table.data.responsive-data-table { min-width: 0; }
 table.data th, table.data td { text-align: left; padding: 0.7rem 0.55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.data th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
 
-.badge {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  border-radius: 999px; padding: 0.2rem 0.65rem; font-size: 0.82rem;
-  border: 1px solid var(--line); background: #f5f7f4;
-}
-.badge::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
-.badge-AVAILABLE, .badge-SERVED, .badge-ok { color: var(--ok); }
-.badge-OCCUPIED, .badge-COOKING, .badge-warn { color: var(--warn); }
-.badge-RESERVED, .badge-ACCEPTED, .badge-info { color: var(--info); }
-.badge-READY, .badge-accent { color: var(--accent); }
-.badge-OUT_OF_SERVICE, .badge-CANCELLED, .badge-danger { color: var(--danger); }
+/* Badge styles live in /shared/css/badges.css */
 
 .card {
   border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-4);

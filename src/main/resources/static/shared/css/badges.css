@@ -1,0 +1,167 @@
+/**
+ * Shared status / kind badges — theme-aware contrast for light and dark.
+ * Semantic kinds: ok, warn, danger, info, muted, accent
+ * Plus domain status codes used by waiter/kitchen/client.
+ */
+
+:root,
+html[data-theme="light"] {
+  --badge-ok-bg: #dcfce7;
+  --badge-ok-fg: #14532d;
+  --badge-ok-border: #86efac;
+
+  --badge-warn-bg: #ffedd5;
+  --badge-warn-fg: #9a3412;
+  --badge-warn-border: #fdba74;
+
+  --badge-danger-bg: #fee2e2;
+  --badge-danger-fg: #991b1b;
+  --badge-danger-border: #fca5a5;
+
+  --badge-info-bg: #e0f2fe;
+  --badge-info-fg: #0c4a6e;
+  --badge-info-border: #7dd3fc;
+
+  --badge-muted-bg: #eef2ee;
+  --badge-muted-fg: #3f4a3f;
+  --badge-muted-border: #c5cfc5;
+
+  --badge-accent-bg: #fef3c7;
+  --badge-accent-fg: #92400e;
+  --badge-accent-border: #fcd34d;
+}
+
+html[data-theme="dark"] {
+  --badge-ok-bg: rgba(74, 222, 128, 0.18);
+  --badge-ok-fg: #86efac;
+  --badge-ok-border: rgba(74, 222, 128, 0.5);
+
+  --badge-warn-bg: rgba(251, 146, 60, 0.2);
+  --badge-warn-fg: #fdba74;
+  --badge-warn-border: rgba(251, 146, 60, 0.55);
+
+  --badge-danger-bg: rgba(248, 113, 113, 0.18);
+  --badge-danger-fg: #fca5a5;
+  --badge-danger-border: rgba(248, 113, 113, 0.5);
+
+  --badge-info-bg: rgba(96, 165, 250, 0.2);
+  --badge-info-fg: #93c5fd;
+  --badge-info-border: rgba(96, 165, 250, 0.55);
+
+  --badge-muted-bg: rgba(154, 171, 158, 0.16);
+  --badge-muted-fg: #c5d0c7;
+  --badge-muted-border: rgba(154, 171, 158, 0.4);
+
+  --badge-accent-bg: rgba(251, 191, 36, 0.18);
+  --badge-accent-fg: #fbbf24;
+  --badge-accent-border: rgba(251, 191, 36, 0.5);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  border: 1px solid var(--badge-muted-border);
+  background: var(--badge-muted-bg);
+  color: var(--badge-muted-fg);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.badge::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.95;
+}
+
+.badge-ok {
+  background: var(--badge-ok-bg);
+  color: var(--badge-ok-fg);
+  border-color: var(--badge-ok-border);
+}
+
+.badge-warn {
+  background: var(--badge-warn-bg);
+  color: var(--badge-warn-fg);
+  border-color: var(--badge-warn-border);
+}
+
+.badge-danger {
+  background: var(--badge-danger-bg);
+  color: var(--badge-danger-fg);
+  border-color: var(--badge-danger-border);
+}
+
+.badge-info {
+  background: var(--badge-info-bg);
+  color: var(--badge-info-fg);
+  border-color: var(--badge-info-border);
+}
+
+.badge-muted {
+  background: var(--badge-muted-bg);
+  color: var(--badge-muted-fg);
+  border-color: var(--badge-muted-border);
+}
+
+.badge-accent {
+  background: var(--badge-accent-bg);
+  color: var(--badge-accent-fg);
+  border-color: var(--badge-accent-border);
+}
+
+/* Domain statuses → semantic tokens */
+.badge-AVAILABLE,
+.badge-SERVED,
+.badge-CONFIRMED,
+.badge-COMPLETED,
+.badge-PAID,
+.badge-CASH {
+  background: var(--badge-ok-bg);
+  color: var(--badge-ok-fg);
+  border-color: var(--badge-ok-border);
+}
+
+.badge-OCCUPIED,
+.badge-COOKING,
+.badge-PENDING {
+  background: var(--badge-warn-bg);
+  color: var(--badge-warn-fg);
+  border-color: var(--badge-warn-border);
+}
+
+.badge-OUT_OF_SERVICE,
+.badge-CANCELLED,
+.badge-FAILED,
+.badge-NO_SHOW {
+  background: var(--badge-danger-bg);
+  color: var(--badge-danger-fg);
+  border-color: var(--badge-danger-border);
+}
+
+.badge-RESERVED,
+.badge-ACCEPTED,
+.badge-CARD,
+.badge-CLOSED {
+  background: var(--badge-info-bg);
+  color: var(--badge-info-fg);
+  border-color: var(--badge-info-border);
+}
+
+.badge-READY {
+  background: var(--badge-accent-bg);
+  color: var(--badge-accent-fg);
+  border-color: var(--badge-accent-border);
+}
