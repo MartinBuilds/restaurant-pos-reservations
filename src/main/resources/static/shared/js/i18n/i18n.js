@@ -1,5 +1,5 @@
-import { bg } from './bg.js?v=fix-qty-1';
-import { en } from './en.js?v=fix-qty-1';
+import { bg } from './bg.js?v=fix-avail-2';
+import { en } from './en.js?v=fix-avail-2';
 import { getLanguage, LANGUAGE_CHANGE, setLanguage as persistLanguage } from '../ui-preferences.js';
 
 const dictionaries = { bg, en };
@@ -19,6 +19,13 @@ export function statusLabel(code) {
   const key = `status.${code}`;
   const translated = t(key);
   return translated === key ? String(code) : translated;
+}
+
+export function availabilityReasonLabel(code) {
+  if (code == null || code === '') return '';
+  const key = `availability.${code}`;
+  const translated = t(key);
+  return translated === key ? statusLabel(code) : translated;
 }
 
 export function unitLabel(code) {

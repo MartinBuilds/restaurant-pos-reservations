@@ -1,11 +1,11 @@
 # Demo / presentation script (8–12 minutes)
 
-Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell only (never commit it). Demo emails:
+Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell only (never commit it). Seeded logins:
 
-- `demo.admin@example.com`
-- `demo.waiter@example.com`
-- `demo.cook@example.com`
-- `demo.client@example.com`
+- `maria.adminova@example.com`
+- `georgi.stoyanov@example.com`
+- `ivan.petkov@example.com`
+- `elena.dimitrova@example.com`
 
 ## Suggested timing
 

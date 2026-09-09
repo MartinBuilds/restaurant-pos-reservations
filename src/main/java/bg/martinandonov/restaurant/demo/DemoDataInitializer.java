@@ -50,11 +50,11 @@ import bg.martinandonov.restaurant.user.repository.RoleRepository;
 @Order(100)
 public class DemoDataInitializer implements ApplicationRunner {
 
-	static final String DEMO_ADMIN_EMAIL = "demo.admin@example.com";
-	static final String DEMO_WAITER_EMAIL = "demo.waiter@example.com";
-	static final String DEMO_COOK_EMAIL = "demo.cook@example.com";
-	static final String DEMO_CLIENT_EMAIL = "demo.client@example.com";
-	static final String DEMO_RESERVATION_NUMBER = "RES-20260809-1001";
+	static final String SEED_ADMIN_EMAIL = "maria.adminova@example.com";
+	static final String SEED_WAITER_EMAIL = "georgi.stoyanov@example.com";
+	static final String SEED_COOK_EMAIL = "ivan.petkov@example.com";
+	static final String SEED_CLIENT_EMAIL = "elena.dimitrova@example.com";
+	static final String SEED_RESERVATION_NUMBER = "RES-20260809-1001";
 
 	static final String CAT_STARTERS = "Предястия";
 	static final String CAT_MAINS = "Основни ястия";
@@ -147,10 +147,10 @@ public class DemoDataInitializer implements ApplicationRunner {
 		}
 
 		String encoded = passwordEncoder.encode(rawPassword);
-		ensureUser(DEMO_ADMIN_EMAIL, "Мария Админова", EnumSet.of(RoleName.ADMIN), encoded);
-		ensureUser(DEMO_WAITER_EMAIL, "Георги Стоянов", EnumSet.of(RoleName.WAITER), encoded);
-		ensureUser(DEMO_COOK_EMAIL, "Иван Петков", EnumSet.of(RoleName.COOK), encoded);
-		ensureUser(DEMO_CLIENT_EMAIL, "Елена Димитрова", EnumSet.of(RoleName.CLIENT), encoded);
+		ensureUser(SEED_ADMIN_EMAIL, "Мария Админова", EnumSet.of(RoleName.ADMIN), encoded);
+		ensureUser(SEED_WAITER_EMAIL, "Георги Стоянов", EnumSet.of(RoleName.WAITER), encoded);
+		ensureUser(SEED_COOK_EMAIL, "Иван Петков", EnumSet.of(RoleName.COOK), encoded);
+		ensureUser(SEED_CLIENT_EMAIL, "Елена Димитрова", EnumSet.of(RoleName.CLIENT), encoded);
 		log.info("Demo users ensured for presentation emails");
 	}
 
@@ -307,10 +307,10 @@ public class DemoDataInitializer implements ApplicationRunner {
 	}
 
 	private void seedDemoReservationIfPossible() {
-		if (reservationRepository.findByReservationNumber(DEMO_RESERVATION_NUMBER).isPresent()) {
+		if (reservationRepository.findByReservationNumber(SEED_RESERVATION_NUMBER).isPresent()) {
 			return;
 		}
-		AppUser client = appUserRepository.findByEmail(EmailNormalizer.normalize(DEMO_CLIENT_EMAIL)).orElse(null);
+		AppUser client = appUserRepository.findByEmail(EmailNormalizer.normalize(SEED_CLIENT_EMAIL)).orElse(null);
 		DiningTable table = diningTableRepository.findByTableNumber(SEED_TABLE_FOR_RESERVATION).orElse(null);
 		if (client == null || table == null) {
 			log.info("Demo reservation skipped: demo client or table is not available");
@@ -324,7 +324,7 @@ public class DemoDataInitializer implements ApplicationRunner {
 		}
 		LocalDateTime now = LocalDateTime.now(clock);
 		reservationRepository.save(new Reservation(
-				DEMO_RESERVATION_NUMBER,
+				SEED_RESERVATION_NUMBER,
 				table,
 				client,
 				start,

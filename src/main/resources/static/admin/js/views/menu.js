@@ -5,7 +5,7 @@ import {
   openDialog, closeDialog, toast, toastIfUnchanged, handleError, field,
   reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { t, availabilityReasonLabel } from '/shared/js/i18n/i18n.js?v=fix-avail-2';
 
 export async function renderMenu() {
   setPageMeta(t('page.menu.title'), t('page.menu.subtitle'));
@@ -51,7 +51,10 @@ async function reload() {
       badge(item.active ? t('common.active') : t('common.inactive'), item.active ? 'ok' : 'muted'),
       badge(item.manualAvailable ? t('menu.manualYes') : t('menu.manualNo'), item.manualAvailable ? 'info' : 'warn'),
       badge(item.available ? t('menu.effectiveYes') : t('menu.effectiveNo'), item.available ? 'ok' : 'danger'),
-      item.availabilityReason || '—',
+      badge(
+        availabilityReasonLabel(item.availabilityReason) || '—',
+        item.available ? 'ok' : 'warn'
+      ),
       el('div', { className: 'row-actions' }, [
         el('button', {
           type: 'button', className: 'btn btn-info', text: t('common.edit'),

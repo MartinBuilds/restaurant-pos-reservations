@@ -148,7 +148,7 @@ Shared static assets (`/shared/**`) are permit-all for early theme bootstrap; ro
 | `INITIAL_ADMIN_EMAIL` | optional | Seed first ADMIN |
 | `INITIAL_ADMIN_PASSWORD` | optional | Seed admin password (BCrypt stored) |
 | `INITIAL_ADMIN_FULL_NAME` | optional | Seed admin display name |
-| `DEMO_USER_PASSWORD` | demo only | Shared password for demo.* users |
+| `DEMO_USER_PASSWORD` | demo only | Shared password for seeded presentation users |
 
 See `src/main/resources/application-example.properties`. Never commit real secrets. Prefer a gitignored `smoke-env.ps1` for local values.
 
@@ -169,14 +169,14 @@ $env:DEMO_USER_PASSWORD = "<set-locally>"
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
 ```
 
-Demo users (created only when `DEMO_USER_PASSWORD` is set):
+Seeded users (created only when `DEMO_USER_PASSWORD` is set):
 
-- `demo.admin@example.com`
-- `demo.waiter@example.com`
-- `demo.cook@example.com`
-- `demo.client@example.com`
+- `maria.adminova@example.com`
+- `georgi.stoyanov@example.com`
+- `ivan.petkov@example.com`
+- `elena.dimitrova@example.com`
 
-Demo catalog/tables use a `DEMO ` prefix and are idempotent. Demo does **not** seed payments or large history. If `DEMO_USER_PASSWORD` is missing, demo users are skipped (safe warning only).
+Catalog and tables use realistic Bulgarian names (idempotent). Demo does **not** seed payments or large history. If `DEMO_USER_PASSWORD` is missing, users are skipped (safe warning only).
 
 ## Running tests
 

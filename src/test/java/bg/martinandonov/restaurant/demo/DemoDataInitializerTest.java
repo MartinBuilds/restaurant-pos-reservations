@@ -116,10 +116,10 @@ class DemoDataInitializerTest {
 		when(appUserRepository.existsByEmail(anyString())).thenReturn(false);
 		when(appUserRepository.save(any(AppUser.class))).thenAnswer(inv -> inv.getArgument(0));
 		stubCatalogAlreadyPresent();
-		when(appUserRepository.findByEmail(DemoDataInitializer.DEMO_CLIENT_EMAIL))
+		when(appUserRepository.findByEmail(DemoDataInitializer.SEED_CLIENT_EMAIL))
 				.thenReturn(Optional.of(demoClient()));
 		when(diningTableRepository.findByTableNumber(3)).thenReturn(Optional.of(demoTable()));
-		when(reservationRepository.findByReservationNumber(DemoDataInitializer.DEMO_RESERVATION_NUMBER))
+		when(reservationRepository.findByReservationNumber(DemoDataInitializer.SEED_RESERVATION_NUMBER))
 				.thenReturn(Optional.empty());
 		when(reservationRepository.existsConfirmedConflict(any(), any(), any())).thenReturn(false);
 
@@ -130,10 +130,10 @@ class DemoDataInitializerTest {
 		verify(appUserRepository, times(4)).save(userCaptor.capture());
 		assertThat(userCaptor.getAllValues()).extracting(AppUser::getEmail)
 				.containsExactlyInAnyOrder(
-						DemoDataInitializer.DEMO_ADMIN_EMAIL,
-						DemoDataInitializer.DEMO_WAITER_EMAIL,
-						DemoDataInitializer.DEMO_COOK_EMAIL,
-						DemoDataInitializer.DEMO_CLIENT_EMAIL);
+						DemoDataInitializer.SEED_ADMIN_EMAIL,
+						DemoDataInitializer.SEED_WAITER_EMAIL,
+						DemoDataInitializer.SEED_COOK_EMAIL,
+						DemoDataInitializer.SEED_CLIENT_EMAIL);
 		assertThat(userCaptor.getAllValues()).extracting(AppUser::getFullName)
 				.containsExactlyInAnyOrder(
 						"Мария Админова",
@@ -146,7 +146,7 @@ class DemoDataInitializerTest {
 			assertThat(user.isEnabled()).isTrue();
 		});
 		assertThat(userCaptor.getAllValues().stream()
-				.filter(u -> u.getEmail().equals(DemoDataInitializer.DEMO_ADMIN_EMAIL))
+				.filter(u -> u.getEmail().equals(DemoDataInitializer.SEED_ADMIN_EMAIL))
 				.findFirst().orElseThrow().getRoles())
 				.extracting(Role::getName)
 				.containsExactly(RoleName.ADMIN);
@@ -154,7 +154,7 @@ class DemoDataInitializerTest {
 		ArgumentCaptor<Reservation> reservationCaptor = ArgumentCaptor.forClass(Reservation.class);
 		verify(reservationRepository).save(reservationCaptor.capture());
 		assertThat(reservationCaptor.getValue().getReservationNumber())
-				.isEqualTo(DemoDataInitializer.DEMO_RESERVATION_NUMBER);
+				.isEqualTo(DemoDataInitializer.SEED_RESERVATION_NUMBER);
 		assertThat(reservationCaptor.getValue().getNotes()).contains("Вечерна");
 	}
 
@@ -165,7 +165,7 @@ class DemoDataInitializerTest {
 		when(appUserRepository.existsByEmail(anyString())).thenReturn(true);
 		when(diningTableRepository.existsByTableNumber(any())).thenReturn(true);
 		stubCatalogAlreadyPresent();
-		when(reservationRepository.findByReservationNumber(DemoDataInitializer.DEMO_RESERVATION_NUMBER))
+		when(reservationRepository.findByReservationNumber(DemoDataInitializer.SEED_RESERVATION_NUMBER))
 				.thenReturn(Optional.of(org.mockito.Mockito.mock(Reservation.class)));
 
 		initializer.run(new DefaultApplicationArguments());
@@ -278,7 +278,7 @@ class DemoDataInitializerTest {
 	}
 
 	private AppUser demoClient() {
-		AppUser user = new AppUser(DemoDataInitializer.DEMO_CLIENT_EMAIL, "hash", "Елена Димитрова", true);
+		AppUser user = new AppUser(DemoDataInitializer.SEED_CLIENT_EMAIL, "hash", "Елена Димитрова", true);
 		ReflectionTestUtils.setField(user, "id", 4L);
 		return user;
 	}
