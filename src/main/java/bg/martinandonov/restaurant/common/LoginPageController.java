@@ -55,12 +55,13 @@ public class LoginPageController {
 				  <meta name="viewport" content="width=device-width, initial-scale=1">
 				  <title>Вход — Restaurant POS</title>
 				  <script src="/shared/js/theme-boot.js"></script>
-				  <link rel="stylesheet" href="/shared/css/theme.css?v=fix-login-3">
-				  <link rel="stylesheet" href="/shared/css/login.css?v=fix-login-3">
+				  <link rel="stylesheet" href="/shared/css/theme.css?v=fix-login-12">
+				  <link rel="stylesheet" href="/shared/css/login.css?v=fix-login-12">
+				  <link rel="stylesheet" href="/shared/css/password-toggle.css?v=fix-login-12">
 				</head>
 				<body>
 				  <main class="login-page">
-				    <aside class="login-stage" aria-hidden="false">
+				    <aside class="login-stage">
 				      <div class="login-stage-inner">
 				        <p class="login-brand" data-i18n="app.brand">Restaurant POS</p>
 				        <p class="login-stage-line" data-i18n="login.stageLine">Маси, поръчки и резервации — на едно място.</p>
@@ -68,69 +69,76 @@ public class LoginPageController {
 				      </div>
 				    </aside>
 
-				    <section class="login-panel-wrap" aria-labelledby="login-title">
-				      <div class="login-panel-inner">
-				        <div class="login-toolbar" role="group" aria-label="Language">
-				          <button type="button" id="login-lang-bg" data-i18n="lang.bg">Български</button>
-				          <button type="button" id="login-lang-en" data-i18n="lang.en">English</button>
+				    <section class="login-panel-wrap" id="login-panel-wrap" aria-labelledby="login-title">
+				      <div class="login-cursor" id="login-cursor" aria-hidden="true"></div>
+				      <div class="login-panel-stack">
+				        <div class="login-toolbar">
+				          <button type="button" id="login-theme" class="login-theme-btn" data-i18n-aria="account.theme" aria-label="Тема">Тема</button>
+				          <div class="login-lang-group" role="group" aria-label="Language">
+				            <button type="button" id="login-lang-bg" data-i18n="lang.bg">Български</button>
+				            <button type="button" id="login-lang-en" data-i18n="lang.en">English</button>
+				          </div>
 				        </div>
 
-				        <h1 id="login-title" data-i18n="login.title">Вход в системата</h1>
-				        <p class="login-subtitle" id="login-subtitle" data-i18n="login.subtitle">Влезте в профила си, за да продължите.</p>
+				        <div class="login-panel-inner">
+				          <h1 id="login-title" data-i18n="login.title">Вход в системата</h1>
+				          <p class="login-subtitle" id="login-subtitle" data-i18n="login.subtitle">Влезте в профила си, за да продължите.</p>
 
-				        <div class="login-tabs" role="tablist" aria-label="Auth mode">
-				          <button type="button" class="login-tab is-active" id="tab-login" role="tab" aria-selected="true" data-i18n="login.tab">Вход</button>
-				          <button type="button" class="login-tab" id="tab-register" role="tab" aria-selected="false" data-i18n="register.tab">Регистрация</button>
-				        </div>
+				          <div class="login-tabs" role="tablist" aria-label="Auth mode">
+				            <button type="button" class="login-tab is-active" id="tab-login" role="tab" aria-selected="true" data-i18n="login.tab">Вход</button>
+				            <button type="button" class="login-tab" id="tab-register" role="tab" aria-selected="false" data-i18n="register.tab">Регистрация</button>
+				          </div>
 
-				        <div id="auth-alert">%s</div>
+				          <div id="auth-alert">%s</div>
 
-				        <div class="login-panel" id="panel-login" role="tabpanel">
-				          <form method="post" action="/login" class="login-form" autocomplete="on">
-				            <div class="field">
-				              <label for="username" data-i18n="login.email">Имейл</label>
-				              <input id="username" name="username" type="email" required autofocus
-				                     autocomplete="username" data-i18n-placeholder="login.email">
-				            </div>
-				            <div class="field">
-				              <label for="password" data-i18n="login.password">Парола</label>
-				              <input id="password" name="password" type="password" required
-				                     autocomplete="current-password" data-i18n-placeholder="login.password">
-				            </div>
-				            <input type="hidden" name="%s" value="%s">
-				            <button type="submit" class="btn btn-primary" data-i18n="login.submit">Вход</button>
-				          </form>
-				        </div>
+				          <div class="login-panel" id="panel-login" role="tabpanel">
+				            <form method="post" action="/login" class="login-form" autocomplete="on">
+				              <div class="field">
+				                <label for="username" data-i18n="login.email">Имейл</label>
+				                <input id="username" name="username" type="email" required autofocus
+				                       autocomplete="username" data-i18n-placeholder="login.email">
+				              </div>
+				              <div class="field">
+				                <label for="password" data-i18n="login.password">Парола</label>
+				                <input id="password" name="password" type="password" required
+				                       autocomplete="current-password" data-i18n-placeholder="login.password">
+				              </div>
+				              <input type="hidden" name="%s" value="%s">
+				              <button type="submit" class="btn btn-primary" data-i18n="login.submit">Вход</button>
+				            </form>
+				          </div>
 
-				        <div class="login-panel" id="panel-register" role="tabpanel" hidden>
-				          <form class="register-form" autocomplete="on" novalidate>
-				            <div class="field">
-				              <label for="reg-name" data-i18n="register.fullName">Име</label>
-				              <input id="reg-name" name="fullName" type="text" required
-				                     autocomplete="name" data-i18n-placeholder="register.fullName">
-				            </div>
-				            <div class="field">
-				              <label for="reg-email" data-i18n="login.email">Имейл</label>
-				              <input id="reg-email" name="email" type="email" required
-				                     autocomplete="email" data-i18n-placeholder="login.email">
-				            </div>
-				            <div class="field">
-				              <label for="reg-password" data-i18n="login.password">Парола</label>
-				              <input id="reg-password" name="password" type="password" required minlength="8"
-				                     autocomplete="new-password" data-i18n-placeholder="register.passwordHint">
-				            </div>
-				            <p class="login-field-error" id="register-error" hidden></p>
-				            <button type="submit" class="btn btn-primary" id="register-submit" data-i18n="register.submit">Създай акаунт</button>
-				            <p class="login-hint" data-i18n="register.clientOnly">Регистрацията създава клиентски профил за онлайн резервации.</p>
-				          </form>
+				          <div class="login-panel" id="panel-register" role="tabpanel" hidden>
+				            <form class="register-form" autocomplete="on" novalidate>
+				              <div class="field">
+				                <label for="reg-name" data-i18n="register.fullName">Име</label>
+				                <input id="reg-name" name="fullName" type="text" required
+				                       autocomplete="name" data-i18n-placeholder="register.fullName">
+				              </div>
+				              <div class="field">
+				                <label for="reg-email" data-i18n="login.email">Имейл</label>
+				                <input id="reg-email" name="email" type="email" required
+				                       autocomplete="email" data-i18n-placeholder="login.email">
+				              </div>
+				              <div class="field">
+				                <label for="reg-password" data-i18n="login.password">Парола</label>
+				                <input id="reg-password" name="password" type="password" required minlength="8"
+				                       autocomplete="new-password" data-i18n-placeholder="register.passwordHint">
+				              </div>
+				              <p class="login-field-error" id="register-error" hidden></p>
+				              <button type="submit" class="btn btn-primary" id="register-submit" data-i18n="register.submit">Създай акаунт</button>
+				              <p class="login-hint" data-i18n="register.clientOnly">Регистрацията създава клиентски профил за онлайн резервации.</p>
+				            </form>
+				          </div>
 				        </div>
 				      </div>
 				    </section>
 				  </main>
 				  <script type="module">
-				    import { applyDomI18n, setLanguage, onLanguageChange, t } from '/shared/js/i18n/i18n.js?v=fix-login-3';
-				    import { getLanguage } from '/shared/js/ui-preferences.js';
+				    import { applyDomI18n, setLanguage, onLanguageChange, t } from '/shared/js/i18n/i18n.js?v=fix-login-11';
+				    import { getLanguage, getTheme, setTheme } from '/shared/js/ui-preferences.js';
 				    import { clearJustSignedIn, markJustSignedIn } from '/shared/js/session-flash.js?v=fix-toasts-3';
+				    import { enhancePasswordFields } from '/shared/js/password-toggle.js?v=fix-login-11';
 
 				    const CSRF_HEADER = %s;
 				    const CSRF_TOKEN = %s;
@@ -146,14 +154,25 @@ public class LoginPageController {
 				    const registerSubmit = document.getElementById('register-submit');
 				    const langBg = document.getElementById('login-lang-bg');
 				    const langEn = document.getElementById('login-lang-en');
+				    const themeBtn = document.getElementById('login-theme');
+				    const THEME_ORDER = ['system', 'light', 'dark'];
 
 				    let mode = 'login';
+
+				    function refreshThemeButton() {
+				      const pref = getTheme();
+				      themeBtn.textContent = t('theme.' + pref);
+				      themeBtn.setAttribute('aria-label', t('account.theme') + ': ' + t('theme.' + pref));
+				      themeBtn.title = themeBtn.getAttribute('aria-label');
+				      themeBtn.dataset.theme = pref;
+				    }
 
 				    function refresh() {
 				      applyDomI18n(document);
 				      document.documentElement.lang = getLanguage() === 'en' ? 'en' : 'bg';
 				      langBg.classList.toggle('is-active', getLanguage() === 'bg');
 				      langEn.classList.toggle('is-active', getLanguage() === 'en');
+				      refreshThemeButton();
 				      if (mode === 'register') {
 				        title.setAttribute('data-i18n', 'register.title');
 				        subtitle.setAttribute('data-i18n', 'register.subtitle');
@@ -198,6 +217,12 @@ public class LoginPageController {
 				    tabRegister.addEventListener('click', () => setMode('register'));
 				    langBg.addEventListener('click', () => setLanguage('bg'));
 				    langEn.addEventListener('click', () => setLanguage('en'));
+				    themeBtn.addEventListener('click', () => {
+				      const idx = THEME_ORDER.indexOf(getTheme());
+				      const next = THEME_ORDER[(idx + 1) %% THEME_ORDER.length];
+				      setTheme(next);
+				      refreshThemeButton();
+				    });
 				    onLanguageChange(refresh);
 
 				    document.querySelector('.register-form').addEventListener('submit', async (event) => {
@@ -241,6 +266,75 @@ public class LoginPageController {
 				      }
 				    });
 
+				    (function initLoginCursor() {
+				      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+				      if (window.matchMedia('(pointer: coarse)').matches) return;
+
+				      const zone = document.getElementById('login-panel-wrap');
+				      const orb = document.getElementById('login-cursor');
+				      if (!zone || !orb) return;
+
+				      let targetX = 0;
+				      let targetY = 0;
+				      let x = 0;
+				      let y = 0;
+				      let active = false;
+				      let raf = 0;
+
+				      function clamp(value, min, max) {
+				        return Math.min(max, Math.max(min, value));
+				      }
+
+				      function radius() {
+				        return Math.max(orb.offsetWidth, 1) / 2;
+				      }
+
+				      function tick() {
+				        x += (targetX - x) * 0.14;
+				        y += (targetY - y) * 0.14;
+				        orb.style.transform = 'translate(' + x + 'px, ' + y + 'px) translate(-50%%, -50%%)';
+				        if (Math.abs(targetX - x) > 0.35 || Math.abs(targetY - y) > 0.35) {
+				          raf = requestAnimationFrame(tick);
+				        } else {
+				          raf = 0;
+				        }
+				      }
+
+				      function onMove(event) {
+				        const rect = zone.getBoundingClientRect();
+				        const inside =
+				          event.clientX >= rect.left &&
+				          event.clientX <= rect.right &&
+				          event.clientY >= rect.top &&
+				          event.clientY <= rect.bottom;
+
+				        if (!inside) {
+				          if (active) {
+				            active = false;
+				            orb.classList.remove('is-active');
+				          }
+				          return;
+				        }
+
+				        const r = radius();
+				        targetX = clamp(event.clientX - rect.left, r, rect.width - r);
+				        targetY = clamp(event.clientY - rect.top, r, rect.height - r);
+
+				        if (!active) {
+				          active = true;
+				          x = targetX;
+				          y = targetY;
+				          orb.style.transform = 'translate(' + x + 'px, ' + y + 'px) translate(-50%%, -50%%)';
+				          orb.classList.add('is-active');
+				        }
+
+				        if (!raf) raf = requestAnimationFrame(tick);
+				      }
+
+				      window.addEventListener('pointermove', onMove, { passive: true });
+				    })();
+
+				    enhancePasswordFields(document);
 				    refresh();
 				  </script>
 				</body>

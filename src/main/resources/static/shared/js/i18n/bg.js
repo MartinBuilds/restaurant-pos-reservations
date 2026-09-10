@@ -98,6 +98,8 @@ export const bg = {
   'login.tab': 'Вход',
   'login.email': 'Имейл',
   'login.password': 'Парола',
+  'password.show': 'Покажи паролата',
+  'password.hide': 'Скрий паролата',
   'login.submit': 'Вход',
   'login.error': 'Невалиден имейл или парола. Опитайте отново.',
   'login.loggedOut': 'Излязохте успешно.',

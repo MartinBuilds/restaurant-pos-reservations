@@ -5,6 +5,7 @@ import {
   reloadButton, setPageRefresh
 } from '../ui.js';
 import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { enhancePasswordInput } from '/shared/js/password-toggle.js?v=fix-login-10';
 
 const ROLES = ['ADMIN', 'WAITER', 'COOK', 'CLIENT'];
 let abortController = null;
@@ -157,6 +158,7 @@ function openCreateDialog(onDone) {
       submit
     ]
   });
+  enhancePasswordInput(password);
 }
 
 function openRolesDialog(user, onDone) {

@@ -98,6 +98,8 @@ export const en = {
   'login.tab': 'Sign in',
   'login.email': 'Email',
   'login.password': 'Password',
+  'password.show': 'Show password',
+  'password.hide': 'Hide password',
   'login.submit': 'Sign in',
   'login.error': 'Invalid email or password. Please try again.',
   'login.loggedOut': 'You have signed out successfully.',

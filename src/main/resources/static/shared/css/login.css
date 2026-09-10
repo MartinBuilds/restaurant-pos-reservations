@@ -102,23 +102,119 @@ body {
 }
 
 .login-panel-wrap {
+  position: relative;
+  overflow: hidden;
   display: grid;
   align-content: center;
   padding: clamp(1.5rem, 4vw, 3rem);
-  background: var(--color-surface, #1b2420);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 55%, var(--color-surface)) 0%, var(--color-surface, #1b2420) 100%);
   animation: login-fade 0.55s 0.08s ease both;
 }
 
-.login-panel-inner {
-  width: min(100%, 23.5rem);
+.login-cursor {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: 0;
+  width: min(34rem, 95%);
+  height: min(34rem, 95%);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--color-primary) 58%, transparent) 0%,
+      color-mix(in srgb, var(--color-primary-2) 34%, transparent) 28%,
+      color-mix(in srgb, var(--login-accent-line) 14%, transparent) 48%,
+      transparent 74%
+    );
+  border: 0;
+  filter: blur(24px);
+  transition: opacity 0.35s ease;
+  will-change: transform, opacity;
+}
+
+.login-cursor::after {
+  display: none;
+}
+
+.login-cursor.is-active {
+  opacity: 1;
+}
+
+html[data-theme="light"] .login-cursor {
+  width: min(38rem, 100%);
+  height: min(38rem, 100%);
+  filter: blur(22px);
+  background:
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--color-primary) 72%, transparent) 0%,
+      color-mix(in srgb, var(--color-primary-2) 48%, transparent) 26%,
+      color-mix(in srgb, var(--color-accent) 22%, transparent) 46%,
+      transparent 72%
+    );
+}
+
+html[data-theme="light"] .login-cursor.is-active {
+  opacity: 1;
+}
+
+.login-panel-stack {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 26rem);
   margin-inline: auto;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.login-panel-inner {
+  position: relative;
+  padding: clamp(1.35rem, 3.5vw, 1.85rem);
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  background: var(--color-bg, #121816);
+  box-shadow: 0 18px 40px color-mix(in srgb, #000 22%, transparent);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.login-panel-inner:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  box-shadow: 0 22px 48px color-mix(in srgb, #000 28%, transparent);
+  transform: translateY(-2px);
+}
+
+.login-panel-inner::before {
+  content: "";
+  position: absolute;
+  left: 1.35rem;
+  right: 1.35rem;
+  top: 0;
+  height: 2px;
+  background: var(--login-accent-line);
+  transform-origin: left center;
+  transition: transform 0.35s ease;
+}
+
+.login-panel-inner:hover::before {
+  transform: scaleX(1.04);
 }
 
 .login-toolbar {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.login-lang-group {
+  display: flex;
   gap: 0.85rem;
   justify-content: flex-end;
-  margin-bottom: 2rem;
 }
 
 .login-toolbar button {
@@ -132,11 +228,24 @@ body {
   font: inherit;
   font-size: 0.84rem;
   font-weight: 600;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
-.login-toolbar button.is-active {
+.login-toolbar button:hover {
+  color: var(--color-text);
+  border-bottom-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+.login-toolbar button.is-active,
+.login-theme-btn {
   color: var(--color-text);
   border-bottom-color: var(--color-primary);
+  transform: none;
+}
+
+.login-theme-btn {
+  flex: 0 0 auto;
 }
 
 .login-panel-wrap h1 {
@@ -173,13 +282,10 @@ body {
   font: inherit;
   font-weight: 600;
   font-size: 0.95rem;
+  transition: color 0.2s ease;
 }
 
-.login-tab.is-active {
-  color: var(--color-text);
-}
-
-.login-tab.is-active::after {
+.login-tab::after {
   content: "";
   position: absolute;
   left: 0;
@@ -187,6 +293,27 @@ body {
   bottom: -1px;
   height: 2px;
   background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  opacity: 0.45;
+}
+
+.login-tab:hover {
+  color: var(--color-text);
+}
+
+.login-tab:hover::after,
+.login-tab.is-active::after {
+  transform: scaleX(1);
+}
+
+.login-tab.is-active {
+  color: var(--color-text);
+}
+
+.login-tab.is-active::after {
+  opacity: 1;
 }
 
 .login-panel[hidden] {
@@ -205,6 +332,13 @@ body {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--login-muted);
+  transition: color 0.2s ease, letter-spacing 0.2s ease;
+}
+
+.login-panel-wrap .field:hover label,
+.login-panel-wrap .field:focus-within label {
+  color: var(--color-primary-2, var(--color-primary));
+  letter-spacing: 0.04em;
 }
 
 .login-panel-wrap input {
@@ -218,12 +352,17 @@ body {
   color: var(--color-text);
   font: inherit;
   font-size: 1.02rem;
-  transition: border-color 0.18s ease;
+  transition: border-color 0.2s ease, padding-left 0.2s ease;
+}
+
+.login-panel-wrap .field:hover input {
+  border-bottom-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
 }
 
 .login-panel-wrap input:focus {
   outline: none;
   border-bottom-color: var(--color-primary);
+  padding-left: 0.2rem;
 }
 
 .login-panel-wrap .btn {
@@ -240,7 +379,11 @@ body {
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: transform 0.18s ease, background-color 0.18s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    letter-spacing 0.2s ease;
 }
 
 .login-panel-wrap .btn-primary {
@@ -250,13 +393,23 @@ body {
 
 .login-panel-wrap .btn-primary:hover {
   background: var(--color-primary-2, var(--color-primary));
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.login-panel-wrap .btn-primary:active {
+  transform: translateY(0);
+  letter-spacing: 0.01em;
+  box-shadow: none;
 }
 
 .login-panel-wrap .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  letter-spacing: 0.01em;
+  box-shadow: none;
 }
 
 .login-hint {
@@ -358,6 +511,15 @@ body {
   .login-panel-wrap {
     padding: 1.5rem 1.35rem 2rem;
   }
+
+  .login-panel-inner {
+    padding: 1.25rem 1.15rem 1.4rem;
+  }
+
+  .login-panel-inner::before {
+    left: 1.15rem;
+    right: 1.15rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -368,7 +530,25 @@ body {
     animation: none;
   }
 
-  .login-panel-wrap .btn-primary:hover {
+  .login-cursor {
+    display: none;
+  }
+
+  .login-toolbar button,
+  .login-tab,
+  .login-tab::after,
+  .login-panel-inner,
+  .login-panel-inner::before,
+  .login-panel-wrap label,
+  .login-panel-wrap input,
+  .login-panel-wrap .btn {
+    transition: none;
+  }
+
+  .login-panel-inner:hover,
+  .login-toolbar button:hover,
+  .login-panel-wrap .btn-primary:hover,
+  .login-panel-wrap .btn-primary:active {
     transform: none;
   }
 }
