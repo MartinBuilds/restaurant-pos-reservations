@@ -2,7 +2,7 @@ import { api, ApiClientError } from '/operations/js/api.js';
 import { clear, el } from '/operations/js/dom.js';
 import { dateTime, text } from '/operations/js/format.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-kitchen-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-tables-board-1';
 import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
 
 let abort = null;
@@ -52,14 +52,28 @@ async function patchStatus(order, status, btn) {
     highlightOrderId = order.id;
     await renderQueue({ soft: true });
   } catch (err) {
+    if (err && err.name === 'AbortError') {
+      // Realtime/refresh may abort the follow-up GET after a successful PATCH.
+      try {
+        await renderQueue({ soft: true });
+      } catch {
+        /* ignore secondary abort */
+      }
+      return;
+    }
     if (err instanceof ApiClientError && (err.status === 409 || err.status === 400)) {
       handleError(err);
-      await renderQueue({ soft: true });
+      try {
+        await renderQueue({ soft: true });
+      } catch {
+        /* ignore */
+      }
     } else {
       handleError(err, t('msg.statusNotUpdated'));
       btn.disabled = false;
-      busyIds.delete(order.id);
     }
+  } finally {
+    busyIds.delete(order.id);
   }
 }
 
@@ -178,7 +192,7 @@ export async function renderQueue(options = {}) {
       });
     }
   } catch (err) {
-    if (err && err.name === 'AbortError') return;
+    if (err && err.name === 'AbortError') throw err;
     clear(content);
     handleError(err, t('kitchen.loadError'));
     const retry = el('button', { type: 'button', className: 'btn btn-primary', text: t('common.retry') });

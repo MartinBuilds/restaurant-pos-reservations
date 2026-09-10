@@ -4,7 +4,7 @@ import { setConnectionStatus } from '/operations/js/connection-status.js';
 import { createStompClient } from '/operations/js/stomp-client.js?v=pr18-1';
 import { toast } from '/operations/js/notifications.js';
 import { t } from '/shared/js/i18n/i18n.js?v=fix-kitchen-1';
-import { markOrderHighlight } from './queue.js?v=fix-kitchen-2';
+import { markOrderHighlight } from './queue.js?v=fix-kitchen-ready-1';
 
 const seenEvents = [];
 const SEEN_MAX = 500;

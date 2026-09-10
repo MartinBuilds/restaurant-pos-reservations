@@ -218,6 +218,15 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<OrderResponse> getRecentClosedOrders(int limit) {
+		int pageSize = Math.min(Math.max(limit, 1), 100);
+		return restaurantOrderRepository.findClosedOrdersWithDetails().stream()
+				.limit(pageSize)
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public List<OrderResponse> getOpenOrdersByTable(Long tableId) {
 		if (tableId == null) {
 			throw new InvalidRequestException("tableId must be provided");

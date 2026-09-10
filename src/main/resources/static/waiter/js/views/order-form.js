@@ -3,11 +3,58 @@ import { el, clear } from '/operations/js/dom.js';
 import { money, text } from '/operations/js/format.js';
 import { handleError, toast } from '/operations/js/notifications.js';
 import { closeDialog, openDialog } from './ui-shared.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-tables-board-1';
 
 async function loadMenu() {
   const items = await api.get('/api/public/menu');
   return (items || []).filter((i) => i.available);
+}
+
+function makeQtyControl(item, quantities) {
+  const initial = quantities.get(item.id) || 0;
+  const valueEl = el('input', {
+    type: 'number',
+    className: 'qty-input',
+    min: '0',
+    step: '1',
+    value: String(initial),
+    inputmode: 'numeric',
+    'aria-label': t('orders.qtyAria', { name: item.name })
+  });
+
+  const dec = el('button', {
+    type: 'button',
+    className: 'qty-btn',
+    text: '−',
+    'aria-label': t('orders.qtyDecrease', { name: item.name })
+  });
+  const inc = el('button', {
+    type: 'button',
+    className: 'qty-btn',
+    text: '+',
+    'aria-label': t('orders.qtyIncrease', { name: item.name })
+  });
+
+  const wrap = el('div', {
+    className: `qty-control${initial > 0 ? ' has-qty' : ''}`
+  }, [dec, valueEl, inc]);
+
+  function commit(raw) {
+    const n = Math.max(0, Math.floor(Number(raw) || 0));
+    valueEl.value = String(n);
+    if (n > 0) quantities.set(item.id, n);
+    else quantities.delete(item.id);
+    wrap.classList.toggle('has-qty', n > 0);
+  }
+
+  dec.addEventListener('click', () => commit(Number(valueEl.value || 0) - 1));
+  inc.addEventListener('click', () => commit(Number(valueEl.value || 0) + 1));
+  valueEl.addEventListener('change', () => commit(valueEl.value));
+  valueEl.addEventListener('input', () => {
+    wrap.classList.toggle('has-qty', Math.max(0, Math.floor(Number(valueEl.value) || 0)) > 0);
+  });
+
+  return wrap;
 }
 
 function buildMenuPicker(menuItems, quantities) {
@@ -23,24 +70,14 @@ function buildMenuPicker(menuItems, quantities) {
     byCat.get(key).push(item);
   });
   byCat.forEach((list, cat) => {
-    wrap.appendChild(el('h3', { text: cat }));
+    wrap.appendChild(el('h3', { className: 'menu-pick-cat', text: cat }));
     list.forEach((item) => {
-      const qty = el('input', {
-        type: 'number', min: '0', step: '1', value: String(quantities.get(item.id) || 0),
-        'aria-label': t('orders.qtyAria', { name: item.name })
-      });
-      qty.addEventListener('change', () => {
-        const n = Math.max(0, Math.floor(Number(qty.value) || 0));
-        qty.value = String(n);
-        if (n > 0) quantities.set(item.id, n);
-        else quantities.delete(item.id);
-      });
       wrap.appendChild(el('div', { className: 'menu-row' }, [
-        el('div', {}, [
-          el('strong', { text: text(item.name) }),
-          el('div', { className: 'muted', text: money(item.price) })
+        el('div', { className: 'menu-row-info' }, [
+          el('strong', { className: 'menu-row-name', text: text(item.name) }),
+          el('div', { className: 'menu-row-price muted', text: money(item.price) })
         ]),
-        qty
+        makeQtyControl(item, quantities)
       ]));
     });
   });
@@ -66,6 +103,7 @@ export async function openCreateOrderDialog(table, { onDone, openerEl }) {
 
   const body = el('div', { className: 'stack' }, [
     el('p', {
+      className: 'order-dialog-context',
       text: table.displayName
         ? t('label.tableNamed', { number: table.tableNumber, name: table.displayName })
         : t('label.table', { number: table.tableNumber })
@@ -97,7 +135,10 @@ export async function openCreateOrderDialog(table, { onDone, openerEl }) {
         try {
           menuItems = await loadMenu();
           clear(body);
-          body.appendChild(el('p', { text: t('label.table', { number: table.tableNumber }) }));
+          body.appendChild(el('p', {
+            className: 'order-dialog-context',
+            text: t('label.table', { number: table.tableNumber })
+          }));
           body.appendChild(buildMenuPicker(menuItems, quantities));
         } catch { /* ignore */ }
         if (onDone) await onDone();
@@ -133,7 +174,7 @@ export async function openAddItemsDialog(order, { onDone, openerEl }) {
   }
 
   const body = el('div', { className: 'stack' }, [
-    el('p', { text: t('label.order', { number: order.orderNumber }) }),
+    el('p', { className: 'order-dialog-context', text: t('label.order', { number: order.orderNumber }) }),
     buildMenuPicker(menuItems, quantities)
   ]);
 
@@ -158,7 +199,10 @@ export async function openAddItemsDialog(order, { onDone, openerEl }) {
         try {
           menuItems = await loadMenu();
           clear(body);
-          body.appendChild(el('p', { text: t('label.order', { number: order.orderNumber }) }));
+          body.appendChild(el('p', {
+            className: 'order-dialog-context',
+            text: t('label.order', { number: order.orderNumber })
+          }));
           body.appendChild(buildMenuPicker(menuItems, quantities));
         } catch { /* ignore */ }
         if (onDone) await onDone();

@@ -1,7 +1,7 @@
 import { clear, el } from '/operations/js/dom.js';
 import { statusLabel } from '/operations/js/format.js';
-import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=pr20-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { closeOverlayDialog, openOverlayDialog } from '/shared/js/dialog-sheet.js?v=fix-receipt-dialog-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-orders-board-1';
 
 let opener = null;
 
@@ -60,7 +60,9 @@ export function closeDialog() {
   document.body.classList.remove('dialog-open');
   const focus = opener;
   opener = null;
-  closeOverlayDialog(dialog, overlay).then(() => {
+  return closeOverlayDialog(dialog, overlay).then(() => {
+    // Skip clearing if another openDialog already reopened this dialog.
+    if (!dialog.hidden) return;
     clear(document.getElementById('dialog-body'));
     clear(document.getElementById('dialog-footer'));
     if (focus && typeof focus.focus === 'function') focus.focus();

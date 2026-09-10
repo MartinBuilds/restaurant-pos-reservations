@@ -48,6 +48,12 @@ public class WaiterOrderController {
 		return ResponseEntity.ok(orderService.getOpenOrders());
 	}
 
+	@GetMapping("/history")
+	public ResponseEntity<List<OrderResponse>> getOrderHistory(
+			@RequestParam(required = false, defaultValue = "40") int limit) {
+		return ResponseEntity.ok(orderService.getRecentClosedOrders(limit));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
 		return ResponseEntity.ok(orderService.getOrderById(id));

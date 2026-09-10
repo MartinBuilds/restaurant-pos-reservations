@@ -78,7 +78,8 @@ export function closeDialog() {
   document.body.classList.remove('dialog-open');
   const focus = opener;
   opener = null;
-  closeOverlayDialog(dialog, overlay).then(() => {
+  return closeOverlayDialog(dialog, overlay).then(() => {
+    if (!dialog.hidden) return;
     clear(document.getElementById('dialog-body'));
     clear(document.getElementById('dialog-footer'));
     if (focus && typeof focus.focus === 'function') focus.focus();

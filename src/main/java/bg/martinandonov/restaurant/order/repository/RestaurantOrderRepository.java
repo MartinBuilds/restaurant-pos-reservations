@@ -82,4 +82,13 @@ public interface RestaurantOrderRepository extends JpaRepository<RestaurantOrder
 			order by o.createdAt asc, o.id asc
 			""")
 	List<RestaurantOrder> findActiveKitchenOrdersByStatus(@Param("status") OrderStatus status);
+
+	@Query("""
+			select distinct o from RestaurantOrder o
+			join fetch o.diningTable
+			join fetch o.waiter
+			where o.closed = true
+			order by o.updatedAt desc, o.id desc
+			""")
+	List<RestaurantOrder> findClosedOrdersWithDetails();
 }
