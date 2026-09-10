@@ -2,7 +2,7 @@
  * Page refresh: top indicator animation, reload-button wiring, mobile pull-to-refresh.
  * Views register a handler that refetches their API data.
  */
-import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-4';
 
 const PULL_THRESHOLD = 72;
 const PULL_MAX = 128;
@@ -40,41 +40,58 @@ function canPull() {
 }
 
 function getScrollTop() {
-  const main = document.querySelector('.main-column');
-  if (main && main.scrollHeight > main.clientHeight + 2) {
-    return main.scrollTop;
-  }
-  const content = document.getElementById('content');
-  if (content && content.scrollHeight > content.clientHeight + 2) {
-    return content.scrollTop;
+  const candidates = [
+    document.querySelector('.main-column'),
+    document.querySelector('.page-refresh-root'),
+    document.getElementById('content'),
+    document.scrollingElement
+  ].filter(Boolean);
+
+  for (const el of candidates) {
+    if (el === document.scrollingElement) {
+      return window.scrollY || document.documentElement.scrollTop || 0;
+    }
+    // Only trust an element that is actually a scroll container.
+    const style = window.getComputedStyle(el);
+    const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY) || /(auto|scroll|overlay)/.test(style.overflow);
+    if (canScrollY && el.scrollHeight > el.clientHeight + 2) {
+      return el.scrollTop;
+    }
   }
   return window.scrollY || document.documentElement.scrollTop || 0;
 }
 
-function getShiftTarget() {
-  return document.querySelector('.app-shell') || document.getElementById('content') || document.body;
+function getShiftTargets() {
+  const root = document.querySelector('.page-refresh-root') || document.querySelector('.app-shell');
+  const targets = [];
+  if (root) targets.push(root);
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) targets.push(bottomNav);
+  // Never fall back to #content alone — that only pulls a section.
+  return targets;
 }
 
 function setContentOffset(px, { animate = false } = {}) {
-  const target = getShiftTarget();
-  if (!target) return;
-  target.classList.toggle('page-refresh-shifting', !animate && px > 0);
-  target.classList.toggle('page-refresh-settling', animate);
-  if (px <= 0) {
-    target.style.setProperty('--page-refresh-shift', '0px');
-    // Keep settling class briefly so spring-back animates, then clear.
-    if (animate) {
-      window.setTimeout(() => {
+  const targets = getShiftTargets();
+  if (!targets.length) return;
+  targets.forEach((target) => {
+    target.classList.toggle('page-refresh-shifting', !animate && px > 0);
+    target.classList.toggle('page-refresh-settling', animate);
+    if (px <= 0) {
+      target.style.setProperty('--page-refresh-shift', '0px');
+      if (animate) {
+        window.setTimeout(() => {
+          target.style.removeProperty('--page-refresh-shift');
+          target.classList.remove('page-refresh-shifting', 'page-refresh-settling');
+        }, 340);
+      } else {
         target.style.removeProperty('--page-refresh-shift');
         target.classList.remove('page-refresh-shifting', 'page-refresh-settling');
-      }, 340);
-    } else {
-      target.style.removeProperty('--page-refresh-shift');
-      target.classList.remove('page-refresh-shifting', 'page-refresh-settling');
+      }
+      return;
     }
-    return;
-  }
-  target.style.setProperty('--page-refresh-shift', `${px}px`);
+    target.style.setProperty('--page-refresh-shift', `${px}px`);
+  });
 }
 
 function ensureBar() {

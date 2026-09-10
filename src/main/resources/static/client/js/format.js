@@ -1,4 +1,5 @@
-import { statusLabel as i18nStatus } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { statusLabel as i18nStatus } from '/shared/js/i18n/i18n.js?v=fix-client-ui-1';
+import { formatDisplayDateTime, parseLocalDateTime } from '/shared/js/datetime-picker.js?v=fix-client-ui-1';
 
 export function text(value) {
   if (value === null || value === undefined || value === '') return '—';
@@ -7,12 +8,9 @@ export function text(value) {
 
 export function dateTime(value) {
   if (!value) return '—';
-  const s = String(value);
-  if (s.includes('T')) {
-    const [d, time] = s.split('T');
-    return `${d} ${(time || '').slice(0, 8)}`;
-  }
-  return s;
+  const parts = parseLocalDateTime(value);
+  if (!parts) return String(value).replace('T', ' ').slice(0, 19);
+  return formatDisplayDateTime(parts);
 }
 
 /** Keep LocalDateTime as local form value — no timezone conversion. */
@@ -21,6 +19,11 @@ export function toDateTimeLocalValue(value) {
   const s = String(value);
   if (s.length >= 16) return s.slice(0, 16);
   return s;
+}
+
+export function fromDateTimeLocalValue(value) {
+  if (!value) return null;
+  return value.length === 16 ? `${value}:00` : value;
 }
 
 export function statusLabel(status) {

@@ -59,21 +59,24 @@
   to { transform: rotate(360deg); }
 }
 
-/* Content rubber-band follows the finger while pulling */
+/* Full-page rubber-band (never only #content / a section) */
+.page-refresh-root,
 .app-shell,
-#content {
+.bottom-nav {
   --page-refresh-shift: 0px;
 }
 
+.page-refresh-root.page-refresh-shifting,
 .app-shell.page-refresh-shifting,
-#content.page-refresh-shifting {
+.bottom-nav.page-refresh-shifting {
   transform: translate3d(0, var(--page-refresh-shift), 0);
   transition: none;
   will-change: transform;
 }
 
+.page-refresh-root.page-refresh-settling,
 .app-shell.page-refresh-settling,
-#content.page-refresh-settling {
+.bottom-nav.page-refresh-settling {
   transform: translate3d(0, var(--page-refresh-shift), 0);
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;

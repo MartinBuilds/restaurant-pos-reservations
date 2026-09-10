@@ -25,6 +25,7 @@ import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.user.dto.CreateUserRequest;
+import bg.martinandonov.restaurant.user.dto.RegisterClientRequest;
 import bg.martinandonov.restaurant.user.dto.UpdateUserRolesRequest;
 import bg.martinandonov.restaurant.user.dto.UpdateUserStatusRequest;
 import bg.martinandonov.restaurant.user.dto.UserResponse;
@@ -51,6 +52,7 @@ class UserServiceTest {
 
 	private Role adminRole;
 	private Role waiterRole;
+	private Role clientRole;
 
 	@BeforeEach
 	void setUp() {
@@ -58,6 +60,51 @@ class UserServiceTest {
 		ReflectionTestUtils.setField(adminRole, "id", 1L);
 		waiterRole = new Role(RoleName.WAITER);
 		ReflectionTestUtils.setField(waiterRole, "id", 2L);
+		clientRole = new Role(RoleName.CLIENT);
+		ReflectionTestUtils.setField(clientRole, "id", 3L);
+	}
+
+	@Test
+	void registerClientAlwaysAssignsClientRole() {
+		RegisterClientRequest request = new RegisterClientRequest();
+		request.setEmail("  Client@Example.COM ");
+		request.setPassword("password123");
+		request.setFullName("Client User");
+
+		when(appUserRepository.existsByEmail("client@example.com")).thenReturn(false);
+		when(roleRepository.findByName(RoleName.CLIENT)).thenReturn(Optional.of(clientRole));
+		when(passwordEncoder.encode("password123")).thenReturn("bcrypt-hash");
+		when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> {
+			AppUser user = invocation.getArgument(0);
+			ReflectionTestUtils.setField(user, "id", 20L);
+			return user;
+		});
+
+		UserResponse response = userService.registerClient(request);
+
+		ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+		verify(appUserRepository).save(captor.capture());
+		AppUser saved = captor.getValue();
+
+		assertThat(saved.getEmail()).isEqualTo("client@example.com");
+		assertThat(saved.getPassword()).isEqualTo("bcrypt-hash");
+		assertThat(saved.getRoles()).extracting(Role::getName).containsExactly(RoleName.CLIENT);
+		assertThat(response.getRoles()).containsExactly("CLIENT");
+	}
+
+	@Test
+	void registerClientRejectsDuplicateEmail() {
+		RegisterClientRequest request = new RegisterClientRequest();
+		request.setEmail("client@example.com");
+		request.setPassword("password123");
+		request.setFullName("Client User");
+
+		when(appUserRepository.existsByEmail("client@example.com")).thenReturn(true);
+
+		assertThatThrownBy(() -> userService.registerClient(request))
+				.isInstanceOf(BusinessRuleException.class)
+				.hasMessageContaining("already exists");
+		verify(appUserRepository, never()).save(any());
 	}
 
 	@Test

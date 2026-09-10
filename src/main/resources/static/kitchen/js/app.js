@@ -1,20 +1,27 @@
 import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/api.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
-import { onRealtimeRefresh, startKitchenRealtime, stopRealtime } from './realtime.js';
-import { renderQueue } from './queue.js';
+import { onRealtimeRefresh, startKitchenRealtime, stopRealtime } from './realtime.js?v=fix-kitchen-2';
+import { renderQueue } from './queue.js?v=fix-kitchen-2';
 import { mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-2';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-toasts-3';
+import { refreshPage, setPageRefresh, wirePageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-kitchen-1';
 
 async function boot() {
+  wirePageRefresh();
+
   setUnauthorizedHandler(() => {
     stopRealtime();
     window.location.assign('/login');
   });
 
-  document.getElementById('refresh-btn').addEventListener('click', () => {
-    renderQueue().catch((err) => handleError(err));
-  });
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.classList.add('btn-reload');
+    refreshBtn.addEventListener('click', () => {
+      refreshPage({ source: 'button' }).catch((err) => handleError(err));
+    });
+  }
 
   let csrfOk = false;
   try {
@@ -49,9 +56,10 @@ async function boot() {
   }
 
   onRealtimeRefresh(async () => {
-    await renderQueue();
+    await renderQueue({ soft: true });
   });
 
+  setPageRefresh(() => renderQueue({ soft: true }));
   await renderQueue();
 
   if (csrfOk) {

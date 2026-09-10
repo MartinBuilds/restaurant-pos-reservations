@@ -5,7 +5,7 @@ import { handleError, setBanner } from '/operations/js/notifications.js';
 import { openCreateOrderDialog } from './order-form.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
 import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
-import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
+import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
 
 let abort = null;
 

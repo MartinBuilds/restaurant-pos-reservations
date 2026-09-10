@@ -9,26 +9,29 @@
   <link rel="stylesheet" href="/shared/css/theme.css?v=fix-toasts-4">
   <link rel="stylesheet" href="/shared/css/badges.css?v=fix-badges-1">
   <link rel="stylesheet" href="/shared/css/shell.css?v=fix-toasts-1">
-  <link rel="stylesheet" href="/operations/css/operations.css?v=fix-tables-1">
+  <link rel="stylesheet" href="/operations/css/operations.css?v=fix-kitchen-2">
   <link rel="stylesheet" href="/shared/css/responsive-records.css?v=fix-toasts-1">
+  <link rel="stylesheet" href="/shared/css/page-refresh.css?v=fix-refresh-4">
   <link rel="stylesheet" href="/shared/css/toasts.css?v=fix-toasts-2">
 </head>
 <body class="kitchen-shell">
-  <header class="kitchen-top">
-    <div>
-      <p class="brand-kicker" data-i18n="app.brand">Restaurant POS</p>
-      <h1 class="page-title" data-i18n="kitchen.title">Кухненска опашка</h1>
-      <p class="page-subtitle" data-i18n="kitchen.subtitle">Нови поръчки → в подготовка → готови</p>
-    </div>
-    <div class="row kitchen-actions">
-      <div id="connection-status" class="conn" role="status" aria-live="polite"></div>
-      <button type="button" class="btn btn-ghost" id="refresh-btn" data-i18n="common.refresh">Обнови</button>
-      <div id="account-mount" class="account-mount kitchen-account-slot"></div>
-    </div>
-  </header>
-  <div class="status-region" id="status-region" role="status" aria-live="polite"></div>
-  <div class="toast-region" id="toast-region" aria-live="polite"></div>
-  <main id="content" class="board" tabindex="-1"></main>
-  <script type="module" src="/kitchen/js/app.js?v=fix-toasts-3"></script>
+  <div class="page-refresh-root">
+    <header class="kitchen-top">
+      <div>
+        <p class="brand-kicker" data-i18n="app.brand">Restaurant POS</p>
+        <h1 class="page-title" data-i18n="kitchen.title">Кухненска опашка</h1>
+        <p class="page-subtitle" data-i18n="kitchen.subtitle">Нови поръчки → в подготовка → готови</p>
+      </div>
+      <div class="row kitchen-actions">
+        <div id="connection-status" class="conn" role="status" aria-live="polite"></div>
+        <button type="button" class="btn btn-ghost btn-reload" id="refresh-btn" data-i18n="common.refresh">Обнови</button>
+        <div id="account-mount" class="account-mount kitchen-account-slot"></div>
+      </div>
+    </header>
+    <div class="status-region" id="status-region" role="status" aria-live="polite"></div>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <main id="content" class="board" tabindex="-1"></main>
+  </div>
+  <script type="module" src="/kitchen/js/app.js?v=fix-refresh-4"></script>
 </body>
 </html>

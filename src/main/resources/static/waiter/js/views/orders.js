@@ -6,7 +6,7 @@ import { openAddItemsDialog } from './order-form.js';
 import { openPaymentDialog, showReceipt } from './payment.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
 import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
-import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-2';
+import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
 
 let abort = null;
 

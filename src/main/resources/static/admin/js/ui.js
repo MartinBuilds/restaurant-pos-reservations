@@ -11,7 +11,7 @@ import {
   clearPageRefresh,
   refreshPage,
   setPageRefresh
-} from '/shared/js/page-refresh.js?v=fix-refresh-2';
+} from '/shared/js/page-refresh.js?v=fix-refresh-4';
 
 export { toast, setBanner, clearBanner, toastIfUnchanged, setPageRefresh, refreshPage, clearPageRefresh };
 

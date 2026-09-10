@@ -3,6 +3,7 @@ import { clear, el } from '../dom.js';
 import { dateTime, text } from '../format.js';
 import { badge, emptyBox, errorBox, handleError, loadingBox, setBanner, setPageMeta } from '../ui.js';
 import { navigate } from '../router.js';
+import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
 import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
 
 let abortController = null;
@@ -58,6 +59,7 @@ function card(reservation) {
 }
 
 export async function renderReservations(root) {
+  setPageRefresh(() => renderReservations(root));
   setPageMeta(t('page.myReservations.title'), t('page.myReservations.subtitle'));
   setBanner('');
   clear(root);
