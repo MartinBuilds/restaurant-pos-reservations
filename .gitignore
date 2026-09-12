@@ -26,6 +26,12 @@ target/
 Thumbs.db
 Desktop.ini
 
+# Environment / secrets
+.env
+.env.*
+!.env.example
+smoke-env.ps1
+local-smoke/
 node_modules/
 *.pem
 *.p12
