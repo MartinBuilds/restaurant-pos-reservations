@@ -150,7 +150,16 @@ Shared static assets (`/shared/**`) are permit-all for early theme bootstrap; ro
 | `INITIAL_ADMIN_FULL_NAME` | optional | Seed admin display name |
 | `DEMO_USER_PASSWORD` | demo only | Shared password for seeded presentation users |
 
-See `src/main/resources/application-example.properties`. Never commit real secrets. Prefer a gitignored `smoke-env.ps1` for local values.
+See `src/main/resources/application-example.properties`. Never commit real secrets.
+
+### Local env setup (required for MySQL + demo logins)
+
+```powershell
+Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
+# edit smoke-env.ps1 — set DB_PASSWORD to your MySQL password for user restaurant_app
+```
+
+Presentation logins use shared password **`SecurePassword123!`** (admin / waiter / cook / seed client when demo users are created).
 
 ## Running the application
 
@@ -165,11 +174,10 @@ See `src/main/resources/application-example.properties`. Never commit real secre
 
 ```powershell
 . .\smoke-env.ps1
-$env:DEMO_USER_PASSWORD = "<set-locally>"
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
 ```
 
-Seeded users (created only when `DEMO_USER_PASSWORD` is set):
+Seeded users (created only when `DEMO_USER_PASSWORD` is set; password **`SecurePassword123!`**):
 
 - `maria.adminova@example.com`
 - `georgi.stoyanov@example.com`

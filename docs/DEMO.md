@@ -1,6 +1,6 @@
 # Demo / presentation script (8–12 minutes)
 
-Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell only (never commit it). Seeded logins:
+Use the optional `demo` profile locally. Copy `smoke-env.example.ps1` → `smoke-env.ps1`, set your MySQL `DB_PASSWORD`, then run with the demo profile. Seeded presentation logins use **`SecurePassword123!`**. Seeded logins:
 
 - `maria.adminova@example.com`
 - `georgi.stoyanov@example.com`
