@@ -156,10 +156,11 @@ See `src/main/resources/application-example.properties`. Never commit real secre
 
 ```powershell
 Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
-# edit smoke-env.ps1 — set DB_PASSWORD to your MySQL password for user restaurant_app
 ```
 
-Presentation logins use shared password **`SecurePassword123!`** (admin / waiter / cook / seed client when demo users are created).
+Create MySQL database `restaurant_management` and user `restaurant_app` with password **`SecurePassword123!`** (same value as in the example file).
+
+All local demo secrets in the example use **`SecurePassword123!`** (MySQL + seeded app logins).
 
 ## Running the application
 

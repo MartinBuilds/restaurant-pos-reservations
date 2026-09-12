@@ -1,10 +1,10 @@
 # Copy once:  Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
-# Then edit smoke-env.ps1 and set DB_PASSWORD to your local MySQL password.
+# Create MySQL user/db with the same password below (or change both together).
 # smoke-env.ps1 is gitignored — never commit it.
 
 $env:DB_URL = "jdbc:mysql://localhost:3306/restaurant_management"
 $env:DB_USERNAME = "restaurant_app"
-$env:DB_PASSWORD = "<your-mysql-password>"
+$env:DB_PASSWORD = "SecurePassword123!"
 
 $env:INITIAL_ADMIN_EMAIL = "maria.adminova@example.com"
 $env:INITIAL_ADMIN_PASSWORD = "SecurePassword123!"
