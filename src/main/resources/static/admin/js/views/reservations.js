@@ -2,9 +2,11 @@ import { api, queryString } from '../api.js';
 import { dateTime, toDateTimeLocalValue, fromDateTimeLocalValue } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-datetime-1';
+import { createDatetimePicker } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
 
 const STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'];
 const TERMINAL = new Set(['CANCELLED', 'COMPLETED', 'NO_SHOW']);
@@ -13,6 +15,10 @@ function statusBadge(status) {
   const map = { CONFIRMED: 'ok', CANCELLED: 'muted', COMPLETED: 'info', NO_SHOW: 'warn' };
   if (!status) return badge('—', 'muted');
   return badge(statusLabel(status) || '—', map[status] || 'muted');
+}
+
+function dtPicker(value = '') {
+  return createDatetimePicker({ value: toDateTimeLocalValue(value) });
 }
 
 export async function renderReservations() {
@@ -34,8 +40,8 @@ async function reload(filters = {}) {
         : Promise.resolve([])
     ]);
 
-    const fromInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.from) });
-    const toInput = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(filters.to) });
+    const fromInput = dtPicker(filters.from);
+    const toInput = dtPicker(filters.to);
     const status = el('select', {}, [
       el('option', { value: '', text: t('filter.allStatuses') }),
       ...STATUSES.map((s) => el('option', { value: s, text: statusLabel(s), selected: filters.status === s ? 'true' : null }))
@@ -79,11 +85,11 @@ async function reload(filters = {}) {
       r.notes || '—',
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
+          type: 'button', className: 'btn btn-info', text: t('common.edit'),
           onClick: () => openEditDialog(r, tables, () => reload(filters))
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('action.status'),
+          type: 'button', className: 'btn btn-warn', text: t('action.status'),
           onClick: () => openStatusDialog(r, () => reload(filters))
         })
       ])
@@ -101,7 +107,6 @@ async function reload(filters = {}) {
 
     mount(el('div', { className: 'stack' }, [
       panel(t('panel.filters'), [
-        el('p', { className: 'note-info note', text: t('reservations.datetimeNote') }),
         el('div', { className: 'filters' }, [
           field(t('col.from'), fromInput),
           field(t('col.to'), toInput),
@@ -115,7 +120,7 @@ async function reload(filters = {}) {
           type: 'button', className: 'btn', text: t('action.createReservation'),
           onClick: () => openCreateDialog(tables, users, () => reload(filters))
         }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload(filters) })
+        reloadButton(() => reload(filters))
       ]),
       panel(t('panel.list'), [
         reservations.length
@@ -130,6 +135,7 @@ async function reload(filters = {}) {
           : el('p', { className: 'muted', text: t('reservations.scheduleHint') })
       ])
     ]));
+    setPageRefresh(() => reload(filters));
   } catch (err) {
     mount(errorBox(handleError(err), () => reload(filters)));
   }
@@ -148,8 +154,8 @@ function openCreateDialog(tables, users, onDone) {
       text: `#${row.tableNumber} ${row.displayName || ''}`.trim()
     }))
   ]);
-  const startTime = el('input', { type: 'datetime-local' });
-  const endTime = el('input', { type: 'datetime-local' });
+  const startTime = dtPicker();
+  const endTime = dtPicker();
   const guestCount = el('input', { type: 'number', min: '1', value: '2' });
   const notes = el('textarea');
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.create') });
@@ -195,21 +201,30 @@ function openEditDialog(reservation, tables, onDone) {
     text: `#${row.tableNumber}`,
     selected: reservation.diningTableId === row.id ? 'true' : null
   })));
-  const startTime = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(reservation.startTime) });
-  const endTime = el('input', { type: 'datetime-local', value: toDateTimeLocalValue(reservation.endTime) });
+  const startTime = dtPicker(reservation.startTime);
+  const endTime = dtPicker(reservation.endTime);
   const guestCount = el('input', { type: 'number', min: '1', value: reservation.guestCount ?? 1 });
   const notes = el('textarea', {}, reservation.notes || '');
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
+    const body = {
+      diningTableId: Number(diningTableId.value),
+      startTime: fromDateTimeLocalValue(startTime.value),
+      endTime: fromDateTimeLocalValue(endTime.value),
+      guestCount: Number(guestCount.value),
+      notes: notes.value.trim() || null
+    };
+    const baseline = {
+      diningTableId: Number(reservation.diningTableId),
+      startTime: fromDateTimeLocalValue(toDateTimeLocalValue(reservation.startTime)),
+      endTime: fromDateTimeLocalValue(toDateTimeLocalValue(reservation.endTime)),
+      guestCount: Number(reservation.guestCount ?? 1),
+      notes: reservation.notes || null
+    };
+    if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
     submit.disabled = true;
     try {
-      await api.put(`/api/admin/reservations/${reservation.id}`, {
-        diningTableId: Number(diningTableId.value),
-        startTime: fromDateTimeLocalValue(startTime.value),
-        endTime: fromDateTimeLocalValue(endTime.value),
-        guestCount: Number(guestCount.value),
-        notes: notes.value.trim() || null
-      });
+      await api.put(`/api/admin/reservations/${reservation.id}`, body);
       closeDialog();
       toast(t('msg.reservationUpdated'), 'success');
       await onDone();
@@ -240,6 +255,10 @@ function openStatusDialog(reservation, onDone) {
   })));
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
+    if (status.value === reservation.status) {
+      toast(t('msg.noChanges'), 'info');
+      return;
+    }
     if (TERMINAL.has(status.value)) {
       const ok = await confirmDialog({
         title: t('reservations.terminalTitle'),

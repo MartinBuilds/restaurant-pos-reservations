@@ -81,7 +81,17 @@ export async function startWaiterRealtime() {
       scheduleRefresh('event');
       return;
     }
-    // Unknown or unexpected types (e.g. ORDER_CREATED) — ignore safely
+    if (type === 'ORDER_CREATED') {
+      scheduleRefresh('event');
+    }
+  });
+
+  client.subscribe('/topic/waiter/tables', (payload) => {
+    if (!payload || typeof payload !== 'object') return;
+    if (rememberEvent(payload.eventId)) return;
+    if (payload.eventType === 'TABLE_STATUS_CHANGED') {
+      scheduleRefresh('tables');
+    }
   });
 
   const csrf = await loadCsrf();

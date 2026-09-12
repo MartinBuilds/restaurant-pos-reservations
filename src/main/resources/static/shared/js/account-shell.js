@@ -25,14 +25,42 @@ function isMenuOpen(root) {
   return root?.dataset?.accountMenu === 'open';
 }
 
+function useAccountSheet() {
+  return document.body.classList.contains('has-bottom-nav')
+    && window.matchMedia('(max-width: 768px)').matches;
+}
+
+function ensureAccountScrim() {
+  let scrim = document.getElementById('account-sheet-scrim');
+  if (scrim) return scrim;
+  scrim = document.createElement('button');
+  scrim.type = 'button';
+  scrim.id = 'account-sheet-scrim';
+  scrim.className = 'account-sheet-scrim';
+  scrim.setAttribute('aria-label', 'Close');
+  scrim.hidden = true;
+  document.body.appendChild(scrim);
+  scrim.addEventListener('click', () => {
+    const mount = document.getElementById('account-mount');
+    if (mount) closeMenu(mount);
+  });
+  return scrim;
+}
+
 function closeMenu(root) {
   if (!root) return;
   const menu = root.querySelector('#account-menu');
   const trigger = root.querySelector('#account-trigger');
   root.dataset.accountMenu = 'closed';
+  document.body.classList.remove('account-sheet-open');
+  const scrim = document.getElementById('account-sheet-scrim');
+  if (scrim) {
+    scrim.classList.remove('is-open');
+    scrim.hidden = true;
+  }
   if (menu) {
     menu.hidden = true;
-    menu.classList.remove('is-open');
+    menu.classList.remove('is-open', 'account-menu-sheet');
     menu.style.display = 'none';
   }
   if (trigger) trigger.setAttribute('aria-expanded', 'false');
@@ -42,11 +70,25 @@ function openMenu(root) {
   if (!root) return;
   const menu = root.querySelector('#account-menu');
   const trigger = root.querySelector('#account-trigger');
+  const sheet = useAccountSheet();
   root.dataset.accountMenu = 'open';
   if (menu) {
     menu.hidden = false;
-    menu.classList.add('is-open');
+    menu.classList.toggle('account-menu-sheet', sheet);
     menu.style.display = 'grid';
+    menu.classList.remove('is-open');
+    if (sheet) {
+      document.body.classList.add('account-sheet-open');
+      const scrim = ensureAccountScrim();
+      scrim.hidden = false;
+      scrim.classList.remove('is-open');
+      requestAnimationFrame(() => {
+        menu.classList.add('is-open');
+        scrim.classList.add('is-open');
+      });
+    } else {
+      menu.classList.add('is-open');
+    }
   }
   if (trigger) trigger.setAttribute('aria-expanded', 'true');
 }
@@ -284,12 +326,13 @@ export async function mountShellChrome(options = {}) {
 
 export function decorateNavIcons(map) {
   Object.entries(map).forEach(([route, iconName]) => {
-    const link = document.querySelector(`.nav-link[data-route="${route}"]`);
-    if (!link || link.querySelector('.icon')) return;
-    const label = document.createElement('span');
-    label.className = 'nav-label';
-    label.textContent = link.textContent.trim();
-    link.textContent = '';
-    link.append(icon(iconName), label);
+    document.querySelectorAll(`.nav-link[data-route="${route}"]`).forEach((link) => {
+      if (link.querySelector('.icon')) return;
+      const label = document.createElement('span');
+      label.className = 'nav-label';
+      label.textContent = link.textContent.trim();
+      link.textContent = '';
+      link.append(icon(iconName), label);
+    });
   });
 }

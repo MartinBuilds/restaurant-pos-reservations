@@ -97,4 +97,26 @@ class AdminUserControllerSecurityTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("UP"));
 	}
+
+	@Test
+	@WithAnonymousUser
+	void anonymousCanRegisterClient() throws Exception {
+		when(userService.registerClient(any())).thenReturn(
+				new UserResponse(3L, "client@example.com", "Client", true, Set.of("CLIENT")));
+
+		mockMvc.perform(post("/api/public/register")
+						.with(csrf())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "email": "client@example.com",
+								  "password": "password123",
+								  "fullName": "Client"
+								}
+								"""))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.email").value("client@example.com"))
+				.andExpect(jsonPath("$.roles[0]").value("CLIENT"))
+				.andExpect(jsonPath("$.password").doesNotExist());
+	}
 }

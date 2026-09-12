@@ -17,6 +17,7 @@ import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.user.EmailNormalizer;
 import bg.martinandonov.restaurant.user.dto.CreateUserRequest;
+import bg.martinandonov.restaurant.user.dto.RegisterClientRequest;
 import bg.martinandonov.restaurant.user.dto.UpdateUserRolesRequest;
 import bg.martinandonov.restaurant.user.dto.UpdateUserStatusRequest;
 import bg.martinandonov.restaurant.user.dto.UserResponse;
@@ -52,6 +53,9 @@ public class UserService {
 		String fullName = requireFullName(request.getFullName());
 		String rawPassword = requirePassword(request.getPassword());
 		Set<RoleName> roleNames = resolveRoleNames(request.getRoles());
+		if (roleNames.size() != 1) {
+			throw new InvalidRequestException("Exactly one role must be assigned");
+		}
 
 		if (appUserRepository.existsByEmail(email)) {
 			throw new BusinessRuleException("A user with this email already exists");
@@ -61,6 +65,30 @@ public class UserService {
 		AppUser user = new AppUser(email, passwordEncoder.encode(rawPassword), fullName, true);
 		user.setRoles(roles);
 
+		AppUser saved = appUserRepository.save(user);
+		return toResponse(saved);
+	}
+
+	/**
+	 * Public self-registration. Always creates an enabled CLIENT account.
+	 * Role is never taken from the request.
+	 */
+	public UserResponse registerClient(RegisterClientRequest request) {
+		Objects.requireNonNull(request, "request must not be null");
+
+		String email = requireNormalizedEmail(request.getEmail());
+		String fullName = requireFullName(request.getFullName());
+		String rawPassword = requirePassword(request.getPassword());
+
+		if (appUserRepository.existsByEmail(email)) {
+			throw new BusinessRuleException("A user with this email already exists");
+		}
+
+		Role clientRole = roleRepository.findByName(RoleName.CLIENT)
+				.orElseThrow(() -> new IllegalStateException("CLIENT role is missing"));
+
+		AppUser user = new AppUser(email, passwordEncoder.encode(rawPassword), fullName, true);
+		user.setRoles(Set.of(clientRole));
 		AppUser saved = appUserRepository.save(user);
 		return toResponse(saved);
 	}
@@ -81,6 +109,12 @@ public class UserService {
 		Objects.requireNonNull(request, "request must not be null");
 		AppUser user = findUser(id);
 		Set<RoleName> roleNames = resolveRoleNames(request.getRoles());
+		if (roleNames.size() != 1) {
+			throw new InvalidRequestException("Exactly one role must be assigned");
+		}
+		if (isLastEnabledAdmin(user) && !roleNames.contains(RoleName.ADMIN)) {
+			throw new BusinessRuleException("Cannot remove ADMIN from the last enabled ADMIN user");
+		}
 		user.setRoles(loadRoles(roleNames));
 		return toResponse(user);
 	}

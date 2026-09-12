@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,12 +14,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import bg.martinandonov.restaurant.common.DocumentCodes;
 import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.diningtable.service.DiningTableFloorStatusService;
 import bg.martinandonov.restaurant.order.entity.OrderItem;
 import bg.martinandonov.restaurant.order.entity.OrderStatus;
 import bg.martinandonov.restaurant.order.entity.RestaurantOrder;
@@ -44,6 +45,7 @@ public class PaymentService {
 	private final OrderItemRepository orderItemRepository;
 	private final DiningTableRepository diningTableRepository;
 	private final AppUserRepository appUserRepository;
+	private final DiningTableFloorStatusService diningTableFloorStatusService;
 	private final Clock clock;
 
 	public PaymentService(
@@ -52,12 +54,14 @@ public class PaymentService {
 			OrderItemRepository orderItemRepository,
 			DiningTableRepository diningTableRepository,
 			AppUserRepository appUserRepository,
+			DiningTableFloorStatusService diningTableFloorStatusService,
 			Clock clock) {
 		this.paymentRepository = paymentRepository;
 		this.restaurantOrderRepository = restaurantOrderRepository;
 		this.orderItemRepository = orderItemRepository;
 		this.diningTableRepository = diningTableRepository;
 		this.appUserRepository = appUserRepository;
+		this.diningTableFloorStatusService = diningTableFloorStatusService;
 		this.clock = clock;
 	}
 
@@ -105,7 +109,9 @@ public class PaymentService {
 
 		order.setClosed(true);
 		order.setUpdatedAt(paidAt);
-		table.setStatus(DiningTableStatus.AVAILABLE);
+		restaurantOrderRepository.saveAndFlush(order);
+		// Free the table, or mark RESERVED again if another confirmed booking is still active/upcoming.
+		diningTableFloorStatusService.syncStoredStatus(table, true);
 
 		return toResponse(payment, orderItemRepository.findByOrderIdOrderByIdAsc(order.getId()));
 	}
@@ -199,7 +205,10 @@ public class PaymentService {
 	}
 
 	private String generateReceiptNumber() {
-		return "SIM-" + UUID.randomUUID();
+		return DocumentCodes.unique(
+				"RCP",
+				clock,
+				number -> paymentRepository.findByReceiptNumber(number).isPresent());
 	}
 
 	private PaymentResponse toResponse(Payment payment, List<OrderItem> items) {

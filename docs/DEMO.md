@@ -1,11 +1,20 @@
 # Demo / presentation script (8–12 minutes)
 
-Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell only (never commit it). Demo emails:
+Use the optional `demo` profile locally:
 
-- `demo.admin@example.com`
-- `demo.waiter@example.com`
-- `demo.cook@example.com`
-- `demo.client@example.com`
+```powershell
+Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
+npm run dev:demo
+```
+
+MySQL user `restaurant_app` and seeded presentation logins all use **`SecurePassword123!`**.
+
+| Role | Email | Password |
+|---|---|---|
+| ADMIN | `maria.adminova@example.com` | `SecurePassword123!` |
+| WAITER | `georgi.stoyanov@example.com` | `SecurePassword123!` |
+| COOK | `ivan.petkov@example.com` | `SecurePassword123!` |
+| CLIENT | `elena.dimitrova@example.com` | `SecurePassword123!` |
 
 ## Suggested timing
 
@@ -16,7 +25,7 @@ Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell 
    Show menu categories/items, inventory stock, dining tables, a reservation schedule view.
 
 3. **WAITER login → `/waiter`**
-   Pick an available DEMO table, create an order with DEMO menu items.
+   Pick an available salon/terrace table, create an order with seeded menu items.
 
 4. **KITCHEN login → `/kitchen` (second browser/window)**
    Show realtime appearance of the new order (notification → REST refresh).
@@ -34,7 +43,7 @@ Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell 
    Summary / by-item / by-payment-method includes the simulated payment.
 
 9. **CLIENT login → `/client`**
-   Availability search → create reservation → show ownership list/detail → cancel (or show seeded DEMO reservation).
+   Availability search → create reservation → show ownership list/detail → cancel (or show seeded evening reservation).
 
 10. **Close with design principles**
     Security roles, conflict locking, snapshots, BigDecimal, no event replay dependency.
@@ -54,4 +63,4 @@ Use the optional `demo` profile locally. Set `DEMO_USER_PASSWORD` in your shell 
 
 - Do not display real passwords on screen.
 - Say clearly that CARD is a local enum simulation.
-- Prefer DEMO-prefixed catalog data so the demo stays recognizable.
+- Prefer realistic Bulgarian menu/table names so the demo looks like a live restaurant, not a test harness.

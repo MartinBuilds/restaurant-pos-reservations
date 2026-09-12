@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -17,12 +16,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import bg.martinandonov.restaurant.common.DocumentCodes;
 import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.diningtable.service.DiningTableFloorStatusService;
 import bg.martinandonov.restaurant.reservation.dto.AvailableTableResponse;
 import bg.martinandonov.restaurant.reservation.dto.CreateAdminReservationRequest;
 import bg.martinandonov.restaurant.reservation.dto.CreateClientReservationRequest;
@@ -49,16 +50,19 @@ public class ReservationService {
 	private final ReservationRepository reservationRepository;
 	private final DiningTableRepository diningTableRepository;
 	private final AppUserRepository appUserRepository;
+	private final DiningTableFloorStatusService diningTableFloorStatusService;
 	private final Clock clock;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
 			DiningTableRepository diningTableRepository,
 			AppUserRepository appUserRepository,
+			DiningTableFloorStatusService diningTableFloorStatusService,
 			Clock clock) {
 		this.reservationRepository = reservationRepository;
 		this.diningTableRepository = diningTableRepository;
 		this.appUserRepository = appUserRepository;
+		this.diningTableFloorStatusService = diningTableFloorStatusService;
 		this.clock = clock;
 	}
 
@@ -232,7 +236,10 @@ public class ReservationService {
 
 		LocalDateTime now = LocalDateTime.now(clock);
 		Reservation reservation = new Reservation(
-				UUID.randomUUID().toString(),
+				DocumentCodes.unique(
+						"RES",
+						clock,
+						number -> reservationRepository.findByReservationNumber(number).isPresent()),
 				table,
 				client,
 				startTime,
@@ -240,7 +247,9 @@ public class ReservationService {
 				guests,
 				normalizedNotes,
 				now);
-		return toResponse(reservationRepository.save(reservation));
+		Reservation saved = reservationRepository.save(reservation);
+		diningTableFloorStatusService.syncStoredStatus(table, true);
+		return toResponse(saved);
 	}
 
 	private ReservationResponse reschedule(Reservation reservation, UpdateReservationRequest request) {
@@ -256,6 +265,7 @@ public class ReservationService {
 		Integer guests = requireGuestCount(request.getGuestCount());
 		String normalizedNotes = normalizeNotes(request.getNotes());
 
+		DiningTable previousTable = reservation.getDiningTable();
 		DiningTable table = lockAndValidateTable(request.getDiningTableId(), guests);
 		assertNoConflict(table.getId(), request.getStartTime(), request.getEndTime(), reservation.getId());
 
@@ -265,6 +275,12 @@ public class ReservationService {
 		reservation.setGuestCount(guests);
 		reservation.setNotes(normalizedNotes);
 		reservation.setUpdatedAt(now);
+		if (previousTable != null && !Objects.equals(previousTable.getId(), table.getId())) {
+			DiningTable lockedPrevious = diningTableRepository.findByIdForUpdate(previousTable.getId())
+					.orElse(previousTable);
+			diningTableFloorStatusService.syncStoredStatus(lockedPrevious, true);
+		}
+		diningTableFloorStatusService.syncStoredStatus(table, true);
 		return toResponse(reservation);
 	}
 
@@ -281,6 +297,9 @@ public class ReservationService {
 		}
 		reservation.setStatus(ReservationStatus.CANCELLED);
 		reservation.setUpdatedAt(now);
+		DiningTable table = diningTableRepository.findByIdForUpdate(reservation.getDiningTable().getId())
+				.orElse(reservation.getDiningTable());
+		diningTableFloorStatusService.syncStoredStatus(table, true);
 		return toResponse(reservation);
 	}
 
@@ -317,6 +336,9 @@ public class ReservationService {
 
 		reservation.setStatus(requested);
 		reservation.setUpdatedAt(now);
+		DiningTable table = diningTableRepository.findByIdForUpdate(reservation.getDiningTable().getId())
+				.orElse(reservation.getDiningTable());
+		diningTableFloorStatusService.syncStoredStatus(table, true);
 		return toResponse(reservation);
 	}
 

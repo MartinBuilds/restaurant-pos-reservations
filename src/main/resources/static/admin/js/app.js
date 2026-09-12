@@ -3,15 +3,18 @@ import { registerRoute, startRouter, setActiveNav } from './router.js';
 import { setBanner, toast, handleError, setPageMeta } from './ui.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderUsers } from './views/users.js';
-import { renderMenu } from './views/menu.js';
+import { renderMenu } from './views/menu.js?v=fix-avail-2';
 import { renderInventory } from './views/inventory.js';
 import { renderTables } from './views/tables.js';
 import { renderReservations } from './views/reservations.js';
 import { renderPayments } from './views/payments.js';
 import { renderReports } from './views/reports.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr20-4';
-import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=pr20-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-account-sheet-1';
+import { polishBottomAccount, wireBottomNav } from '/shared/js/bottom-nav.js?v=fix-account-sheet-1';
+import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
+import { clearPageRefresh, wirePageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
+import { wireDatetimePickers } from '/shared/js/datetime-picker.js?v=fix-datetime-2';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-avail-2';
 
 registerRoute('dashboard', renderDashboard);
 registerRoute('users', renderUsers);
@@ -47,11 +50,10 @@ async function logout() {
 }
 
 function wireShell() {
-  wireMobileSidebarDrawer();
+  wireBottomNav();
 }
 
 async function boot() {
-  wireShell();
   decorateNavIcons({
     dashboard: 'dashboard',
     users: 'users',
@@ -62,6 +64,9 @@ async function boot() {
     payments: 'payments',
     reports: 'reports'
   });
+  wireShell();
+  wirePageRefresh();
+  wireDatetimePickers();
 
   let csrfOk = false;
   try {
@@ -78,21 +83,24 @@ async function boot() {
       onLogout: logout,
       collapsibleSidebar: true,
       onLanguageApplied: () => {
+        polishBottomAccount();
         window.dispatchEvent(new Event('hashchange'));
       }
     });
     shellAccount = shell.account;
     window.__adminAccount = shellAccount;
+    polishBottomAccount();
   } catch (err) {
     console.error(err);
     handleError(err, t('boot.adminError'));
   }
 
-  if (csrfOk) {
-    setBanner(t('session.active'), 'success');
+  if (csrfOk && consumeSignedInWelcome()) {
+    toast(t('session.active'), 'success');
   }
 
   await startRouter(async (name, handler) => {
+    clearPageRefresh();
     setActiveNav(name);
     try {
       await handler();

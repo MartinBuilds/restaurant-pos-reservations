@@ -1,0 +1,108 @@
+/* Top refresh indicator + pull-to-refresh + reload button spin */
+
+.page-refresh-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 95;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transform: translate3d(0, -110%, 0);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.page-refresh-bar.is-pulling {
+  transition: none;
+}
+
+.page-refresh-bar.is-visible,
+.page-refresh-bar.is-loading {
+  transform: translate3d(0, 0, 0);
+}
+
+.page-refresh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  background: var(--color-surface, var(--surface));
+  color: var(--color-text, var(--ink));
+  border: 1px solid var(--color-border, var(--line));
+  box-shadow: var(--color-shadow, 0 8px 24px rgba(0, 0, 0, 0.18));
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.page-refresh-spinner {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-primary, var(--brand)) 28%, transparent);
+  border-top-color: var(--color-primary, var(--brand));
+  flex: 0 0 auto;
+  transform: rotate(calc(var(--pull, 0) * 270deg));
+  transition: transform 0.12s linear;
+}
+
+.page-refresh-spinner.is-spinning,
+.page-refresh-bar.is-loading .page-refresh-spinner {
+  animation: page-refresh-spin 0.7s linear infinite;
+  transition: none;
+}
+
+@keyframes page-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Full-page rubber-band (never only #content / a section) */
+.page-refresh-root,
+.app-shell,
+.bottom-nav {
+  --page-refresh-shift: 0px;
+}
+
+.page-refresh-root.page-refresh-shifting,
+.app-shell.page-refresh-shifting,
+.bottom-nav.page-refresh-shifting {
+  transform: translate3d(0, var(--page-refresh-shift), 0);
+  transition: none;
+  will-change: transform;
+}
+
+.page-refresh-root.page-refresh-settling,
+.app-shell.page-refresh-settling,
+.bottom-nav.page-refresh-settling {
+  transform: translate3d(0, var(--page-refresh-shift), 0);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.btn-reload {
+  position: relative;
+}
+
+.btn-reload.is-refreshing {
+  opacity: 0.85;
+}
+
+.btn-reload.is-refreshing::after {
+  content: "";
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-left: 0.45rem;
+  vertical-align: -0.1rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: page-refresh-spin 0.7s linear infinite;
+}
+
+body.is-page-refreshing {
+  cursor: progress;
+}

@@ -1,12 +1,43 @@
 import { api } from '../api.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
+import { enhancePasswordInput } from '/shared/js/password-toggle.js?v=fix-login-10';
 
 const ROLES = ['ADMIN', 'WAITER', 'COOK', 'CLIENT'];
 let abortController = null;
+
+function roleLabel(role) {
+  const key = `role.${role}`;
+  const translated = t(key);
+  return translated === key ? role : translated;
+}
+
+/** Prefer highest operational role when legacy multi-role data exists. */
+function primaryRole(roles) {
+  for (const role of ROLES) {
+    if ((roles || []).includes(role)) return role;
+  }
+  return 'CLIENT';
+}
+
+function roleRadioOptions(selectedRole, groupName) {
+  return ROLES.map((role) => {
+    const input = el('input', { type: 'radio', name: groupName, value: role });
+    if (role === selectedRole) input.checked = true;
+    return el('label', {}, [input, document.createTextNode(roleLabel(role))]);
+  });
+}
+
+function selectedRole(roleBoxes) {
+  const checked = roleBoxes
+    .map((label) => label.querySelector('input'))
+    .find((input) => input && input.checked);
+  return checked ? checked.value : null;
+}
 
 export async function renderUsers() {
   setPageMeta(t('page.users.title'), t('page.users.subtitle'));
@@ -23,13 +54,11 @@ async function reload() {
       type: 'button', className: 'btn', text: t('action.newUser'),
       onClick: () => openCreateDialog(() => reload())
     });
-    const reloadBtn = el('button', {
-      type: 'button', className: 'btn btn-secondary', text: t('action.reload'),
-      onClick: () => reload()
-    });
+    const reloadBtn = reloadButton(reload);
 
     if (!users.length) {
       mount(panel(t('page.users.title'), [emptyState(t('msg.usersEmpty'))], [createBtn, reloadBtn]));
+      setPageRefresh(reload);
       return;
     }
 
@@ -37,21 +66,24 @@ async function reload() {
       String(u.id),
       u.fullName || '—',
       u.email || '—',
-      el('div', { className: 'row-actions' }, (u.roles || []).map((r) => badge(r, 'info'))),
+      el('div', { className: 'row-actions' }, [
+        badge(roleLabel(primaryRole(u.roles)), 'info')
+      ]),
       badge(u.enabled ? t('common.active') : t('common.inactive'), u.enabled ? 'ok' : 'danger'),
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('action.roles'),
+          type: 'button', className: 'btn btn-info', text: t('action.roles'),
           onClick: () => openRolesDialog(u, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary',
+          type: 'button', className: `btn ${u.enabled ? 'btn-danger' : 'btn-ok'}`,
           text: u.enabled ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             const ok = await confirmDialog({
               title: u.enabled ? t('users.confirmDisableTitle') : t('users.confirmEnableTitle'),
               message: t('users.confirmStatusMsg', { email: u.email }),
-              confirmLabel: t('common.confirm')
+              confirmLabel: t('common.confirm'),
+              danger: !!u.enabled
             });
             if (!ok) return;
             try {
@@ -70,6 +102,7 @@ async function reload() {
       el('p', { className: 'muted', text: t('users.passwordNote') }),
       table(t('users.listTitle'), [t('col.id'), t('col.name'), t('col.email'), t('col.roles'), t('col.status'), t('common.actions')], rows)
     ], [createBtn, reloadBtn]));
+    setPageRefresh(reload);
   } catch (err) {
     if (err.name === 'AbortError') return;
     mount(errorBox(handleError(err, t('users.loadError')), () => reload()));
@@ -80,18 +113,15 @@ function openCreateDialog(onDone) {
   const email = el('input', { type: 'email', autocomplete: 'off', required: 'true' });
   const fullName = el('input', { type: 'text', autocomplete: 'name', required: 'true' });
   const password = el('input', { type: 'password', autocomplete: 'new-password', required: 'true' });
-  const roleBoxes = ROLES.map((role) => {
-    const input = el('input', { type: 'checkbox', value: role });
-    if (role === 'CLIENT') input.checked = true;
-    return el('label', {}, [input, document.createTextNode(role)]);
-  });
+  const roleBoxes = roleRadioOptions('CLIENT', 'create-user-role');
 
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.create') });
   submit.addEventListener('click', async () => {
-    const roles = roleBoxes
-      .map((label) => label.querySelector('input'))
-      .filter((i) => i.checked)
-      .map((i) => i.value);
+    const role = selectedRole(roleBoxes);
+    if (!role) {
+      toast(t('users.roleRequired'), 'error');
+      return;
+    }
     submit.disabled = true;
     submit.textContent = t('common.loading');
     try {
@@ -99,7 +129,7 @@ function openCreateDialog(onDone) {
         email: email.value.trim(),
         fullName: fullName.value.trim(),
         password: password.value,
-        roles
+        roles: [role]
       });
       password.value = '';
       closeDialog();
@@ -128,20 +158,25 @@ function openCreateDialog(onDone) {
       submit
     ]
   });
+  enhancePasswordInput(password);
 }
 
 function openRolesDialog(user, onDone) {
-  const roleBoxes = ROLES.map((role) => {
-    const input = el('input', { type: 'checkbox', value: role });
-    input.checked = (user.roles || []).includes(role);
-    return el('label', {}, [input, document.createTextNode(role)]);
-  });
+  const current = primaryRole(user.roles);
+  const roleBoxes = roleRadioOptions(current, `user-role-${user.id}`);
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
-    const roles = roleBoxes.map((l) => l.querySelector('input')).filter((i) => i.checked).map((i) => i.value);
+    const role = selectedRole(roleBoxes);
+    if (!role) {
+      toast(t('users.roleRequired'), 'error');
+      return;
+    }
+    const baseline = [current];
+    const next = [role];
+    if (toastIfUnchanged(baseline, next, t('msg.noChanges'))) return;
     submit.disabled = true;
     try {
-      await api.put(`/api/admin/users/${user.id}/roles`, { roles });
+      await api.put(`/api/admin/users/${user.id}/roles`, { roles: [role] });
       closeDialog();
       toast(t('msg.updated'), 'success');
       await onDone();

@@ -1,31 +1,34 @@
 ﻿import { ensureCsrf, logout, setUnauthorizedHandler, api } from '/operations/js/api.js';
 import { handleError, setBanner, toast } from '/operations/js/notifications.js';
-import { onRealtimeRefresh, startWaiterRealtime, stopRealtime } from './realtime.js';
+import { onRealtimeRefresh, startWaiterRealtime, stopRealtime } from './realtime.js?v=fix-table-live-1';
 import { registerRoute, setActiveNav, startRouter } from './router.js';
-import { renderOrders } from './views/orders.js';
+import { renderOrders } from './views/orders.js?v=fix-orders-board-1';
 import { renderReservations } from './views/reservations.js';
-import { renderTables } from './views/tables.js';
+import { renderTables } from './views/tables.js?v=fix-table-live-1';
 import { wireDialogChrome } from './views/ui-shared.js';
-import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=pr20-4';
-import { wireMobileSidebarDrawer } from '/shared/js/mobile-drawer.js?v=pr20-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr20-4';
+import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-account-sheet-1';
+import { polishBottomAccount, wireBottomNav } from '/shared/js/bottom-nav.js?v=fix-account-sheet-1';
+import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
+import { clearPageRefresh, wirePageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-table-live-1';
 
 registerRoute('tables', renderTables);
 registerRoute('orders', renderOrders);
 registerRoute('reservations', renderReservations);
 
 function wireShell() {
-  wireMobileSidebarDrawer();
+  wireBottomNav();
   wireDialogChrome();
 }
 
 async function boot() {
-  wireShell();
   decorateNavIcons({
     tables: 'tables',
     orders: 'orders',
     reservations: 'reservations'
   });
+  wireShell();
+  wirePageRefresh();
 
   setUnauthorizedHandler(() => {
     stopRealtime();
@@ -55,16 +58,18 @@ async function boot() {
         window.location.assign('/login');
       },
       onLanguageApplied: () => {
+        polishBottomAccount();
         window.dispatchEvent(new Event('hashchange'));
       }
     });
+    polishBottomAccount();
   } catch (err) {
     console.error(err);
     handleError(err, t('boot.waiterError'));
   }
 
-  if (csrfOk) {
-    setBanner(t('session.activeShort'), 'success');
+  if (csrfOk && consumeSignedInWelcome()) {
+    toast(t('session.activeShort'), 'success');
   }
 
   onRealtimeRefresh(async () => {
@@ -74,6 +79,7 @@ async function boot() {
   });
 
   await startRouter(async (name, handler) => {
+    clearPageRefresh();
     setActiveNav(name);
     try {
       await handler();

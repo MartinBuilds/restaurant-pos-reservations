@@ -2,9 +2,10 @@ import { api } from '../api.js';
 import { quantity } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, unitLabel } from '/shared/js/i18n/i18n.js?v=fix-units-1';
 
 const UNITS = ['GRAM', 'MILLILITER', 'PIECE'];
 
@@ -24,16 +25,16 @@ async function reload() {
     const rows = ingredients.map((ing) => [
       String(ing.id),
       ing.name || '—',
-      ing.unit || '—',
+      unitLabel(ing.unit) || '—',
       quantity(ing.stockQuantity),
       quantity(ing.minimumStockLevel),
       badge(ing.active ? t('common.active') : t('common.inactive'), ing.active ? 'ok' : 'muted'),
       badge(ing.lowStock ? t('inventory.lowStock') : t('inventory.stockOk'), ing.lowStock ? 'warn' : 'ok'),
       el('div', { className: 'row-actions' }, [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.edit'), onClick: () => openIngredientDialog(ing, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.stock'), onClick: () => openStockDialog(ing, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-info', text: t('common.edit'), onClick: () => openIngredientDialog(ing, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-warn', text: t('action.stock'), onClick: () => openStockDialog(ing, () => reload()) }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: ing.active ? t('action.disable') : t('action.enable'),
+          type: 'button', className: `btn ${ing.active ? 'btn-danger' : 'btn-ok'}`, text: ing.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/inventory/ingredients/${ing.id}/status`, { active: !ing.active });
@@ -52,13 +53,14 @@ async function reload() {
           : emptyState(t('common.empty'))
       ], [
         el('button', { type: 'button', className: 'btn', text: t('action.newIngredient'), onClick: () => openIngredientDialog(null, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
+        reloadButton(reload)
       ]),
       panel(t('inventory.recipes'), [
         el('p', { className: 'muted', text: t('inventory.recipeNote') }),
         recipePicker(items, ingredients)
       ])
     ]));
+    setPageRefresh(reload);
   } catch (err) {
     mount(errorBox(handleError(err), () => reload()));
   }
@@ -106,7 +108,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
         el('option', { value: '', text: t('col.ingredient') }),
         ...ingredients.map((ing) => el('option', {
           value: String(ing.id),
-          text: `${ing.name} (${ing.unit})`,
+          text: `${ing.name} (${unitLabel(ing.unit)})`,
           selected: String(ing.id) === String(row.ingredientId) ? 'true' : null
         }))
       ]);
@@ -117,7 +119,7 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
         field(t('col.ingredient'), ingSelect),
         field(t('col.quantity'), qty),
         el('button', {
-          type: 'button', className: 'btn btn-ghost', text: t('common.delete'),
+          type: 'button', className: 'btn btn-danger', text: t('common.delete'),
           onClick: () => { rowsState.splice(idx, 1); redraw(); }
         })
       ]));
@@ -171,12 +173,25 @@ function renderRecipeEditor(area, menuItemId, recipe, ingredients, onDone) {
 function openIngredientDialog(existing, onDone) {
   const name = el('input', { type: 'text', value: existing?.name || '' });
   const unit = el('select', {}, UNITS.map((u) => el('option', {
-    value: u, text: u, selected: existing?.unit === u ? 'true' : null
+    value: u, text: unitLabel(u), selected: existing?.unit === u ? 'true' : null
   })));
   const stockQuantity = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.stockQuantity ?? '0' });
   const minimumStockLevel = el('input', { type: 'number', step: '0.001', min: '0', value: existing?.minimumStockLevel ?? '0' });
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    if (existing) {
+      const baseline = {
+        name: existing.name || '',
+        unit: existing.unit,
+        minimumStockLevel: String(existing.minimumStockLevel ?? '0')
+      };
+      const next = {
+        name: name.value.trim(),
+        unit: unit.value,
+        minimumStockLevel: String(minimumStockLevel.value)
+      };
+      if (toastIfUnchanged(baseline, next, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
       if (existing) {
@@ -238,7 +253,7 @@ function openStockDialog(ing, onDone) {
   openDialog({
     title: t('inventory.adjustTitle', { name: ing.name }),
     body: el('div', { className: 'stack' }, [
-      el('p', { className: 'muted', text: t('inventory.currentStock', { qty: quantity(ing.stockQuantity), unit: ing.unit }) }),
+      el('p', { className: 'muted', text: t('inventory.currentStock', { qty: quantity(ing.stockQuantity), unit: unitLabel(ing.unit) }) }),
       field(t('inventory.qtyChange'), quantityChange),
       field(t('col.note'), note)
     ]),

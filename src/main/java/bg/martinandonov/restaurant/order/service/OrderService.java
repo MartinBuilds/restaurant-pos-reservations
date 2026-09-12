@@ -2,6 +2,7 @@ package bg.martinandonov.restaurant.order.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,12 +19,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import bg.martinandonov.restaurant.common.DocumentCodes;
 import bg.martinandonov.restaurant.common.exception.BusinessRuleException;
 import bg.martinandonov.restaurant.common.exception.InvalidRequestException;
 import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.diningtable.websocket.event.DiningTableStatusChangedRealtimeEvent;
 import bg.martinandonov.restaurant.inventory.entity.Ingredient;
 import bg.martinandonov.restaurant.inventory.entity.RecipeIngredient;
 import bg.martinandonov.restaurant.inventory.repository.IngredientRepository;
@@ -67,6 +69,7 @@ public class OrderService {
 	private final MenuAvailabilityService menuAvailabilityService;
 	private final AppUserRepository appUserRepository;
 	private final ApplicationEventPublisher applicationEventPublisher;
+	private final Clock clock;
 
 	public OrderService(
 			RestaurantOrderRepository restaurantOrderRepository,
@@ -77,7 +80,8 @@ public class OrderService {
 			IngredientRepository ingredientRepository,
 			MenuAvailabilityService menuAvailabilityService,
 			AppUserRepository appUserRepository,
-			ApplicationEventPublisher applicationEventPublisher) {
+			ApplicationEventPublisher applicationEventPublisher,
+			Clock clock) {
 		this.restaurantOrderRepository = restaurantOrderRepository;
 		this.orderItemRepository = orderItemRepository;
 		this.diningTableRepository = diningTableRepository;
@@ -87,6 +91,7 @@ public class OrderService {
 		this.menuAvailabilityService = menuAvailabilityService;
 		this.appUserRepository = appUserRepository;
 		this.applicationEventPublisher = applicationEventPublisher;
+		this.clock = clock;
 	}
 
 	public OrderResponse createOrder(CreateOrderRequest request) {
@@ -104,7 +109,7 @@ public class OrderService {
 		Map<Long, BigDecimal> requiredStock = aggregateRequiredStock(requestedQuantities, menuItems);
 		deductStock(requiredStock);
 
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(clock);
 		RestaurantOrder order = new RestaurantOrder(generateOrderNumber(), table, waiter, now);
 		RestaurantOrder savedOrder = restaurantOrderRepository.save(order);
 
@@ -129,6 +134,8 @@ public class OrderService {
 		savedOrder.setTotalAmount(total);
 		savedOrder.setUpdatedAt(now);
 		table.setStatus(DiningTableStatus.OCCUPIED);
+		applicationEventPublisher.publishEvent(
+				new DiningTableStatusChangedRealtimeEvent(table.getId(), DiningTableStatus.OCCUPIED.name()));
 		recalculateAvailabilityForIngredients(requiredStock.keySet());
 
 		KitchenOrderResponse kitchenSnapshot = toKitchenResponse(savedOrder);
@@ -157,7 +164,7 @@ public class OrderService {
 		Map<Long, BigDecimal> requiredStock = aggregateRequiredStock(requestedQuantities, menuItems);
 		deductStock(requiredStock);
 
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(clock);
 		for (Map.Entry<Long, Integer> entry : requestedQuantities.entrySet()) {
 			Long menuItemId = entry.getKey();
 			Integer addedQuantity = entry.getValue();
@@ -209,6 +216,15 @@ public class OrderService {
 	@Transactional(readOnly = true)
 	public List<OrderResponse> getOpenOrders() {
 		return restaurantOrderRepository.findOpenOrdersWithDetails().stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<OrderResponse> getRecentClosedOrders(int limit) {
+		int pageSize = Math.min(Math.max(limit, 1), 100);
+		return restaurantOrderRepository.findClosedOrdersWithDetails().stream()
+				.limit(pageSize)
 				.map(this::toResponse)
 				.toList();
 	}
@@ -284,8 +300,9 @@ public class OrderService {
 		if (!table.isActive()) {
 			throw new BusinessRuleException("Dining table is inactive");
 		}
-		if (table.getStatus() != DiningTableStatus.AVAILABLE) {
-			throw new BusinessRuleException("Dining table is not AVAILABLE");
+		DiningTableStatus status = table.getStatus();
+		if (status != DiningTableStatus.AVAILABLE && status != DiningTableStatus.RESERVED) {
+			throw new BusinessRuleException("Dining table is not AVAILABLE or RESERVED");
 		}
 		if (restaurantOrderRepository.existsByDiningTableIdAndClosedFalse(table.getId())) {
 			throw new BusinessRuleException("An open order already exists for this dining table");
@@ -395,7 +412,10 @@ public class OrderService {
 	}
 
 	private String generateOrderNumber() {
-		return UUID.randomUUID().toString();
+		return DocumentCodes.unique(
+				"ORD",
+				clock,
+				number -> restaurantOrderRepository.findByOrderNumber(number).isPresent());
 	}
 
 	private BigDecimal money(BigDecimal value) {

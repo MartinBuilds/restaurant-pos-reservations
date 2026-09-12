@@ -4,13 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -93,6 +98,9 @@ class OrderServiceTest {
 	@Mock
 	private ApplicationEventPublisher applicationEventPublisher;
 
+	@Mock
+	private Clock clock;
+
 	@InjectMocks
 	private OrderService orderService;
 
@@ -101,6 +109,11 @@ class OrderServiceTest {
 
 	@BeforeEach
 	void setUp() {
+		Clock fixed = Clock.fixed(Instant.parse("2026-08-05T12:00:00Z"), ZoneId.of("Europe/Sofia"));
+		lenient().when(clock.instant()).thenReturn(fixed.instant());
+		lenient().when(clock.getZone()).thenReturn(fixed.getZone());
+		lenient().when(restaurantOrderRepository.findByOrderNumber(anyString())).thenReturn(Optional.empty());
+
 		waiter = new AppUser(WAITER_EMAIL, "hash", "Waiter One", true);
 		ReflectionTestUtils.setField(waiter, "id", 5L);
 		Role waiterRole = new Role(RoleName.WAITER);
@@ -156,7 +169,7 @@ class OrderServiceTest {
 		ArgumentCaptor<RestaurantOrder> orderCaptor = ArgumentCaptor.forClass(RestaurantOrder.class);
 		verify(restaurantOrderRepository).save(orderCaptor.capture());
 		RestaurantOrder savedOrder = orderCaptor.getValue();
-		assertThat(savedOrder.getOrderNumber()).isNotBlank().hasSize(36);
+		assertThat(savedOrder.getOrderNumber()).matches("ORD-\\d{8}-\\d{4}");
 		assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.ACCEPTED);
 		assertThat(savedOrder.isClosed()).isFalse();
 		assertThat(savedOrder.getTotalAmount()).isEqualByComparingTo("25.00");
@@ -300,7 +313,7 @@ class OrderServiceTest {
 
 		assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(1L, orderLine(10L, 1))))
 				.isInstanceOf(BusinessRuleException.class)
-				.hasMessageContaining("not AVAILABLE");
+				.hasMessageContaining("not AVAILABLE or RESERVED");
 	}
 
 	@Test

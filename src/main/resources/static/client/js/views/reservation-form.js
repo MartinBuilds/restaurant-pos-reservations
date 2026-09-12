@@ -1,12 +1,14 @@
 import { api } from '../api.js';
 import { clear, el } from '../dom.js';
-import { text, toDateTimeLocalValue } from '../format.js';
+import { fromDateTimeLocalValue, text, toDateTimeLocalValue } from '../format.js';
 import {
   badge, closeDialog, errorBox, handleError, loadingBox, openDialog,
   setBanner, setPageMeta, toast
 } from '../ui.js';
 import { navigate } from '../router.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { createDatetimePicker } from '/shared/js/datetime-picker.js?v=fix-client-ui-1';
+import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-client-ui-1';
 
 const NOTES_MAX = 500;
 
@@ -26,7 +28,41 @@ function validate(start, end, guestCount, diningTableId) {
   return null;
 }
 
+function guestStepper(id, value = 2) {
+  const input = el('input', {
+    id,
+    type: 'number',
+    min: '1',
+    step: '1',
+    required: true,
+    value: String(value),
+    className: 'guest-input',
+    inputmode: 'numeric'
+  });
+  const dec = el('button', {
+    type: 'button',
+    className: 'guest-btn',
+    text: '−',
+    onClick: () => {
+      input.value = String(Math.max(1, Number(input.value || 1) - 1));
+    }
+  });
+  const inc = el('button', {
+    type: 'button',
+    className: 'guest-btn',
+    text: '+',
+    onClick: () => {
+      input.value = String(Number(input.value || 1) + 1);
+    }
+  });
+  return {
+    root: el('div', { className: 'guest-stepper' }, [dec, input, inc]),
+    input
+  };
+}
+
 export async function renderCreateForm(root) {
+  setPageRefresh(() => renderCreateForm(root));
   setPageMeta(t('action.createReservation'), t('page.availability.subtitle'));
   setBanner('');
   clear(root);
@@ -37,44 +73,45 @@ export async function renderCreateForm(root) {
     || t('reservations.tableFromSearch');
   const start = toDateTimeLocalValue(q.get('startTime') || '');
   const end = toDateTimeLocalValue(q.get('endTime') || '');
-  const guests = q.get('guestCount') || '2';
+  const guestCount = q.get('guestCount') || '2';
 
   if (!diningTableId) {
     root.appendChild(errorBox(t('msg.requiredFields'), () => navigate('#/availability')));
     return;
   }
 
-  const form = el('form', { className: 'form-grid', novalidate: true });
-  const startInput = el('input', { id: 'cr-start', type: 'datetime-local', required: true, value: start });
-  const endInput = el('input', { id: 'cr-end', type: 'datetime-local', required: true, value: end });
-  const guestInput = el('input', { id: 'cr-guests', type: 'number', min: '1', step: '1', required: true, value: guests });
+  const startPicker = createDatetimePicker({ value: start });
+  startPicker.id = 'cr-start';
+  const endPicker = createDatetimePicker({ value: end });
+  endPicker.id = 'cr-end';
+  const guests = guestStepper('cr-guests', Number(guestCount) || 2);
   const notesInput = el('textarea', { id: 'cr-notes', rows: '3', maxlength: String(NOTES_MAX) });
-  const tableIdHidden = el('input', { type: 'hidden', id: 'cr-table-id', value: diningTableId });
   const fieldError = el('p', { className: 'field-error', id: 'cr-error', hidden: true });
   const submitBtn = el('button', { type: 'submit', className: 'btn btn-primary', text: t('action.createReservation') });
   const progress = el('p', { className: 'muted', id: 'cr-progress', hidden: true, text: t('common.loading') });
 
-  form.append(
-    el('div', { className: 'field' }, [
-      el('label', { text: t('col.table') }),
-      el('p', {
-        className: 'readonly',
-        text: t('label.tableWithId', { label: tableLabel, id: diningTableId })
-      }),
-      tableIdHidden
+  const form = el('form', { className: 'search-panel booking-panel', novalidate: true }, [
+    el('div', { className: 'search-panel-head' }, [
+      el('h3', { text: t('action.createReservation') }),
+      el('p', { className: 'muted', text: t('client.confirmHint') })
     ]),
-    el('div', { className: 'field' }, [
-      el('label', { for: 'cr-start', text: t('col.startRequired') }),
-      startInput,
-      el('p', { className: 'hint', text: t('hint.localTimezone') })
+    el('div', { className: 'booking-table' }, [
+      el('span', { className: 'search-summary-label', text: t('col.table') }),
+      el('strong', { text: tableLabel })
     ]),
-    el('div', { className: 'field' }, [
-      el('label', { for: 'cr-end', text: t('col.endRequired') }),
-      endInput
-    ]),
-    el('div', { className: 'field' }, [
-      el('label', { for: 'cr-guests', text: `${t('msg.guests')} *` }),
-      guestInput
+    el('div', { className: 'search-fields' }, [
+      el('div', { className: 'field' }, [
+        el('label', { for: 'cr-start', text: t('col.startRequired') }),
+        startPicker
+      ]),
+      el('div', { className: 'field' }, [
+        el('label', { for: 'cr-end', text: t('col.endRequired') }),
+        endPicker
+      ]),
+      el('div', { className: 'field field-guests' }, [
+        el('label', { for: 'cr-guests', text: `${t('msg.guests')} *` }),
+        guests.root
+      ])
     ]),
     el('div', { className: 'field' }, [
       el('label', { for: 'cr-notes', text: t('col.notesOptionalMax', { max: NOTES_MAX }) }),
@@ -82,18 +119,18 @@ export async function renderCreateForm(root) {
     ]),
     fieldError,
     progress,
-    el('div', { className: 'actions' }, [
+    el('div', { className: 'search-actions' }, [
       el('button', { type: 'button', className: 'btn btn-ghost', text: t('common.back'), onClick: () => navigate('#/availability') }),
       submitBtn
     ])
-  );
+  ]);
 
   root.appendChild(form);
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     fieldError.hidden = true;
-    const err = validate(startInput.value, endInput.value, guestInput.value, diningTableId);
+    const err = validate(startPicker.value, endPicker.value, guests.input.value, diningTableId);
     if (err) {
       fieldError.textContent = err;
       fieldError.hidden = false;
@@ -106,9 +143,9 @@ export async function renderCreateForm(root) {
       const notes = notesInput.value.trim();
       const body = {
         diningTableId: Number(diningTableId),
-        startTime: startInput.value.length === 16 ? `${startInput.value}:00` : startInput.value,
-        endTime: endInput.value.length === 16 ? `${endInput.value}:00` : endInput.value,
-        guestCount: Number(guestInput.value)
+        startTime: fromDateTimeLocalValue(startPicker.value),
+        endTime: fromDateTimeLocalValue(endPicker.value),
+        guestCount: Number(guests.input.value)
       };
       if (notes) body.notes = notes;
 
@@ -147,6 +184,7 @@ export async function renderCreateForm(root) {
 }
 
 export async function renderEditForm(root, reservationId) {
+  setPageRefresh(() => renderEditForm(root, reservationId));
   setPageMeta(t('action.reschedule'), t('page.myReservations.subtitle'));
   setBanner('');
   clear(root);
@@ -172,7 +210,11 @@ export async function renderEditForm(root, reservationId) {
     return;
   }
 
-  const form = el('form', { className: 'form-grid', novalidate: true });
+  const startPicker = createDatetimePicker({ value: toDateTimeLocalValue(reservation.startTime) });
+  startPicker.id = 'ed-start';
+  const endPicker = createDatetimePicker({ value: toDateTimeLocalValue(reservation.endTime) });
+  endPicker.id = 'ed-end';
+  const guests = guestStepper('ed-guests', reservation.guestCount || 2);
   const tableIdInput = el('input', {
     id: 'ed-table-id',
     type: 'number',
@@ -180,64 +222,45 @@ export async function renderEditForm(root, reservationId) {
     required: true,
     value: String(reservation.diningTableId)
   });
-  const startInput = el('input', {
-    id: 'ed-start',
-    type: 'datetime-local',
-    required: true,
-    value: toDateTimeLocalValue(reservation.startTime)
-  });
-  const endInput = el('input', {
-    id: 'ed-end',
-    type: 'datetime-local',
-    required: true,
-    value: toDateTimeLocalValue(reservation.endTime)
-  });
-  const guestInput = el('input', {
-    id: 'ed-guests',
-    type: 'number',
-    min: '1',
-    step: '1',
-    required: true,
-    value: String(reservation.guestCount)
-  });
   const notesInput = el('textarea', { id: 'ed-notes', rows: '3', maxlength: String(NOTES_MAX) });
   notesInput.value = reservation.notes || '';
   const fieldError = el('p', { className: 'field-error', hidden: true });
   const submitBtn = el('button', { type: 'submit', className: 'btn btn-primary', text: t('common.save') });
   const progress = el('p', { className: 'muted', hidden: true, text: t('common.loading') });
 
-  form.append(
-    el('div', { className: 'field' }, [
-      el('label', { text: t('col.number') }),
-      el('p', { className: 'readonly', text: text(reservation.reservationNumber) })
+  const form = el('form', { className: 'search-panel booking-panel', novalidate: true }, [
+    el('div', { className: 'search-panel-head' }, [
+      el('h3', { text: t('action.reschedule') }),
+      el('p', { className: 'muted', text: text(reservation.reservationNumber) })
     ]),
-    el('div', { className: 'field' }, [
-      el('label', { text: t('col.status') }),
+    el('div', { className: 'booking-table' }, [
+      el('span', { className: 'search-summary-label', text: t('col.status') }),
       badge(reservation.status)
     ]),
     el('div', { className: 'field' }, [
       el('label', { for: 'ed-table-id', text: t('col.tableIdRequired') }),
       tableIdInput,
       el('p', {
-        className: 'hint',
+        className: 'field-note',
         text: t('reservations.currentTable', {
           number: text(reservation.tableNumber),
           name: text(reservation.tableDisplayName)
         })
       })
     ]),
-    el('div', { className: 'field' }, [
-      el('label', { for: 'ed-start', text: t('col.startRequired') }),
-      startInput,
-      el('p', { className: 'hint', text: t('hint.localTimezone') })
-    ]),
-    el('div', { className: 'field' }, [
-      el('label', { for: 'ed-end', text: t('col.endRequired') }),
-      endInput
-    ]),
-    el('div', { className: 'field' }, [
-      el('label', { for: 'ed-guests', text: `${t('msg.guests')} *` }),
-      guestInput
+    el('div', { className: 'search-fields' }, [
+      el('div', { className: 'field' }, [
+        el('label', { for: 'ed-start', text: t('col.startRequired') }),
+        startPicker
+      ]),
+      el('div', { className: 'field' }, [
+        el('label', { for: 'ed-end', text: t('col.endRequired') }),
+        endPicker
+      ]),
+      el('div', { className: 'field field-guests' }, [
+        el('label', { for: 'ed-guests', text: `${t('msg.guests')} *` }),
+        guests.root
+      ])
     ]),
     el('div', { className: 'field' }, [
       el('label', { for: 'ed-notes', text: t('col.notesMax', { max: NOTES_MAX }) }),
@@ -245,29 +268,23 @@ export async function renderEditForm(root, reservationId) {
     ]),
     fieldError,
     progress,
-    el('div', { className: 'actions' }, [
+    el('div', { className: 'search-actions' }, [
       el('button', {
         type: 'button',
         className: 'btn btn-ghost',
-        text: t('action.search'),
-        onClick: () => navigate('#/availability')
-      }),
-      el('button', {
-        type: 'button',
-        className: 'btn btn-ghost',
-        text: t('common.cancel'),
+        text: t('common.back'),
         onClick: () => navigate(`#/reservations/${reservationId}`)
       }),
       submitBtn
     ])
-  );
+  ]);
 
   root.appendChild(form);
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     fieldError.hidden = true;
-    const err = validate(startInput.value, endInput.value, guestInput.value, tableIdInput.value);
+    const err = validate(startPicker.value, endPicker.value, guests.input.value, tableIdInput.value);
     if (err) {
       fieldError.textContent = err;
       fieldError.hidden = false;
@@ -280,9 +297,9 @@ export async function renderEditForm(root, reservationId) {
       const notes = notesInput.value.trim();
       const body = {
         diningTableId: Number(tableIdInput.value),
-        startTime: startInput.value.length === 16 ? `${startInput.value}:00` : startInput.value,
-        endTime: endInput.value.length === 16 ? `${endInput.value}:00` : endInput.value,
-        guestCount: Number(guestInput.value),
+        startTime: fromDateTimeLocalValue(startPicker.value),
+        endTime: fromDateTimeLocalValue(endPicker.value),
+        guestCount: Number(guests.input.value),
         notes: notes || null
       };
       await api.put(`/api/client/reservations/${reservationId}`, body);

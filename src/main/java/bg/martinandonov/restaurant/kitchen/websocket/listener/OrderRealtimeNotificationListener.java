@@ -26,7 +26,9 @@ public class OrderRealtimeNotificationListener {
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = false)
 	public void onOrderCreated(OrderCreatedRealtimeEvent event) {
-		dispatch(KitchenWebSocketConfig.KITCHEN_ORDERS_TOPIC, event.getMessage());
+		OrderRealtimeMessage message = event.getMessage();
+		dispatch(KitchenWebSocketConfig.KITCHEN_ORDERS_TOPIC, message);
+		dispatch(KitchenWebSocketConfig.WAITER_ORDERS_TOPIC, message);
 	}
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = false)

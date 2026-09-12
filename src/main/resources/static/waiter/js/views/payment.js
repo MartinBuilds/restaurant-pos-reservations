@@ -71,7 +71,7 @@ export async function openPaymentDialog(order, { onDone, openerEl }) {
     try {
       const payment = await api.post(`/api/waiter/orders/${order.id}/payment`, { method });
       toast(t('msg.paymentSaved'), 'success');
-      closeDialog();
+      await closeDialog();
       showReceipt(payment, openerEl);
       if (onDone) await onDone();
     } catch (err) {
@@ -79,7 +79,7 @@ export async function openPaymentDialog(order, { onDone, openerEl }) {
         handleError(err);
         try {
           const existing = await api.get(`/api/waiter/orders/${order.id}/payment`);
-          closeDialog();
+          await closeDialog();
           showReceipt(existing, openerEl);
         } catch { /* ignore */ }
         if (onDone) await onDone();

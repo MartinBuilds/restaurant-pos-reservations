@@ -17,6 +17,7 @@ public class KitchenWebSocketConfig implements WebSocketMessageBrokerConfigurer 
 	public static final String APPLICATION_PREFIX = "/app";
 	public static final String KITCHEN_ORDERS_TOPIC = "/topic/kitchen/orders";
 	public static final String WAITER_ORDERS_TOPIC = "/topic/waiter/orders";
+	public static final String WAITER_TABLES_TOPIC = "/topic/waiter/tables";
 	public static final String HEARTBEAT_SCHEDULER_BEAN = "kitchenWebSocketHeartbeatScheduler";
 
 	private static final long HEARTBEAT_MS = 10_000L;

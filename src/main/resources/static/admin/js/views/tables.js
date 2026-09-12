@@ -1,9 +1,10 @@
 import { api } from '../api.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field, confirmDialog
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field, confirmDialog,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-refresh-1';
 
 const STATUSES = ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'OUT_OF_SERVICE'];
 
@@ -35,10 +36,10 @@ async function reload() {
       statusBadge(row.status),
       badge(row.active ? t('common.active') : t('common.inactive'), row.active ? 'ok' : 'muted'),
       el('div', { className: 'row-actions' }, [
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('common.edit'), onClick: () => openTableDialog(row, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.status'), onClick: () => openStatusDialog(row, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-info', text: t('common.edit'), onClick: () => openTableDialog(row, () => reload()) }),
+        el('button', { type: 'button', className: 'btn btn-warn', text: t('action.status'), onClick: () => openStatusDialog(row, () => reload()) }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: row.active ? t('action.disable') : t('action.enable'),
+          type: 'button', className: `btn ${row.active ? 'btn-danger' : 'btn-ok'}`, text: row.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             if (row.active) {
               const ok = await confirmDialog({
@@ -65,8 +66,9 @@ async function reload() {
         : emptyState(t('msg.tablesEmpty'))
     ], [
       el('button', { type: 'button', className: 'btn', text: t('action.newTable'), onClick: () => openTableDialog(null, () => reload()) }),
-      el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
+      reloadButton(reload)
     ]));
+    setPageRefresh(reload);
   } catch (err) {
     mount(errorBox(handleError(err), () => reload()));
   }
@@ -78,13 +80,21 @@ function openTableDialog(existing, onDone) {
   const capacity = el('input', { type: 'number', min: '1', value: existing?.capacity ?? '' });
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    const body = {
+      tableNumber: Number(tableNumber.value),
+      displayName: displayName.value.trim() || null,
+      capacity: Number(capacity.value)
+    };
+    if (existing) {
+      const baseline = {
+        tableNumber: Number(existing.tableNumber),
+        displayName: existing.displayName || null,
+        capacity: Number(existing.capacity)
+      };
+      if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
-      const body = {
-        tableNumber: Number(tableNumber.value),
-        displayName: displayName.value.trim() || null,
-        capacity: Number(capacity.value)
-      };
       if (existing) await api.put(`/api/admin/tables/${existing.id}`, body);
       else await api.post('/api/admin/tables', body);
       closeDialog();
@@ -115,6 +125,10 @@ function openStatusDialog(tableRow, onDone) {
   })));
   const submit = el('button', { type: 'button', className: 'btn', text: t('common.save') });
   submit.addEventListener('click', async () => {
+    if (status.value === tableRow.status) {
+      toast(t('msg.noChanges'), 'info');
+      return;
+    }
     if (status.value === 'OUT_OF_SERVICE') {
       const ok = await confirmDialog({
         title: statusLabel('OUT_OF_SERVICE'),

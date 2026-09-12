@@ -160,7 +160,7 @@ class PaymentControllerSecurityTest {
 	private PaymentResponse sampleResponse() {
 		return new PaymentResponse(
 				9L,
-				"SIM-abc",
+				"RCP-20260805-4281",
 				true,
 				1L,
 				"ORD-1",

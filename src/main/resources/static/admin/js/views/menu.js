@@ -2,9 +2,10 @@ import { api } from '../api.js';
 import { money } from '../format.js';
 import {
   setPageMeta, mount, el, panel, table, badge, loading, errorBox, emptyState,
-  openDialog, closeDialog, toast, handleError, field
+  openDialog, closeDialog, toast, toastIfUnchanged, handleError, field,
+  reloadButton, setPageRefresh
 } from '../ui.js';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t, availabilityReasonLabel } from '/shared/js/i18n/i18n.js?v=fix-avail-2';
 
 export async function renderMenu() {
   setPageMeta(t('page.menu.title'), t('page.menu.subtitle'));
@@ -26,11 +27,11 @@ async function reload() {
       badge(c.active ? t('common.active') : t('common.inactive'), c.active ? 'ok' : 'muted'),
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
+          type: 'button', className: 'btn btn-info', text: t('common.edit'),
           onClick: () => openCategoryDialog(c, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: c.active ? t('action.disable') : t('action.enable'),
+          type: 'button', className: `btn ${c.active ? 'btn-danger' : 'btn-ok'}`, text: c.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/menu/categories/${c.id}/status`, { active: !c.active });
@@ -50,14 +51,17 @@ async function reload() {
       badge(item.active ? t('common.active') : t('common.inactive'), item.active ? 'ok' : 'muted'),
       badge(item.manualAvailable ? t('menu.manualYes') : t('menu.manualNo'), item.manualAvailable ? 'info' : 'warn'),
       badge(item.available ? t('menu.effectiveYes') : t('menu.effectiveNo'), item.available ? 'ok' : 'danger'),
-      item.availabilityReason || '—',
+      badge(
+        availabilityReasonLabel(item.availabilityReason) || '—',
+        item.available ? 'ok' : 'warn'
+      ),
       el('div', { className: 'row-actions' }, [
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('common.edit'),
+          type: 'button', className: 'btn btn-info', text: t('common.edit'),
           onClick: () => openItemDialog(item, categories, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: item.active ? t('action.disable') : t('action.enable'),
+          type: 'button', className: `btn ${item.active ? 'btn-danger' : 'btn-ok'}`, text: item.active ? t('action.disable') : t('action.enable'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/menu/items/${item.id}/status`, { active: !item.active });
@@ -67,7 +71,7 @@ async function reload() {
           }
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('action.manualAvailability'),
+          type: 'button', className: 'btn btn-warn', text: t('action.manualAvailability'),
           onClick: async () => {
             try {
               await api.patch(`/api/admin/menu/items/${item.id}/availability`, {
@@ -88,7 +92,7 @@ async function reload() {
           : emptyState(t('common.empty'))
       ], [
         el('button', { type: 'button', className: 'btn', text: t('action.newCategory'), onClick: () => openCategoryDialog(null, () => reload()) }),
-        el('button', { type: 'button', className: 'btn btn-secondary', text: t('action.reload'), onClick: () => reload() })
+        reloadButton(reload)
       ]),
       panel(t('menu.items'), [
         el('p', { className: 'muted', text: t('menu.availabilityNote') }),
@@ -101,7 +105,7 @@ async function reload() {
           onClick: () => openItemDialog(null, categories, () => reload())
         }),
         el('button', {
-          type: 'button', className: 'btn btn-secondary', text: t('action.recalcAvailability'),
+          type: 'button', className: 'btn btn-warn', text: t('action.recalcAvailability'),
           onClick: async () => {
             try {
               await api.post('/api/admin/menu/availability/recalculate', {});
@@ -112,6 +116,7 @@ async function reload() {
         })
       ])
     ]));
+    setPageRefresh(reload);
   } catch (err) {
     mount(errorBox(handleError(err), () => reload()));
   }
@@ -122,9 +127,13 @@ function openCategoryDialog(existing, onDone) {
   const description = el('textarea', {}, existing?.description || '');
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    const body = { name: name.value.trim(), description: description.value.trim() || null };
+    if (existing) {
+      const baseline = { name: existing.name || '', description: existing.description || null };
+      if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
-      const body = { name: name.value.trim(), description: description.value.trim() || null };
       if (existing) await api.put(`/api/admin/menu/categories/${existing.id}`, body);
       else await api.post('/api/admin/menu/categories', body);
       closeDialog();
@@ -162,15 +171,25 @@ function openItemDialog(existing, categories, onDone) {
 
   const submit = el('button', { type: 'button', className: 'btn', text: existing ? t('common.save') : t('common.create') });
   submit.addEventListener('click', async () => {
+    const body = {
+      name: name.value.trim(),
+      description: description.value.trim() || null,
+      price: price.value,
+      categoryId: Number(categoryId.value),
+      available: available.checked
+    };
+    if (existing) {
+      const baseline = {
+        name: existing.name || '',
+        description: existing.description || null,
+        price: String(existing.price ?? ''),
+        categoryId: Number(existing.categoryId),
+        available: existing.manualAvailable !== false
+      };
+      if (toastIfUnchanged(baseline, body, t('msg.noChanges'))) return;
+    }
     submit.disabled = true;
     try {
-      const body = {
-        name: name.value.trim(),
-        description: description.value.trim() || null,
-        price: price.value,
-        categoryId: Number(categoryId.value),
-        available: available.checked
-      };
       if (existing) await api.put(`/api/admin/menu/items/${existing.id}`, body);
       else await api.post('/api/admin/menu/items', body);
       closeDialog();

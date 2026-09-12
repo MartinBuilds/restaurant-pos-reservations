@@ -21,4 +21,10 @@ public class DiningTableReservationGuard {
 	public boolean hasFutureConfirmedReservation(Long diningTableId) {
 		return reservationRepository.existsFutureConfirmedForTable(diningTableId, LocalDateTime.now(clock));
 	}
+
+	/** Confirmed reservation that has not ended yet (in progress or upcoming). */
+	public boolean hasActiveOrUpcomingConfirmedReservation(Long diningTableId) {
+		return reservationRepository.existsActiveOrUpcomingConfirmedForTable(
+				diningTableId, LocalDateTime.now(clock));
+	}
 }
