@@ -153,8 +153,7 @@ html[data-theme="dark"] {
 
 .badge-RESERVED,
 .badge-ACCEPTED,
-.badge-CARD,
-.badge-CLOSED {
+.badge-CARD {
   background: var(--badge-info-bg);
   color: var(--badge-info-fg);
   border-color: var(--badge-info-border);
@@ -164,4 +163,11 @@ html[data-theme="dark"] {
   background: var(--badge-accent-bg);
   color: var(--badge-accent-fg);
   border-color: var(--badge-accent-border);
+}
+
+.badge-ELAPSED,
+.badge-CLOSED {
+  background: var(--badge-muted-bg);
+  color: var(--badge-muted-fg);
+  border-color: var(--badge-muted-border);
 }

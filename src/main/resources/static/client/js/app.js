@@ -4,14 +4,14 @@ import { registerRoute, setActiveNav, startRouter } from './router.js';
 import { handleError, setBanner, toast, wireDialogChrome } from './ui.js';
 import { abortAvailability, renderAvailability } from './views/availability.js';
 import { renderCreateForm, renderEditForm } from './views/reservation-form.js';
-import { abortReservationDetails, renderReservationDetails } from './views/reservation-details.js';
-import { abortReservations, renderReservations } from './views/reservations.js';
+import { abortReservationDetails, renderReservationDetails } from './views/reservation-details.js?v=fix-res-history-1';
+import { abortReservations, renderReservations } from './views/reservations.js?v=fix-res-boards-4';
 import { decorateNavIcons, mountShellChrome } from '/shared/js/account-shell.js?v=fix-toasts-3';
 import { icon } from '/shared/js/icons.js';
 import { consumeSignedInWelcome } from '/shared/js/session-flash.js?v=fix-toasts-3';
 import { wireDatetimePickers } from '/shared/js/datetime-picker.js?v=fix-client-ui-1';
 import { clearPageRefresh, wirePageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
-import { t } from '/shared/js/i18n/i18n.js?v=fix-client-ui-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-res-boards-2';
 
 const root = document.getElementById('view-root');
 

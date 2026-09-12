@@ -7,7 +7,7 @@ import {
 } from '../ui.js';
 import { navigate } from '../router.js';
 import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
-import { t } from '/shared/js/i18n/i18n.js?v=pr19-1';
+import { t } from '/shared/js/i18n/i18n.js?v=fix-res-history-1';
 
 let abortController = null;
 
@@ -44,11 +44,16 @@ export async function renderReservationDetails(root, reservationId) {
   }
 
   clear(root);
-  const canMutate = reservation.status === 'CONFIRMED';
+  const endRaw = reservation.endTime ? String(reservation.endTime) : '';
+  const endNormalized = endRaw.includes('T') ? endRaw : endRaw.replace(' ', 'T');
+  const end = Date.parse(endNormalized);
+  const elapsed = reservation.status === 'CONFIRMED' && Number.isFinite(end) && end <= Date.now();
+  const displayStatus = elapsed ? 'ELAPSED' : reservation.status;
+  const canMutate = reservation.status === 'CONFIRMED' && !elapsed;
 
   const dl = el('dl', { className: 'detail-list' }, [
     detailRow(t('col.number'), text(reservation.reservationNumber)),
-    detailRow(t('col.status'), badge(reservation.status)),
+    detailRow(t('col.status'), badge(displayStatus)),
     detailRow(t('col.table'), t('label.tableNamed', {
       number: text(reservation.tableNumber),
       name: text(reservation.tableDisplayName)

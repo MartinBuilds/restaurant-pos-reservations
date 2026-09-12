@@ -142,7 +142,7 @@ export const bg = {
   'client.searchHint': 'Начало, край и брой гости — после търсете свободна маса.',
   'client.confirmHint': 'Потвърдете часа и масата, после запазете резервацията.',
   'client.reservationsTitle': 'Моите резервации',
-  'client.reservationsSubtitle': 'Преглед, промяна и отказ',
+  'client.reservationsSubtitle': 'Предстоящи и история',
 
   'status.CONFIRMED': 'Потвърдена',
   'status.CANCELLED': 'Отказана',
@@ -171,6 +171,7 @@ export const bg = {
   'status.PENDING': 'Чакаща',
   'status.FAILED': 'Неуспешна',
   'status.NO_SHOW': 'Неявяване',
+  'status.ELAPSED': 'Изминала',
 
   'payment.simulationWarning': 'Това е демонстрационно плащане. Не се извършва реална финансова транзакция.',
 
@@ -195,7 +196,7 @@ export const bg = {
   'page.availability.title': 'Нова резервация',
   'page.availability.subtitle': 'Търсене на свободни маси',
   'page.myReservations.title': 'Моите резервации',
-  'page.myReservations.subtitle': 'Преглед, промяна и отказ',
+  'page.myReservations.subtitle': 'Предстоящи и история',
 
   'action.newUser': 'Нов потребител',
   'action.reload': 'Презареди',
@@ -409,6 +410,12 @@ export const bg = {
   'orders.qtyDecrease': 'Намали количество за {name}',
   'orders.qtyIncrease': 'Увеличи количество за {name}',
 
+  'reservations.upcomingTitle': 'Предстоящи',
+  'reservations.upcomingHint': 'Потвърдени резервации, които още не са приключили.',
+  'reservations.upcomingEmpty': 'Няма предстоящи резервации.',
+  'reservations.historyTitle': 'История',
+  'reservations.historyHint': 'Изминали, отказани, завършени или с неявяване.',
+  'reservations.historyEmpty': 'Няма минали резервации.',
   'reservations.datetimeNote': 'Изпращайте LocalDateTime без Z/offset. Часова зона на ресторанта: Europe/Sofia.',
   'reservations.scheduleHint': 'Задайте from/to филтри, за да заредите /schedule.',
   'reservations.editTitle': 'Редакция — {number}',

@@ -142,7 +142,7 @@ export const en = {
   'client.searchHint': 'Set start, end, and guests — then search for a free table.',
   'client.confirmHint': 'Confirm the time and table, then save the reservation.',
   'client.reservationsTitle': 'My reservations',
-  'client.reservationsSubtitle': 'View, reschedule, and cancel',
+  'client.reservationsSubtitle': 'Upcoming and history',
 
   'status.CONFIRMED': 'Confirmed',
   'status.CANCELLED': 'Cancelled',
@@ -171,6 +171,7 @@ export const en = {
   'status.PENDING': 'Pending',
   'status.FAILED': 'Failed',
   'status.NO_SHOW': 'No-show',
+  'status.ELAPSED': 'Elapsed',
 
   'payment.simulationWarning': 'This is a demonstration payment. No real financial transaction is performed.',
 
@@ -195,7 +196,7 @@ export const en = {
   'page.availability.title': 'New reservation',
   'page.availability.subtitle': 'Search available tables',
   'page.myReservations.title': 'My reservations',
-  'page.myReservations.subtitle': 'View, reschedule, and cancel',
+  'page.myReservations.subtitle': 'Upcoming and history',
 
   'action.newUser': 'New user',
   'action.reload': 'Reload',
@@ -409,6 +410,12 @@ export const en = {
   'orders.qtyDecrease': 'Decrease quantity for {name}',
   'orders.qtyIncrease': 'Increase quantity for {name}',
 
+  'reservations.upcomingTitle': 'Upcoming',
+  'reservations.upcomingHint': 'Confirmed reservations that have not ended yet.',
+  'reservations.upcomingEmpty': 'No upcoming reservations.',
+  'reservations.historyTitle': 'History',
+  'reservations.historyHint': 'Elapsed, cancelled, completed, or no-show.',
+  'reservations.historyEmpty': 'No past reservations.',
   'reservations.datetimeNote': 'Send LocalDateTime without Z/offset. Restaurant time zone: Europe/Sofia.',
   'reservations.scheduleHint': 'Set from/to filters to load /schedule.',
   'reservations.editTitle': 'Edit — {number}',
