@@ -38,8 +38,9 @@ REST + MySQL are the source of truth. WebSocket/STOMP messages are notifications
 - MySQL 8+
 - Maven Wrapper
 - HTML5 / CSS3 / vanilla JavaScript (ES modules, Fetch API)
+- Optional Node.js/npm **only** for convenience scripts (`npm run dev:demo`) — the app runtime does not use Node
 
-No Node.js, npm, React/Angular/Vue, Docker, H2, Lombok, Flyway, or external payment SDKs in this project.
+The application itself has no React/Angular/Vue, Docker, H2, Lombok, Flyway, or external payment SDKs.
 
 ## Architecture
 
@@ -47,17 +48,29 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Summary: Browser UIs → REST controllers → services → repositories → MySQL. Order commits publish AFTER_COMMIT events to STOMP topics; UIs refresh via REST.
 
-## Roles
+## Roles & demo logins
 
-| Role | UI | API |
-|---|---|---|
-| ADMIN | `/admin` | `/api/admin/**` (+ other operational areas as configured) |
-| WAITER | `/waiter` | `/api/waiter/**`, `/operations/**` |
-| COOK | `/kitchen` | `/api/kitchen/**`, `/operations/**` |
-| CLIENT | `/client` | `/api/client/**` |
+| Role | UI | Email | Password |
+|---|---|---|---|
+| ADMIN | `/admin` | `maria.adminova@example.com` | `SecurePassword123!` |
+| WAITER | `/waiter` | `georgi.stoyanov@example.com` | `SecurePassword123!` |
+| COOK | `/kitchen` | `ivan.petkov@example.com` | `SecurePassword123!` |
+| CLIENT | `/client` | `elena.dimitrova@example.com` | `SecurePassword123!` |
+
+Shared password for all seeded presentation accounts: **`SecurePassword123!`**
+
+API prefixes:
+
+| Role | API |
+|---|---|
+| ADMIN | `/api/admin/**` (+ other operational areas as configured) |
+| WAITER | `/api/waiter/**`, `/operations/**` |
+| COOK | `/api/kitchen/**`, `/operations/**` |
+| CLIENT | `/api/client/**` |
 
 Login redirect precedence: ADMIN → WAITER → COOK → CLIENT.
 
+Seeded users are created when `DEMO_USER_PASSWORD` is set (via `smoke-env*.ps1`) and the app runs with the `demo` profile. Self-registered clients keep their own passwords.
 ## Main business workflows
 
 1. **Order:** Waiter creates order → stock deducted → table OCCUPIED → kitchen notified → COOKING/READY → Waiter SERVED → payment → order closed → table AVAILABLE.
@@ -136,6 +149,7 @@ Shared static assets (`/shared/**`) are permit-all for early theme bootstrap; ro
 - Java 17+
 - MySQL 8+
 - Maven Wrapper (included)
+- Node.js/npm (optional — only if you prefer `npm run …` instead of calling the scripts directly)
 
 ### Environment variables
 
@@ -143,16 +157,16 @@ Shared static assets (`/shared/**`) are permit-all for early theme bootstrap; ro
 |---|---|---|
 | `DB_URL` | no (has default) | JDBC URL |
 | `DB_USERNAME` | no (default `restaurant_app`) | DB user |
-| `DB_PASSWORD` | **yes** | DB password |
+| `DB_PASSWORD` | **yes** | DB password (`SecurePassword123!` in the example) |
 | `RESTAURANT_TIME_ZONE` | no (default `Europe/Sofia`) | Reservation clock zone |
 | `INITIAL_ADMIN_EMAIL` | optional | Seed first ADMIN |
 | `INITIAL_ADMIN_PASSWORD` | optional | Seed admin password (BCrypt stored) |
 | `INITIAL_ADMIN_FULL_NAME` | optional | Seed admin display name |
 | `DEMO_USER_PASSWORD` | demo only | Shared password for seeded presentation users |
 
-See `src/main/resources/application-example.properties`. Never commit real secrets.
+See `src/main/resources/application-example.properties` and `smoke-env.example.ps1`. Never commit real production secrets.
 
-### Local env setup (required for MySQL + demo logins)
+### Local env setup
 
 ```powershell
 Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
@@ -160,38 +174,41 @@ Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
 
 Create MySQL database `restaurant_management` and user `restaurant_app` with password **`SecurePassword123!`** (same value as in the example file).
 
-All local demo secrets in the example use **`SecurePassword123!`** (MySQL + seeded app logins).
-
 ## Running the application
 
-### Windows PowerShell (normal)
+### Recommended (demo / presentation)
 
 ```powershell
-. .\smoke-env.ps1
-.\mvnw.cmd spring-boot:run
+npm run dev:demo
 ```
 
-### Demo profile (presentation)
+This loads `smoke-env.ps1` (or the example), starts Spring Boot with the `demo` profile, and seeds the presentation users above.
+
+### Normal run (no demo seed)
 
 ```powershell
-. .\smoke-env.ps1
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
+npm run dev
 ```
 
-Seeded users (created only when `DEMO_USER_PASSWORD` is set; password **`SecurePassword123!`**):
+### Equivalent without npm
 
-- `maria.adminova@example.com`
-- `georgi.stoyanov@example.com`
-- `ivan.petkov@example.com`
-- `elena.dimitrova@example.com`
+```powershell
+.\scripts\dev-demo.ps1
+# or
+.\scripts\dev.ps1
+```
 
-Catalog and tables use realistic Bulgarian names (idempotent). Demo does **not** seed payments or large history. If `DEMO_USER_PASSWORD` is missing, users are skipped (safe warning only).
+Open `http://localhost:8080/login` and sign in with any role from the table above.
+
+Catalog and tables use realistic Bulgarian names (idempotent). Demo does **not** seed payments or large history. If `DEMO_USER_PASSWORD` is missing, demo users are skipped (safe warning only).
 
 ## Running tests
 
 ```powershell
-.\mvnw.cmd clean test
+npm test
 ```
+
+Or: `.\scripts\test.ps1` / `.\mvnw.cmd clean test`.
 
 More detail: [docs/TESTING.md](docs/TESTING.md).
 

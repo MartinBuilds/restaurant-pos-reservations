@@ -1,0 +1,10 @@
+{
+  "name": "restaurant-pos-reservations",
+  "private": true,
+  "description": "Convenience scripts only. The application itself is Spring Boot + Maven (not a Node app).",
+  "scripts": {
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev.ps1",
+    "dev:demo": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-demo.ps1",
+    "test": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test.ps1"
+  }
+}

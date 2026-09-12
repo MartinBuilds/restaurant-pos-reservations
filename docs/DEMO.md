@@ -1,6 +1,22 @@
 # Demo / presentation script (8–12 minutes)
 
-Use the optional `demo` profile locally. Copy `smoke-env.example.ps1` → `smoke-env.ps1`. MySQL user `restaurant_app` and seeded presentation logins all use **`SecurePassword123!`**. Seeded logins:
+Use the optional `demo` profile locally:
+
+```powershell
+Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
+npm run dev:demo
+```
+
+MySQL user `restaurant_app` and seeded presentation logins all use **`SecurePassword123!`**.
+
+| Role | Email | Password |
+|---|---|---|
+| ADMIN | `maria.adminova@example.com` | `SecurePassword123!` |
+| WAITER | `georgi.stoyanov@example.com` | `SecurePassword123!` |
+| COOK | `ivan.petkov@example.com` | `SecurePassword123!` |
+| CLIENT | `elena.dimitrova@example.com` | `SecurePassword123!` |
+
+Seeded logins:
 
 - `maria.adminova@example.com`
 - `georgi.stoyanov@example.com`
