@@ -16,13 +16,6 @@ MySQL user `restaurant_app` and seeded presentation logins all use **`SecurePass
 | COOK | `ivan.petkov@example.com` | `SecurePassword123!` |
 | CLIENT | `elena.dimitrova@example.com` | `SecurePassword123!` |
 
-Seeded logins:
-
-- `maria.adminova@example.com`
-- `georgi.stoyanov@example.com`
-- `ivan.petkov@example.com`
-- `elena.dimitrova@example.com`
-
 ## Suggested timing
 
 1. **~1 min — Architecture**
