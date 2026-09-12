@@ -38,6 +38,7 @@ import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.diningtable.service.DiningTableFloorStatusService;
 import bg.martinandonov.restaurant.menu.entity.MenuCategory;
 import bg.martinandonov.restaurant.menu.entity.MenuItem;
 import bg.martinandonov.restaurant.order.entity.OrderItem;
@@ -78,6 +79,9 @@ class PaymentServiceTest {
 	@Mock
 	private AppUserRepository appUserRepository;
 
+	@Mock
+	private DiningTableFloorStatusService diningTableFloorStatusService;
+
 	private PaymentService paymentService;
 
 	private AppUser waiter;
@@ -95,6 +99,7 @@ class PaymentServiceTest {
 				orderItemRepository,
 				diningTableRepository,
 				appUserRepository,
+				diningTableFloorStatusService,
 				clock);
 		lenient().when(paymentRepository.findByReceiptNumber(any())).thenReturn(Optional.empty());
 
@@ -144,6 +149,7 @@ class PaymentServiceTest {
 			return payment;
 		});
 		when(orderItemRepository.findByOrderIdOrderByIdAsc(10L)).thenReturn(List.of(orderItem));
+		when(restaurantOrderRepository.saveAndFlush(order)).thenReturn(order);
 
 		PaymentResponse response = paymentService.processPayment(10L, request(PaymentMethod.CASH));
 
@@ -156,7 +162,7 @@ class PaymentServiceTest {
 		assertThat(captor.getValue().getReceiptNumber()).matches("RCP-\\d{8}-\\d{4}");
 		assertThat(order.isClosed()).isTrue();
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.SERVED);
-		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.AVAILABLE);
+		verify(diningTableFloorStatusService).syncStoredStatus(table, true);
 		assertThat(response.isSimulated()).isTrue();
 		assertThat(response.getMethod()).isEqualTo("CASH");
 		assertThat(response.getItems()).hasSize(1);
@@ -173,6 +179,7 @@ class PaymentServiceTest {
 			return payment;
 		});
 		when(orderItemRepository.findByOrderIdOrderByIdAsc(10L)).thenReturn(List.of(orderItem));
+		when(restaurantOrderRepository.saveAndFlush(order)).thenReturn(order);
 
 		PaymentResponse response = paymentService.processPayment(10L, request(PaymentMethod.CARD));
 

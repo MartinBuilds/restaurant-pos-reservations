@@ -37,6 +37,7 @@ import bg.martinandonov.restaurant.common.exception.ResourceNotFoundException;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.diningtable.service.DiningTableFloorStatusService;
 import bg.martinandonov.restaurant.reservation.dto.CreateAdminReservationRequest;
 import bg.martinandonov.restaurant.reservation.dto.CreateClientReservationRequest;
 import bg.martinandonov.restaurant.reservation.dto.ReservationAvailabilityResponse;
@@ -67,6 +68,9 @@ class ReservationServiceTest {
 	@Mock
 	private AppUserRepository appUserRepository;
 
+	@Mock
+	private DiningTableFloorStatusService diningTableFloorStatusService;
+
 	private ReservationService reservationService;
 
 	private AppUser client;
@@ -76,7 +80,11 @@ class ReservationServiceTest {
 	void setUp() {
 		Clock fixedClock = Clock.fixed(FIXED_INSTANT, ZONE);
 		reservationService = new ReservationService(
-				reservationRepository, diningTableRepository, appUserRepository, fixedClock);
+				reservationRepository,
+				diningTableRepository,
+				appUserRepository,
+				diningTableFloorStatusService,
+				fixedClock);
 
 		client = new AppUser("client@example.com", "hash", "Client One", true);
 		ReflectionTestUtils.setField(client, "id", 10L);
@@ -123,7 +131,7 @@ class ReservationServiceTest {
 		assertThat(captor.getValue().getReservationNumber()).matches("RES-\\d{8}-\\d{4}");
 		assertThat(captor.getValue().getNotes()).isEqualTo("window");
 		assertThat(captor.getValue().getClient().getId()).isEqualTo(10L);
-		assertThat(table.getStatus()).isEqualTo(DiningTableStatus.AVAILABLE);
+		verify(diningTableFloorStatusService).syncStoredStatus(table, true);
 		assertThat(response.getStatus()).isEqualTo("CONFIRMED");
 	}
 
@@ -292,9 +300,11 @@ class ReservationServiceTest {
 	void clientCancelIsIdempotentAndBlocksStarted() {
 		Reservation reservation = existingReservation(50L, NOW.plusHours(2), NOW.plusHours(4));
 		when(reservationRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(reservation));
+		stubLockTable();
 
 		ReservationResponse cancelled = reservationService.cancelCurrentClientReservation(50L);
 		assertThat(cancelled.getStatus()).isEqualTo("CANCELLED");
+		verify(diningTableFloorStatusService).syncStoredStatus(table, true);
 
 		ReservationResponse again = reservationService.cancelCurrentClientReservation(50L);
 		assertThat(again.getStatus()).isEqualTo("CANCELLED");
@@ -310,10 +320,12 @@ class ReservationServiceTest {
 	void adminStatusTransitions() {
 		Reservation reservation = existingReservation(50L, NOW.minusHours(2), NOW.minusHours(1));
 		when(reservationRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(reservation));
+		stubLockTable();
 
 		ReservationResponse completed = reservationService.updateReservationStatusByAdmin(
 				50L, statusRequest("COMPLETED"));
 		assertThat(completed.getStatus()).isEqualTo("COMPLETED");
+		verify(diningTableFloorStatusService).syncStoredStatus(table, true);
 
 		reservation.setStatus(ReservationStatus.CONFIRMED);
 		reservation.setStartTime(NOW.minusMinutes(10));

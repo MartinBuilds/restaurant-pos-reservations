@@ -403,6 +403,7 @@ export const en = {
   'tables.statusTitle': 'Status — table {number}',
   'tables.loadError': 'Tables could not be loaded.',
   'tables.orderRequiresAvailable': 'New order requires {status} status.',
+  'tables.orderRequiresFreeOrReserved': 'New order requires {available} or {reserved}.',
   'tables.summaryAvailable': '{n} free',
   'tables.summaryOccupied': '{n} occupied',
   'tables.summaryReserved': '{n} reserved',

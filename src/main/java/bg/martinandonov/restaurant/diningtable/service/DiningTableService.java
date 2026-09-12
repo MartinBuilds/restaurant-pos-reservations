@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import bg.martinandonov.restaurant.diningtable.dto.UpdateDiningTableStatusReques
 import bg.martinandonov.restaurant.diningtable.entity.DiningTable;
 import bg.martinandonov.restaurant.diningtable.entity.DiningTableStatus;
 import bg.martinandonov.restaurant.diningtable.repository.DiningTableRepository;
+import bg.martinandonov.restaurant.diningtable.websocket.event.DiningTableStatusChangedRealtimeEvent;
 import bg.martinandonov.restaurant.reservation.service.DiningTableReservationGuard;
 
 @Service
@@ -30,14 +32,20 @@ public class DiningTableService {
 	private final DiningTableRepository diningTableRepository;
 	private final DiningTableOperationalGuard diningTableOperationalGuard;
 	private final DiningTableReservationGuard diningTableReservationGuard;
+	private final DiningTableFloorStatusService diningTableFloorStatusService;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public DiningTableService(
 			DiningTableRepository diningTableRepository,
 			DiningTableOperationalGuard diningTableOperationalGuard,
-			DiningTableReservationGuard diningTableReservationGuard) {
+			DiningTableReservationGuard diningTableReservationGuard,
+			DiningTableFloorStatusService diningTableFloorStatusService,
+			ApplicationEventPublisher applicationEventPublisher) {
 		this.diningTableRepository = diningTableRepository;
 		this.diningTableOperationalGuard = diningTableOperationalGuard;
 		this.diningTableReservationGuard = diningTableReservationGuard;
+		this.diningTableFloorStatusService = diningTableFloorStatusService;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	public DiningTableResponse createTable(CreateDiningTableRequest request) {
@@ -85,8 +93,9 @@ public class DiningTableService {
 	@Transactional(readOnly = true)
 	public List<DiningTableResponse> getActiveTablesByStatus(DiningTableStatus status) {
 		Objects.requireNonNull(status, "status must not be null");
-		return diningTableRepository.findByActiveTrueAndStatusOrderByTableNumberAsc(status).stream()
+		return diningTableRepository.findByActiveTrueOrderByTableNumberAsc().stream()
 				.map(this::toResponse)
+				.filter(response -> status.name().equals(response.getStatus()))
 				.toList();
 	}
 
@@ -153,7 +162,7 @@ public class DiningTableService {
 
 		if (request.getActive()) {
 			table.setActive(true);
-			table.setStatus(DiningTableStatus.AVAILABLE);
+			diningTableFloorStatusService.syncStoredStatus(table, true);
 		}
 		else {
 			if (diningTableReservationGuard.hasFutureConfirmedReservation(table.getId())) {
@@ -162,6 +171,8 @@ public class DiningTableService {
 			}
 			table.setActive(false);
 			table.setStatus(DiningTableStatus.OUT_OF_SERVICE);
+			applicationEventPublisher.publishEvent(
+					new DiningTableStatusChangedRealtimeEvent(table.getId(), table.getStatus().name()));
 		}
 		return toResponse(table);
 	}
@@ -186,6 +197,8 @@ public class DiningTableService {
 		}
 
 		table.setStatus(status);
+		applicationEventPublisher.publishEvent(
+				new DiningTableStatusChangedRealtimeEvent(table.getId(), table.getStatus().name()));
 	}
 
 	private DiningTable findTable(Long id) {
@@ -241,12 +254,13 @@ public class DiningTableService {
 	}
 
 	private DiningTableResponse toResponse(DiningTable table) {
+		DiningTableStatus effective = diningTableFloorStatusService.resolveEffectiveStatus(table);
 		return new DiningTableResponse(
 				table.getId(),
 				table.getTableNumber(),
 				table.getDisplayName(),
 				table.getCapacity(),
-				table.getStatus().name(),
+				effective.name(),
 				table.isActive(),
 				table.getVersion());
 	}

@@ -4,7 +4,7 @@ import { text } from '/operations/js/format.js';
 import { handleError, setBanner } from '/operations/js/notifications.js';
 import { openCreateOrderDialog } from './order-form.js';
 import { badge, emptyBox, errorBox, loadingBox, setPageMeta } from './ui-shared.js';
-import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-tables-board-1';
+import { t, statusLabel } from '/shared/js/i18n/i18n.js?v=fix-table-live-1';
 import { setPageRefresh } from '/shared/js/page-refresh.js?v=fix-refresh-4';
 
 let abort = null;
@@ -35,7 +35,7 @@ function buildSummary(tables) {
 }
 
 function buildTile(table, onReload) {
-  const canCreate = table.status === 'AVAILABLE' && table.active;
+  const canCreate = (table.status === 'AVAILABLE' || table.status === 'RESERVED') && table.active;
   const actions = el('div', { className: 'table-tile-actions' });
 
   if (canCreate) {
@@ -55,7 +55,10 @@ function buildTile(table, onReload) {
     actions.appendChild(el('p', {
       className: 'table-tile-hint muted',
       text: table.active
-        ? t('tables.orderRequiresAvailable', { status: statusLabel('AVAILABLE') })
+        ? t('tables.orderRequiresFreeOrReserved', {
+          available: statusLabel('AVAILABLE'),
+          reserved: statusLabel('RESERVED')
+        })
         : t('common.inactive')
     }));
   }

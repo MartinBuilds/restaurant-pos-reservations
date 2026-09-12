@@ -313,7 +313,7 @@ class OrderServiceTest {
 
 		assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(1L, orderLine(10L, 1))))
 				.isInstanceOf(BusinessRuleException.class)
-				.hasMessageContaining("not AVAILABLE");
+				.hasMessageContaining("not AVAILABLE or RESERVED");
 	}
 
 	@Test

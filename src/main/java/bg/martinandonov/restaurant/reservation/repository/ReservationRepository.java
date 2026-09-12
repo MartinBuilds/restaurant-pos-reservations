@@ -104,4 +104,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	boolean existsFutureConfirmedForTable(
 			@Param("tableId") Long tableId,
 			@Param("now") LocalDateTime now);
+
+	@Query("""
+			select case when count(r) > 0 then true else false end
+			from Reservation r
+			where r.diningTable.id = :tableId
+			  and r.status = bg.martinandonov.restaurant.reservation.entity.ReservationStatus.CONFIRMED
+			  and r.endTime > :now
+			""")
+	boolean existsActiveOrUpcomingConfirmedForTable(
+			@Param("tableId") Long tableId,
+			@Param("now") LocalDateTime now);
 }

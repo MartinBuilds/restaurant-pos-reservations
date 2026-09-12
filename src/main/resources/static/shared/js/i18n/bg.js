@@ -403,6 +403,7 @@ export const bg = {
   'tables.statusTitle': 'Статус — маса {number}',
   'tables.loadError': 'Масите не можаха да се заредят.',
   'tables.orderRequiresAvailable': 'Нова поръчка изисква статус {status}.',
+  'tables.orderRequiresFreeOrReserved': 'Нова поръчка изисква {available} или {reserved}.',
   'tables.summaryAvailable': '{n} свободни',
   'tables.summaryOccupied': '{n} заети',
   'tables.summaryReserved': '{n} резервирани',
