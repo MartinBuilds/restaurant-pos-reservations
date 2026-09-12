@@ -1,238 +1,240 @@
 # restaurant-pos-reservations
 
-Enterprise restaurant management system for POS operations and table reservations.
-Built as a single Spring Boot **modular monolith**.
+Система за управление на ресторант: POS операции и резервации на маси.
+Изградена като един Spring Boot **модулен монолит**.
 
-**Author:** Martin Andonov Kolev
+**Автор:** Martin Andonov Kolev
 
-## Overview
+## Общ преглед
 
-The application covers day-to-day restaurant operations:
+Приложението покрива ежедневната работа на ресторант:
 
-- staff authentication and roles
-- menu and inventory with recipe-based availability
-- waiter order taking with stock deduction
-- kitchen workflow with realtime notifications
-- table reservations for clients and staff views
-- simulated CASH/CARD payments and operational sales reports
-- four role-based browser UIs (Admin, Waiter, Kitchen, Client)
+- автентикация на персонал и роли
+- меню и склад с наличност по рецепти
+- приемане на поръчки от сервитьор със сваляне на склад
+- кухненски работен поток с известия в реално време
+- резервации на маси за клиенти и персонал
+- симулирани плащания CASH/CARD и оперативни справки за продажби
+- четири браузърни интерфейса по роли (ADMIN, WAITER, COOK, CLIENT)
 
-REST + MySQL are the source of truth. WebSocket/STOMP messages are notifications only.
+REST + MySQL са източникът на истина. WebSocket/STOMP съобщенията са само известия.
 
-## Features
+## Възможности
 
-- Session-based Spring Security with CSRF
-- Role-isolated Admin / Waiter / Kitchen / Client interfaces
-- Menu catalog + automatic availability from recipes/stock
-- Order workflow: ACCEPTED → COOKING → READY → SERVED
-- Reservation availability, create, reschedule, cancel with conflict checks
-- Simulated payments and receipts (not fiscal / not a real PSP)
-- Operational sales reports for ADMIN
-- Optional `demo` profile for presentation seed data
+- Spring Security със сесии и CSRF
+- Изолирани интерфейси за ADMIN / WAITER / COOK / CLIENT
+- Каталог меню + автоматична наличност от рецепти и склад
+- Работен поток на поръчка: ACCEPTED → COOKING → READY → SERVED
+- Резервации: наличност, създаване, пренасрочване, отказ с проверка за конфликти
+- Симулирани плащания и бонове (не са фискални / не са реален PSP)
+- Оперативни справки за продажби за ADMIN
+- Опционален профил `demo` за демонстрационни seed данни
 
-## Technology stack
+## Технологии
 
 - Java 17
 - Spring Boot 4.1 (Web MVC, Data JPA, Security, WebSocket)
-- Spring Security Messaging (STOMP authorization)
+- Spring Security Messaging (СТОМП оторизация)
 - MySQL 8+
 - Maven Wrapper
 - HTML5 / CSS3 / vanilla JavaScript (ES modules, Fetch API)
-- Optional Node.js/npm **only** for convenience scripts (`npm run dev:demo`) — the app runtime does not use Node
+- Опционално Node.js/npm **само** за удобни скриптове (`npm run dev:demo`) — самото приложение не ползва Node
 
-The application itself has no React/Angular/Vue, Docker, H2, Lombok, Flyway, or external payment SDKs.
+В самото приложение няма React/Angular/Vue, Docker, H2, Lombok, Flyway или външни payment SDK-та.
 
-## Architecture
+## Архитектура
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Виж [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-Summary: Browser UIs → REST controllers → services → repositories → MySQL. Order commits publish AFTER_COMMIT events to STOMP topics; UIs refresh via REST.
+Накратко: браузърни UI → REST контролери → услуги → хранилища → MySQL. След commit на поръчка се публикуват AFTER_COMMIT събития към STOMP теми; интерфейсите се обновяват през REST.
 
-## Roles & demo logins
+## Роли и демо входове
 
-| Role | UI | Email | Password |
+| Роля | UI | Имейл | Парола |
 |---|---|---|---|
 | ADMIN | `/admin` | `maria.adminova@example.com` | `SecurePassword123!` |
 | WAITER | `/waiter` | `georgi.stoyanov@example.com` | `SecurePassword123!` |
 | COOK | `/kitchen` | `ivan.petkov@example.com` | `SecurePassword123!` |
 | CLIENT | `/client` | `elena.dimitrova@example.com` | `SecurePassword123!` |
 
-Shared password for all seeded presentation accounts: **`SecurePassword123!`**
+Обща парола за всички seed акаунти за презентация: **`SecurePassword123!`**
 
-API prefixes:
+API префикси:
 
-| Role | API |
+| Роля | API |
 |---|---|
-| ADMIN | `/api/admin/**` (+ other operational areas as configured) |
+| ADMIN | `/api/admin/**` (+ други оперативни зони според конфигурацията) |
 | WAITER | `/api/waiter/**`, `/operations/**` |
 | COOK | `/api/kitchen/**`, `/operations/**` |
 | CLIENT | `/api/client/**` |
 
-Login redirect precedence: ADMIN → WAITER → COOK → CLIENT.
+Приоритет при пренасочване след вход: ADMIN → WAITER → COOK → CLIENT.
 
-Seeded users are created when `DEMO_USER_PASSWORD` is set (via `smoke-env*.ps1`) and the app runs with the `demo` profile. Self-registered clients keep their own passwords.
-## Main business workflows
+Seed потребителите се създават, когато е зададен `DEMO_USER_PASSWORD` (чрез `smoke-env*.ps1`) и приложението тръгне с профил `demo`. Саморегистрираните клиенти запазват собствените си пароли.
 
-1. **Order:** Waiter creates order → stock deducted → table OCCUPIED → kitchen notified → COOKING/READY → Waiter SERVED → payment → order closed → table AVAILABLE.
-2. **Reservation:** Client (or admin) books a free table interval → CONFIRMED → optional reschedule → cancel frees the slot.
-3. **Availability:** Menu item effective availability = manual flag AND recipe AND active ingredients AND enough stock.
+## Основни бизнес потоци
 
-## Database
+1. **Поръчка:** WAITER създава поръчка → сваля се склад → масата става OCCUPIED → кухнята се известява → COOKING/READY → WAITER маркира SERVED → плащане → поръчката се затваря → масата става AVAILABLE (или пак RESERVED при активна резервация).
+2. **Резервация:** CLIENT (или ADMIN) запазва свободен интервал за маса → CONFIRMED → по желание пренасрочване → отказът освобождава слота.
+3. **Наличност:** ефективната наличност на артикул = ръчен флаг И рецепта И активни съставки И достатъчен склад.
 
-MySQL 8+ with JPA `ddl-auto=update`. Details and ER diagram: [docs/DATABASE.md](docs/DATABASE.md).
+## База данни
 
-## Security
+MySQL 8+ с JPA `ddl-auto=update`. Подробности и ER диаграма: [docs/DATABASE.md](docs/DATABASE.md).
 
-- BCrypt password hashes
-- Session cookies + CSRF for mutating HTTP and STOMP CONNECT
-- Role-based HTTP authorization
-- STOMP topic authorization; inbound business SEND denied
-- Password hashes never returned in API JSON
-- Safe API error bodies (no stack traces)
+## Сигурност
+
+- BCrypt хешове на пароли
+- Session cookies + CSRF за променящи HTTP заявки и STOMP CONNECT
+- HTTP оторизация по роли
+- Оторизация на STOMP теми; входящ business SEND е забранен
+- Хешове на пароли никога не се връщат в API JSON
+- Безопасни API грешки (без stack traces)
 
 ## WebSocket / STOMP
 
-- Endpoint: `/ws` (authenticated)
-- Kitchen topic: `/topic/kitchen/orders` (COOK/ADMIN)
-- Waiter topic: `/topic/waiter/orders` (WAITER/ADMIN)
-- CLIENT has no operational subscriptions
-- Notifications are not durable; reconnect recovers with REST
+- Endpoint: `/ws` (с автентикация)
+- Кухненска тема: `/topic/kitchen/orders` (COOK/ADMIN)
+- Сервитьорска тема: `/topic/waiter/orders` (WAITER/ADMIN)
+- Тема за маси: `/topic/waiter/tables` (WAITER/ADMIN)
+- CLIENT няма оперативни абонаменти
+- Известията не са трайни; при reconnect възстановяването е през REST
 
-## Simulated payments disclaimer
+## Дисклеймер за симулирани плащания
 
-Payment methods `CASH` and `CARD` are **local simulations**.
+Методите `CASH` и `CARD` са **локални симулации**.
 
-`CARD` means:
+`CARD` означава:
 
-- a local enum value
-- a local MySQL payment row
-- **no** card number / CVV / holder
-- **no** payment provider, bank authorization, or real money movement
+- локална enum стойност
+- локален ред за плащане в MySQL
+- **без** номер на карта / CVV / титуляр
+- **без** платежен доставчик, банкова авторизация или реално движение на пари
 
-Receipts are operational simulation documents only — **not** a fiscal bon, tax invoice, or bank document.
+Боновете са само оперативни симулационни документи — **не** са фискален бон, данъчна фактура или банков документ.
 
-## Sales reports
+## Справки за продажби
 
-ADMIN operational aggregates (summary, by item, by payment method) over paid/closed activity. They are not accounting or tax filings.
+Оперативни агрегати за ADMIN (обобщение, по артикул, по метод на плащане) върху платена/затворена активност. Не са счетоводни или данъчни декларации.
 
-## UI routes
+## UI маршрути
 
-| UI | URL | Stack notes |
+| UI | URL | Бележки |
 |---|---|---|
-| Admin | `/admin` | Vanilla JS modules; REST only |
-| Waiter | `/waiter` | Shared `/operations/**` + STOMP |
-| Kitchen | `/kitchen` | Shared `/operations/**` + STOMP |
-| Client | `/client` | REST only; no WebSocket |
+| ADMIN | `/admin` | Vanilla JS модули; само REST |
+| WAITER | `/waiter` | Споделени `/operations/**` + STOMP |
+| COOK | `/kitchen` | Споделени `/operations/**` + STOMP |
+| CLIENT | `/client` | Само REST; без WebSocket |
 
-### UI shell preferences (PR 17+)
+### Общи UI предпочитания (shell)
 
-All four role UIs share a local shell layer under `/shared/**`:
+И четирите ролеви интерфейса споделят общ слой под `/shared/**`:
 
-- **Languages:** Bulgarian (`bg`, default) and English (`en`)
-- **Themes:** `system` (default), `light`, `dark` — CSS variables via `html[data-theme]`
-- **Account menu:** bottom/sidebar (or header) account area with initials avatar, theme, language, logout
-- **Current user:** `GET /api/account/me` (authenticated) returns `id`, `name`, `email`, `roles` — never password/hash
-- **Admin sidebar:** collapsible on desktop; icons remain visible when collapsed; mobile drawer stays usable
-- **localStorage keys (UI only):**
+- **Езици:** български (`bg`, по подразбиране) и английски (`en`)
+- **Теми:** `system` (по подразбиране), `light`, `dark` — CSS променливи чрез `html[data-theme]`
+- **Акаунт меню:** долу/странично (или горе) с аватар от инициали, тема, език, изход
+- **Текущ потребител:** `GET /api/account/me` (автентикиран) връща `id`, `name`, `email`, `roles` — никога парола/хеш
+- **ADMIN странично меню:** свиваемо на десктоп; иконите остават видими при свиване; мобилният drawer остава ползваем
+- **Ключове в localStorage (само UI):**
   - `restaurant.ui.theme`
   - `restaurant.ui.language`
   - `restaurant.ui.sidebar.collapsed`
 
-Do **not** store passwords, session ids, CSRF tokens, or auth tokens in `localStorage`. Account profile is loaded from the API for the active session and is not persisted as credentials.
+**Не** съхранявайте пароли, session id, CSRF токени или auth токени в `localStorage`. Профилът се зарежда от API за активната сесия и не се пази като credentials.
 
-Shared static assets (`/shared/**`) are permit-all for early theme bootstrap; role HTML/API routes remain role-protected.
+Споделените статични ресурси (`/shared/**`) са permit-all за ранен theme bootstrap; ролевите HTML/API маршрути остават защитени по роля.
 
-## Local setup
+## Локална настройка
 
-### Requirements
+### Изисквания
 
 - Java 17+
 - MySQL 8+
-- Maven Wrapper (included)
-- Node.js/npm (optional — only if you prefer `npm run …` instead of calling the scripts directly)
+- Maven Wrapper (включен в проекта)
+- Node.js/npm (по желание — само ако предпочитате `npm run …` вместо директно извикване на скриптовете)
 
-### Environment variables
+### Променливи на средата
 
-| Variable | Required | Description |
+| Променлива | Задължителна | Описание |
 |---|---|---|
-| `DB_URL` | no (has default) | JDBC URL |
-| `DB_USERNAME` | no (default `restaurant_app`) | DB user |
-| `DB_PASSWORD` | **yes** | DB password (`SecurePassword123!` in the example) |
-| `RESTAURANT_TIME_ZONE` | no (default `Europe/Sofia`) | Reservation clock zone |
-| `INITIAL_ADMIN_EMAIL` | optional | Seed first ADMIN |
-| `INITIAL_ADMIN_PASSWORD` | optional | Seed admin password (BCrypt stored) |
-| `INITIAL_ADMIN_FULL_NAME` | optional | Seed admin display name |
-| `DEMO_USER_PASSWORD` | demo only | Shared password for seeded presentation users |
+| `DB_URL` | не (има default) | JDBC URL |
+| `DB_USERNAME` | не (default `restaurant_app`) | MySQL потребител |
+| `DB_PASSWORD` | **да** | MySQL парола (`SecurePassword123!` в примера) |
+| `RESTAURANT_TIME_ZONE` | не (default `Europe/Sofia`) | Часова зона за резервации |
+| `INITIAL_ADMIN_EMAIL` | по желание | Seed на първи ADMIN |
+| `INITIAL_ADMIN_PASSWORD` | по желание | Парола на seed ADMIN (съхранява се като BCrypt) |
+| `INITIAL_ADMIN_FULL_NAME` | по желание | Име за показване на seed ADMIN |
+| `DEMO_USER_PASSWORD` | само за demo | Обща парола за seed потребители за презентация |
 
-See `src/main/resources/application-example.properties` and `smoke-env.example.ps1`. Never commit real production secrets.
+Виж `src/main/resources/application-example.properties` и `smoke-env.example.ps1`. Не комитвайте реални продукционни тайни.
 
-### Local env setup
+### Настройка на локалния env
 
 ```powershell
 Copy-Item .\smoke-env.example.ps1 .\smoke-env.ps1
 ```
 
-Create MySQL database `restaurant_management` and user `restaurant_app` with password **`SecurePassword123!`** (same value as in the example file).
+Създайте MySQL база `restaurant_management` и потребител `restaurant_app` с парола **`SecurePassword123!`** (същата стойност като в примерния файл).
 
-## Running the application
+## Стартиране на приложението
 
-### Recommended (demo / presentation)
+### Препоръчително (демо / презентация)
 
 ```powershell
 npm run dev:demo
 ```
 
-This loads `smoke-env.ps1` (or the example), starts Spring Boot with the `demo` profile, and seeds the presentation users above.
+Това зарежда `smoke-env.ps1` (или example файла), стартира Spring Boot с профил `demo` и създава презентационните потребители по-горе.
 
-### Normal run (no demo seed)
+### Нормално стартиране (без demo seed)
 
 ```powershell
 npm run dev
 ```
 
-### Equivalent without npm
+### Еквивалент без npm
 
 ```powershell
 .\scripts\dev-demo.ps1
-# or
+# или
 .\scripts\dev.ps1
 ```
 
-Open `http://localhost:8080/login` and sign in with any role from the table above.
+Отворете `http://localhost:8080/login` и влезте с която и да е роля от таблицата по-горе.
 
-Catalog and tables use realistic Bulgarian names (idempotent). Demo does **not** seed payments or large history. If `DEMO_USER_PASSWORD` is missing, demo users are skipped (safe warning only).
+Каталогът и масите ползват реалистични български имена (идемпотентно). Demo **не** зарежда плащания или голяма история. Ако липсва `DEMO_USER_PASSWORD`, demo потребителите се пропускат (само предупреждение в лога).
 
-## Running tests
+## Тестове
 
 ```powershell
 npm test
 ```
 
-Or: `.\scripts\test.ps1` / `.\mvnw.cmd clean test`.
+Или: `.\scripts\test.ps1` / `.\mvnw.cmd clean test`.
 
-More detail: [docs/TESTING.md](docs/TESTING.md).
+Повече подробности: [docs/TESTING.md](docs/TESTING.md).
 
-## API overview
+## API преглед
 
-See [docs/API.md](docs/API.md).
+Виж [docs/API.md](docs/API.md).
 
-## Known scope limitations / future production work
+## Известни ограничения / бъдеща продукционна работа
 
-This academic/demo-scope system does **not** include:
+Тази академична/демо система **не** включва:
 
-- real payment gateway or fiscal device
-- VAT/tax compliance modules
-- email/SMS notifications
-- password reset / anonymous public booking
-- distributed message broker / outbox / WebSocket event replay
-- Flyway/Liquibase migrations
-- Docker deployment packaging
-- production observability / rate limiting
-- external identity provider
+- реален платежен шлюз или фискално устройство
+- модули за ДДС/данъчно съответствие
+- имейл/SMS известия
+- нулиране на парола / анонимна публична резервация
+- разпределен message broker / outbox / replay на WebSocket събития
+- Flyway/Liquibase миграции
+- Docker пакетиране за деплой
+- продукционен observability / rate limiting
+- външен identity provider
 
-Do not treat simulated CARD payments or receipts as real financial or fiscal documents.
+Не третирайте симулираните CARD плащания или боновете като реални финансови или фискални документи.
 
-## Project structure
+## Структура на проекта
 
 ```text
 src/main/java/bg/martinandonov/restaurant/
@@ -244,17 +246,17 @@ docs/
   ARCHITECTURE.md DATABASE.md API.md TESTING.md DEMO.md PRESENTATION_QA.md
 ```
 
-## Presentation / demo instructions
+## Инструкции за презентация / демо
 
-Follow [docs/DEMO.md](docs/DEMO.md) and prepare answers with [docs/PRESENTATION_QA.md](docs/PRESENTATION_QA.md).
+Следвайте [docs/DEMO.md](docs/DEMO.md) и подгответе отговори с [docs/PRESENTATION_QA.md](docs/PRESENTATION_QA.md).
 
-## Further documentation
+## Допълнителна документация
 
-| Doc | Content |
+| Документ | Съдържание |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modular monolith, WebSocket flow, concurrency |
-| [DATABASE.md](docs/DATABASE.md) | Entities, ER diagram, constraints |
-| [API.md](docs/API.md) | Role-oriented API map |
-| [TESTING.md](docs/TESTING.md) | Automated + smoke testing |
-| [DEMO.md](docs/DEMO.md) | 8–12 minute presentation script |
-| [PRESENTATION_QA.md](docs/PRESENTATION_QA.md) | Defense Q&A |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Модулен монолит, WebSocket поток, конкурентност |
+| [DATABASE.md](docs/DATABASE.md) | Ентитети, ER диаграма, ограничения |
+| [API.md](docs/API.md) | API карта по роли |
+| [TESTING.md](docs/TESTING.md) | Автоматизирани + smoke тестове |
+| [DEMO.md](docs/DEMO.md) | Сценарий за презентация (8–12 мин.) |
+| [PRESENTATION_QA.md](docs/PRESENTATION_QA.md) | Въпроси и отговори за защита |
